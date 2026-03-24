@@ -1,9 +1,19 @@
 /// <reference types='vitest' />
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import { reactRouter } from '@react-router/dev/vite';
 
+const appDir = path.join(fileURLToPath(new URL('.', import.meta.url)), 'app');
+
 export default defineConfig(() => ({
   root: import.meta.dirname,
+  resolve: {
+    alias: {
+      '~': appDir,
+      '@': appDir,
+    },
+  },
   cacheDir: '../../node_modules/.vite/apps/nota.app',
   server: {
     port: 4200,
@@ -32,6 +42,7 @@ export default defineConfig(() => ({
     globals: true,
     environment: 'jsdom',
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    setupFiles: ['./tests/setup.ts'],
     reporters: ['default'],
     coverage: {
       reportsDirectory: './test-output/vitest/coverage',

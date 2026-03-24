@@ -1,0 +1,35 @@
+appId: app.nota.desktop
+productName: Nota
+directories:
+  output: release
+  buildResources: buildResources
+files:
+  - dist/**/*
+  - from: ../nota.app/build
+    to: nota.app/build
+    filter:
+      - "**/*"
+  - from: ../nota.app/node_modules
+    to: nota.app/node_modules
+    filter:
+      - "**/*"
+mac:
+  category: public.app-category.productivity
+  target:
+    - target: dmg
+      arch:
+        - arm64
+        - x64
+    - target: zip
+      arch:
+        - arm64
+        - x64
+  hardenedRuntime: true
+dmg:
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications

@@ -1,0 +1,105 @@
+---
+description: Unit tests must follow AAA (Arrange-Act-Assert) pattern with clear sections
+globs: "**/*.{spec,test}.{ts,tsx}"
+alwaysApply: false
+---
+
+# AAA Testing Pattern
+
+All unit tests must follow the Arrange-Act-Assert structure with explicit comments marking each section.
+
+## Structure
+
+```typescript
+// ❌ BAD - No clear structure
+it('should calculate sum', () => {
+  const a = 5;
+  const b = 10;
+  const result = add(a, b);
+  expect(result).toBe(15);
+});
+
+// ✅ GOOD - Clear AAA sections
+it('should calculate sum', () => {
+  // Arrange
+  const a = 5;
+  const b = 10;
+
+  // Act
+  const result = add(a, b);
+
+  // Assert
+  expect(result).toBe(15);
+});
+```
+
+## Section Guidelines
+
+### Arrange
+- Set up test data and dependencies
+- Create mocks, stubs, or spies
+- Configure initial state
+- Keep minimal - only what's needed for this test
+
+### Act
+- Single action that triggers the behavior being tested
+- Should be one line when possible
+- Clear separation from Arrange
+
+### Assert
+- One or more assertions verifying the outcome
+- Test one concept per test
+- Use descriptive assertion messages when framework supports it
+
+## Multiple Assertions
+
+When multiple related assertions are needed, keep them in the Assert section:
+
+```typescript
+// ✅ GOOD
+it('should create user with defaults', () => {
+  // Arrange
+  const email = 'test@example.com';
+
+  // Act
+  const user = createUser(email);
+
+  // Assert
+  expect(user.email).toBe(email);
+  expect(user.isActive).toBe(true);
+  expect(user.createdAt).toBeInstanceOf(Date);
+});
+```
+
+## Async Tests
+
+```typescript
+// ✅ GOOD
+it('should fetch data', async () => {
+  // Arrange
+  const fetcher = mockApi();
+  fetcher.mockResolvedValue({ data: 'value' });
+
+  // Act
+  const result = await fetchData(fetcher);
+
+  // Assert
+  expect(result).toEqual({ data: 'value' });
+  expect(fetcher).toHaveBeenCalledWith('/api/data');
+});
+```
+
+## Empty Sections
+
+If a section has nothing to arrange (e.g., testing a pure function with inline values), omit the comment:
+
+```typescript
+// ✅ GOOD - No arrange needed
+it('should return true for valid email', () => {
+  // Act
+  const result = isValidEmail('user@example.com');
+
+  // Assert
+  expect(result).toBe(true);
+});
+```

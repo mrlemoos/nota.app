@@ -1,0 +1,64 @@
+{
+  "name": "@nota.app/nota-electron",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/main.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "npm run build && electron .",
+    "dist": "npm run build && electron-builder"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/wait-on": "^5.3.4",
+    "electron": "^35.0.0",
+    "electron-builder": "^25.0.0",
+    "typescript": "~5.9.2"
+  },
+  "dependencies": {
+    "wait-on": "^8.0.0"
+  },
+  "nx": {
+    "sourceRoot": "apps/nota-electron/src",
+    "projectType": "application",
+    "targets": {
+      "build": {
+        "executor": "nx:run-commands",
+        "options": {
+          "commands": [
+            "cd apps/nota-electron && npx tsc"
+          ]
+        }
+      },
+      "electron:dev": {
+        "executor": "nx:run-commands",
+        "options": {
+          "commands": [
+            "echo 'Make sure nota.app dev server is running on port 4200 (nx dev nota.app)'",
+            "cd apps/nota-electron && npm run build && npx electron ."
+          ]
+        }
+      },
+      "electron:pack": {
+        "executor": "nx:run-commands",
+        "dependsOn": [
+          {
+            "target": "build",
+            "projects": "nota.app"
+          },
+          {
+            "target": "build",
+            "projects": "self"
+          }
+        ],
+        "options": {
+          "commands": [
+            "cd apps/nota-electron && npx electron-builder"
+          ]
+        }
+      }
+    },
+    "tags": []
+  }
+}

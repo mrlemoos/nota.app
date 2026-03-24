@@ -1,0 +1,11 @@
+{
+  "cSpell.words": [
+    "cmdk",
+    "distributables",
+    "isbot",
+    "partialize",
+    "Pipeable",
+    "supabase"
+  ],
+  "tailwindcss.configPath": "./apps/nota.app/styles.css"
+}
