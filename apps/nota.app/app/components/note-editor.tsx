@@ -162,7 +162,8 @@ export function NoteEditor({
         const updatedNote = await updateNote(client, note.id, {
           content: toSave as Json,
         });
-        lastSavedContent.current = toSave as Json;
+        const mergedBody = (pendingContentRef.current ?? toSave) as Json;
+        lastSavedContent.current = mergedBody;
         setSaveStatus('saved');
         onNoteUpdated?.(
           mergeUpdatedNoteLocalContent(

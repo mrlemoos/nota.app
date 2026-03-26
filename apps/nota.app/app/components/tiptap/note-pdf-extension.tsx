@@ -22,8 +22,8 @@ import { pdfPreviewSrc } from '@/lib/pdf-preview-url';
 import { cn } from '@/lib/utils';
 import { getBrowserClient } from '../../lib/supabase/browser';
 import {
-  PDF_SIGNED_URL_TTL_SEC,
-  downloadPdfFromSignedUrl,
+  ATTACHMENT_SIGNED_URL_TTL_SEC,
+  downloadBlobFromSignedUrl,
 } from '../../lib/pdf-attachment-client';
 import {
   NOTE_PDFS_BUCKET,
@@ -192,7 +192,10 @@ function NotePdfNodeView(props: NodeViewProps) {
       const client = getBrowserClient();
       const { data, error } = await client.storage
         .from(NOTE_PDFS_BUCKET)
-        .createSignedUrl(attachment.storage_path, PDF_SIGNED_URL_TTL_SEC);
+        .createSignedUrl(
+          attachment.storage_path,
+          ATTACHMENT_SIGNED_URL_TTL_SEC,
+        );
 
       if (error || !data?.signedUrl) {
         throw new Error(error?.message ?? 'Could not open preview');
@@ -229,13 +232,16 @@ function NotePdfNodeView(props: NodeViewProps) {
       const client = getBrowserClient();
       const { data, error } = await client.storage
         .from(NOTE_PDFS_BUCKET)
-        .createSignedUrl(attachment.storage_path, PDF_SIGNED_URL_TTL_SEC);
+        .createSignedUrl(
+          attachment.storage_path,
+          ATTACHMENT_SIGNED_URL_TTL_SEC,
+        );
 
       if (error || !data?.signedUrl) {
         throw new Error(error?.message ?? 'Could not download');
       }
 
-      await downloadPdfFromSignedUrl(data.signedUrl, attachment.filename);
+      await downloadBlobFromSignedUrl(data.signedUrl, attachment.filename);
     } catch (e) {
       setActionError(e instanceof Error ? e.message : 'Download failed');
     }

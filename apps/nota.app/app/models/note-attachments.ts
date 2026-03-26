@@ -3,13 +3,32 @@ import type { NoteAttachment, NoteAttachmentInsert } from '~/types/database.type
 
 export const NOTE_PDFS_BUCKET = 'note-pdfs';
 
-/** Object path inside the bucket: `{user_id}/{note_id}/{objectId}.pdf` */
-export function pdfStoragePath(
+const NOTE_ATTACHMENT_STORAGE_EXTENSIONS = new Set([
+  '.pdf',
+  '.jpg',
+  '.jpeg',
+  '.png',
+  '.gif',
+  '.webp',
+]);
+
+/**
+ * Object path inside the bucket: `{user_id}/{note_id}/{objectId}{safeExt}`.
+ * `safeExt` must be a known extension (e.g. `.pdf`, `.jpg`); never pass raw user filenames.
+ */
+export function noteAttachmentStoragePath(
   userId: string,
   noteId: string,
   objectId: string,
+  safeExt: string,
 ): string {
-  return `${userId}/${noteId}/${objectId}.pdf`;
+  const ext = safeExt.startsWith('.')
+    ? safeExt.toLowerCase()
+    : `.${safeExt.toLowerCase()}`;
+  if (!NOTE_ATTACHMENT_STORAGE_EXTENSIONS.has(ext)) {
+    throw new Error(`Invalid attachment storage extension: ${safeExt}`);
+  }
+  return `${userId}/${noteId}/${objectId}${ext}`;
 }
 
 export async function listNoteAttachments(

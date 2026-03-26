@@ -22,10 +22,10 @@ import {
   NotePdf,
   NotePdfDocProvider,
 } from './tiptap/note-pdf-extension';
+import { NoteImage } from './tiptap/note-image-extension';
 import {
-  PDF_MAX_BYTES,
-  isPdfFile,
-  uploadPdfAndCreateRecord,
+  classifyNoteAttachmentFile,
+  uploadNoteAttachmentFile,
 } from '../lib/pdf-attachment-client';
 import type { NoteAttachment } from '~/types/database.types';
 import { useRegisterNoteEditorMermaidInserter } from '../context/note-editor-commands';
@@ -62,6 +62,13 @@ export function TipTapEditor({
   userId,
   attachments,
 }: TipTapEditorProps): JSX.Element {
+  const canInsertAttachments = Boolean(userId && noteId);
+  const canInsertAttachmentsRef = useRef(false);
+  const uploadingRef = useRef(false);
+  const processFilesRef = useRef<
+    (files: FileList | File[] | null) => Promise<void>
+  >(async () => {});
+
   const [isMounted, setIsMounted] = useState(false);
   const { revalidate } = useRevalidator();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -70,6 +77,11 @@ export function TipTapEditor({
   const [pendingAttachments, setPendingAttachments] = useState<
     NoteAttachment[]
   >([]);
+  const [isFileDragOver, setIsFileDragOver] = useState(false);
+  const prevNoteIdRef = useRef<string | undefined>(undefined);
+
+  canInsertAttachmentsRef.current = canInsertAttachments;
+  uploadingRef.current = uploading;
 
   useEffect(() => {
     setPendingAttachments((prev) =>
@@ -110,10 +122,52 @@ export function TipTapEditor({
       }),
       LinkPreview,
       NotePdf,
+      NoteImage,
     ],
     content: content || { type: 'doc', content: [{ type: 'paragraph' }] },
     onUpdate: ({ editor: ed }) => {
       onUpdate(ed.getJSON());
+    },
+    editorProps: {
+      handleDOMEvents: {
+        dragover: (_view, event) => {
+          if (
+            !canInsertAttachmentsRef.current ||
+            uploadingRef.current ||
+            !event.dataTransfer.types.includes('Files')
+          ) {
+            return false;
+          }
+          event.preventDefault();
+          setIsFileDragOver(true);
+          return false;
+        },
+        dragleave: (_view, event) => {
+          const related = event.relatedTarget as Node | null;
+          if (related && _view.dom.contains(related)) {
+            return false;
+          }
+          setIsFileDragOver(false);
+          return false;
+        },
+        drop: (_view, event) => {
+          setIsFileDragOver(false);
+          if (
+            !canInsertAttachmentsRef.current ||
+            uploadingRef.current ||
+            !event.dataTransfer.types.includes('Files')
+          ) {
+            return false;
+          }
+          const { files } = event.dataTransfer;
+          if (!files?.length) {
+            return false;
+          }
+          event.preventDefault();
+          void processFilesRef.current(files);
+          return true;
+        },
+      },
     },
   });
 
@@ -124,10 +178,14 @@ export function TipTapEditor({
   }, []);
 
   useEffect(() => {
-    if (editor && content && !isDocContentEqual(editor, content)) {
-      editor.commands.setContent(content, false);
+    if (!editor || !content) return;
+    if (noteId !== prevNoteIdRef.current) {
+      prevNoteIdRef.current = noteId;
+      if (!isDocContentEqual(editor, content)) {
+        editor.commands.setContent(content, false);
+      }
     }
-  }, [editor, content]);
+  }, [editor, content, noteId]);
 
   useEffect(() => {
     if (!editor) return;
@@ -150,49 +208,72 @@ export function TipTapEditor({
     fileInputRef.current?.click();
   }, []);
 
-  const handleFileChange = useCallback(
-    async (e: ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      e.target.value = '';
-      if (!file || !editor) return;
+  const insertAttachmentNode = useCallback(
+    (record: NoteAttachment) => {
+      if (!editor) return;
+      const isPdf = record.content_type === 'application/pdf';
+      editor
+        .chain()
+        .focus()
+        .insertContent({
+          type: isPdf ? 'notePdf' : 'noteImage',
+          attrs: {
+            attachmentId: record.id,
+            filename: record.filename,
+          },
+        })
+        .run();
+    },
+    [editor],
+  );
+
+  const processFiles = useCallback(
+    async (files: FileList | File[] | null) => {
+      if (!files || !editor) return;
+      const list = Array.from(files);
+      if (list.length === 0) return;
 
       setUploadError(null);
-
-      if (!isPdfFile(file)) {
-        setUploadError('Please choose a PDF file.');
-        return;
-      }
-
-      if (file.size > PDF_MAX_BYTES) {
-        setUploadError('This file is too large (max 25 MB).');
-        return;
-      }
-
       setUploading(true);
       try {
-        const record = await uploadPdfAndCreateRecord(noteId, userId, file);
-        setPendingAttachments((prev) => [...prev, record]);
-        editor
-          .chain()
-          .focus()
-          .insertContent({
-            type: 'notePdf',
-            attrs: {
-              attachmentId: record.id,
-              filename: record.filename,
-            },
-          })
-          .run();
-        revalidate();
-      } catch (err) {
-        setUploadError(
-          err instanceof Error ? err.message : 'Upload failed',
-        );
+        for (const file of list) {
+          if (!classifyNoteAttachmentFile(file)) {
+            setUploadError(
+              'Unsupported file type. Use a PDF or JPEG, PNG, GIF, or WebP image.',
+            );
+            continue;
+          }
+          try {
+            const record = await uploadNoteAttachmentFile(
+              noteId,
+              userId,
+              file,
+            );
+            setPendingAttachments((prev) => [...prev, record]);
+            insertAttachmentNode(record);
+            revalidate();
+          } catch (err) {
+            setUploadError(
+              err instanceof Error ? err.message : 'Upload failed',
+            );
+          }
+        }
       } finally {
         setUploading(false);
       }
     },
-    [editor, noteId, userId, revalidate],
+    [editor, insertAttachmentNode, noteId, revalidate, userId],
+  );
+
+  processFilesRef.current = processFiles;
+
+  const handleFileChange = useCallback(
+    async (e: ChangeEvent<HTMLInputElement>) => {
+      const fl = e.target.files;
+      e.target.value = '';
+      await processFiles(fl);
+    },
+    [processFiles],
   );
 
   if (!isMounted || !editor) {
@@ -206,8 +287,6 @@ export function TipTapEditor({
     );
   }
 
-  const canInsertPdf = Boolean(userId && noteId);
-
   return (
     <NotePdfDocProvider
       value={{
@@ -218,15 +297,16 @@ export function TipTapEditor({
       }}
     >
       <div className="tiptap-editor">
-        {canInsertPdf ? (
+        {canInsertAttachments ? (
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <input
               ref={fileInputRef}
               type="file"
-              accept="application/pdf,.pdf"
+              accept="application/pdf,.pdf,image/jpeg,image/png,image/gif,image/webp,.jpg,.jpeg,.png,.gif,.webp"
               className="sr-only"
               aria-hidden
               tabIndex={-1}
+              multiple
               onChange={handleFileChange}
             />
             <Button
@@ -236,10 +316,10 @@ export function TipTapEditor({
               disabled={uploading}
               onClick={handlePickFile}
             >
-              {uploading ? 'Uploading…' : 'Insert PDF'}
+              {uploading ? 'Uploading…' : 'Insert PDF or image'}
             </Button>
             <span className="text-xs text-muted-foreground">
-              Inserts at the cursor
+              Inserts at the cursor, or drag files into the editor
             </span>
             {uploadError ? (
               <p className="w-full text-sm text-destructive" role="alert">
@@ -248,7 +328,15 @@ export function TipTapEditor({
             ) : null}
           </div>
         ) : null}
-        <EditorContent editor={editor} />
+        <div
+          className={
+            isFileDragOver && canInsertAttachments && !uploading
+              ? 'rounded-md ring-2 ring-ring/50 ring-offset-2 ring-offset-background'
+              : undefined
+          }
+        >
+          <EditorContent editor={editor} />
+        </div>
       </div>
     </NotePdfDocProvider>
   );

@@ -28,11 +28,6 @@
 - After successful client-side saves from `NoteEditor`, the note detail route should call React Router `revalidate()` (e.g. `useRevalidator`) so the parent `notes` layout loader refreshes sidebar titles and dates.
 - Delete note: POST `/notes/:noteId` from the trash control on each sidebar row (with confirm) and from the Command Palette when that route is active—not from a control beside the document title.
 - Command palette (`app/components/command-palette.tsx`) mounts from `app/signed-in-command-palette.tsx` in the root layout when a user session exists. Cmd/Ctrl+K toggles it from anywhere (including the TipTap body and title field); it lists notes from the `/notes` layout loader to open one (navigate to `/notes/:noteId`), POSTs to `/notes` to create a note, to `/notes/:noteId` to delete the open note, and to `/logout` for sign out.
-</think>
-
-
-<｜tool▁calls▁begin｜><｜tool▁call▁begin｜>
-TodoWrite
 
 ## Auth forms
 
@@ -47,8 +42,12 @@ TodoWrite
 ## Learned User Preferences
 
 - PDF attachments should live inline in the TipTap document (insert at the cursor as a `notePdf` block) rather than only in a separate footer panel.
+- The open note’s inline document title textarea should use a heavy sans weight and `text-pretty` so large, multi-line titles read clearly.
 
 ## Learned Workspace Facts
 
 - Per-note PDFs use Supabase Storage bucket `note-pdfs`, `note_attachments` rows, and a TipTap `notePdf` atom block in `notes.content` JSON (`attachmentId`, `filename`); RLS allows owners to update `note_attachments.filename` for display-name renames (double-click the label in the node view). Upload/rollback helpers live in `app/lib/pdf-attachment-client.ts`. Modal preview uses PDF.js in a lazy-loaded chunk (`pdf-js-modal-preview.tsx`); keep PDF.js off the eager import path for `note-pdf-extension.tsx` (use `React.lazy` and `Suspense`) or the extension can fail to load and `notePdf` nodes vanish from the document. Render the preview `<dialog>` with `createPortal` to `document.body`. `app/lib/pdf-preview-url.ts` adds `#toolbar=0&navpanes=0` for iframe fallback only when PDF.js fails.
 - Link previews use an authenticated `GET /og-preview?url=` resource route and `app/lib/og-preview.server.ts` for server-side fetch and Open Graph parsing; the editor exposes a TipTap `linkPreview` block and debounced conversion of link-only paragraphs via `app/components/tiptap/link-preview-scan.ts`. If OG fetch fails or returns no usable title/description/image, revert to a normal paragraph with a link; the link mark uses `skipLinkPreview` so the scanner does not immediately re-promote the same URL and loop.
+- Mermaid in notes uses `NotaCodeBlock` (`app/components/tiptap/nota-code-block.tsx`): `StarterKit.configure({ codeBlock: false })` plus an extended `@tiptap/extension-code-block` with a React node view; when `attrs.language` is `mermaid` (case-insensitive), lazy-load `mermaid`, debounce renders, use `securityLevel: 'strict'`, and derive light/dark theme from the `<html>` `dark` class. Fence input rules allow broader language ids (e.g. `c++`) than stock TipTap. In `TipTapEditor`, declare hooks such as `useCallback` for toolbar actions before any early return that skips the mounted editor tree so hook order stays valid.
+- Signed-in command palette: when open, Cmd/Ctrl+N submits create-note (if not busy) and Space focuses the filter unless the input is already focused; create-note and sign-out close the palette; muted right-side labels can show hotkeys (e.g. ⌘N vs Ctrl+N from platform sniff).
+- Electron translucency: `BrowserWindow` uses `transparent: true` and `backgroundColor: '#00000000'`; on macOS add `vibrancy: 'under-window'` and `visualEffectState: 'followWindow'` so the window is not a solid black composite. `root.tsx` runs an inline head script that adds `nota-electron` on `<html>` when `window.nota` exists. Use unlayered CSS (not only `@layer base`) for `html.nota-electron` / `body` transparency and for `html.nota-electron .nota-notes-root` so Tailwind utility backgrounds on the notes shell do not override transparency.
