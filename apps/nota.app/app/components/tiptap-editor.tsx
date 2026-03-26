@@ -11,6 +11,7 @@ import { NotaCodeBlock } from './tiptap/nota-code-block';
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -35,6 +36,8 @@ import {
   useRegisterNoteEditorTableInserter,
 } from '../context/note-editor-commands';
 import { TableEditorMenu } from './tiptap/table-editor-menu';
+import { NoteDueDateBubbleMenu } from './note-due-date-bubble-menu';
+import { NotaDueDateInteraction } from './tiptap/nota-due-date-interaction';
 import { hrefForNote, parseNoteLinkPath } from '../lib/internal-note-link';
 import { notesFromMatches } from '../lib/notes-from-matches';
 import { persistedDisplayTitle } from '../lib/note-title';
@@ -60,6 +63,29 @@ function noteLinkInsertPayload(label: string, href: string) {
   };
 }
 
+function insertNoteLinkAtMentionRange(
+  ed: Editor,
+  from: number,
+  to: number,
+  target: Note,
+): void {
+  const href = hrefForNote(target.id);
+  const label = persistedDisplayTitle(target.title || '');
+  ed
+    .chain()
+    .focus()
+    .deleteRange({ from, to })
+    .insertContent(noteLinkInsertPayload(label, href))
+    .setParagraph()
+    .command(({ tr, dispatch }) => {
+      if (dispatch) {
+        tr.setStoredMarks([]);
+      }
+      return true;
+    })
+    .run();
+}
+
 function isDocContentEqual(editor: Editor, content: unknown): boolean {
   if (content === null || content === undefined) {
     return false;
@@ -82,6 +108,9 @@ interface TipTapEditorProps {
   noteId: string;
   userId: string;
   attachments: NoteAttachment[];
+  dueAt?: string | null;
+  isDeadline?: boolean;
+  onSaveDueDate?: (dueAt: string | null, isDeadline: boolean) => Promise<void>;
 }
 
 export function TipTapEditor({
@@ -91,6 +120,9 @@ export function TipTapEditor({
   noteId,
   userId,
   attachments,
+  dueAt = null,
+  isDeadline = false,
+  onSaveDueDate,
 }: TipTapEditorProps): JSX.Element {
   const canInsertAttachments = Boolean(userId && noteId);
   const canInsertAttachmentsRef = useRef(false);
@@ -134,8 +166,9 @@ export function TipTapEditor({
     query: string;
     selectedIndex: number;
   } | null>(null);
-  const mentionRef = useRef(mention);
-  mentionRef.current = mention;
+
+  const mentionSelectedIndexRef = useRef(0);
+  const mentionTriggerKeyRef = useRef<string | null>(null);
 
   canInsertAttachmentsRef.current = canInsertAttachments;
   uploadingRef.current = uploading;
@@ -159,8 +192,8 @@ export function TipTapEditor({
 
   const editorRef = useRef<Editor | null>(null);
 
-  const editor = useEditor({
-    extensions: [
+  const extensions = useMemo(
+    () => [
       StarterKit.configure({
         codeBlock: false,
       }),
@@ -189,7 +222,13 @@ export function TipTapEditor({
       TableRow,
       TableHeader,
       TableCell,
+      ...(onSaveDueDate ? [NotaDueDateInteraction] : []),
     ],
+    [onSaveDueDate, placeholder],
+  );
+
+  const editor = useEditor({
+    extensions,
     content: content || { type: 'doc', content: [{ type: 'paragraph' }] },
     onUpdate: ({ editor: ed }) => {
       onUpdate(ed.getJSON());
@@ -199,15 +238,16 @@ export function TipTapEditor({
         if (!canInsertAttachmentsRef.current) return false;
         const trigger = findNoteMentionTrigger(_view.state);
         if (!trigger) return false;
-        const m = mentionRef.current;
-        if (
-          !m ||
-          m.from !== trigger.from ||
-          m.query !== trigger.query
-        ) {
-          return false;
-        }
         const filtered = filterNoteCandidatesRef.current(trigger.query);
+        const triggerKey = `${trigger.from}:${trigger.query}`;
+
+        const alignMentionNavToTrigger = (): void => {
+          if (mentionTriggerKeyRef.current !== triggerKey) {
+            mentionSelectedIndexRef.current = 0;
+            mentionTriggerKeyRef.current = triggerKey;
+          }
+        };
+
         if (event.key === 'Escape') {
           event.preventDefault();
           const to = _view.state.selection.from;
@@ -218,53 +258,50 @@ export function TipTapEditor({
         if (event.key === 'ArrowDown') {
           event.preventDefault();
           if (filtered.length === 0) return true;
-          setMention((s) =>
-            s
-              ? {
-                  ...s,
-                  selectedIndex: (s.selectedIndex + 1) % filtered.length,
-                }
-              : s,
-          );
+          alignMentionNavToTrigger();
+          const next =
+            (mentionSelectedIndexRef.current + 1) % filtered.length;
+          mentionSelectedIndexRef.current = next;
+          setMention({
+            from: trigger.from,
+            query: trigger.query,
+            selectedIndex: next,
+          });
           return true;
         }
         if (event.key === 'ArrowUp') {
           event.preventDefault();
           if (filtered.length === 0) return true;
-          setMention((s) =>
-            s
-              ? {
-                  ...s,
-                  selectedIndex:
-                    (s.selectedIndex - 1 + filtered.length) % filtered.length,
-                }
-              : s,
-          );
+          alignMentionNavToTrigger();
+          const next =
+            (mentionSelectedIndexRef.current -
+              1 +
+              filtered.length) %
+            filtered.length;
+          mentionSelectedIndexRef.current = next;
+          setMention({
+            from: trigger.from,
+            query: trigger.query,
+            selectedIndex: next,
+          });
           return true;
         }
-        if (event.key === 'Enter' && !event.shiftKey) {
+        const confirmByKey =
+          (event.key === 'Enter' && !event.shiftKey) ||
+          (event.key === 'Tab' && !event.shiftKey);
+        if (confirmByKey) {
           if (filtered.length === 0) return false;
           event.preventDefault();
           const ed = editorRef.current;
           if (!ed) return true;
-          const idx = Math.min(m.selectedIndex, filtered.length - 1);
+          alignMentionNavToTrigger();
+          const idx = Math.min(
+            mentionSelectedIndexRef.current,
+            filtered.length - 1,
+          );
           const target = filtered[idx]!;
           const to = _view.state.selection.from;
-          const href = hrefForNote(target.id);
-          const label = persistedDisplayTitle(target.title || '');
-          ed
-            .chain()
-            .focus()
-            .deleteRange({ from: trigger.from, to })
-            .insertContent(noteLinkInsertPayload(label, href))
-            .setParagraph()
-            .command(({ tr, dispatch }) => {
-              if (dispatch) {
-                tr.setStoredMarks([]);
-              }
-              return true;
-            })
-            .run();
+          insertNoteLinkAtMentionRange(ed, trigger.from, to, target);
           setMention(null);
           return true;
         }
@@ -345,9 +382,19 @@ export function TipTapEditor({
         },
       },
     },
-  });
+  }, [extensions]);
 
   editorRef.current = editor ?? null;
+
+  useLayoutEffect(() => {
+    if (mention) {
+      mentionSelectedIndexRef.current = mention.selectedIndex;
+      mentionTriggerKeyRef.current = `${mention.from}:${mention.query}`;
+    } else {
+      mentionTriggerKeyRef.current = null;
+      mentionSelectedIndexRef.current = 0;
+    }
+  }, [mention]);
 
   useRegisterNoteEditorMermaidInserter(editor);
   useRegisterNoteEditorTableInserter(editor);
@@ -494,31 +541,15 @@ export function TipTapEditor({
         })()
       : null;
 
-  const handleMentionSelectNote = useCallback(
-    (target: Note) => {
-      const ed = editorRef.current;
-      const s = mentionRef.current;
-      if (!ed || !s) return;
-      const to = ed.state.selection.from;
-      const href = hrefForNote(target.id);
-      const label = persistedDisplayTitle(target.title || '');
-      ed
-        .chain()
-        .focus()
-        .deleteRange({ from: s.from, to })
-        .insertContent(noteLinkInsertPayload(label, href))
-        .setParagraph()
-        .command(({ tr, dispatch }) => {
-          if (dispatch) {
-            tr.setStoredMarks([]);
-          }
-          return true;
-        })
-        .run();
-      setMention(null);
-    },
-    [],
-  );
+  const handleMentionSelectNote = useCallback((target: Note) => {
+    const ed = editorRef.current;
+    if (!ed) return;
+    const trigger = findNoteMentionTrigger(ed.state);
+    if (!trigger) return;
+    const to = ed.state.selection.from;
+    insertNoteLinkAtMentionRange(ed, trigger.from, to, target);
+    setMention(null);
+  }, []);
 
   if (!isMounted || !editor) {
     return (
@@ -554,6 +585,15 @@ export function TipTapEditor({
           }
         >
           <TableEditorMenu editor={editor} />
+          {onSaveDueDate ? (
+            <NoteDueDateBubbleMenu
+              editor={editor}
+              dueAt={dueAt}
+              isDeadline={isDeadline}
+              disabled={!userId}
+              onSaveDueDate={onSaveDueDate}
+            />
+          ) : null}
           <EditorContent editor={editor} />
         </div>
         <NoteLinkMentionMenu
@@ -561,9 +601,10 @@ export function TipTapEditor({
           anchor={mentionAnchor}
           notes={mentionFiltered}
           selectedIndex={mention?.selectedIndex ?? 0}
-          onHighlightIndex={(i) =>
-            setMention((s) => (s ? { ...s, selectedIndex: i } : s))
-          }
+          onHighlightIndex={(i) => {
+            mentionSelectedIndexRef.current = i;
+            setMention((s) => (s ? { ...s, selectedIndex: i } : s));
+          }}
           onSelect={handleMentionSelectNote}
           emptyMessage={
             sidebarNotes.filter((n) => n.id !== noteId).length === 0

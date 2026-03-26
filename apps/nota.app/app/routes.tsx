@@ -13,6 +13,7 @@ export default [
   route('notes', './routes/notes.tsx', [
     index('./routes/notes._index.tsx'),
     route('graph', './routes/notes.graph.tsx'),
+    route('settings', './routes/notes.settings.tsx'),
     route(':noteId', './routes/notes.$noteId.tsx'),
   ]),
 ] satisfies RouteConfig;

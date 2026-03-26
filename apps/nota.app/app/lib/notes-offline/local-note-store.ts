@@ -48,6 +48,8 @@ export async function saveLocalNoteDraft(
     content?: Json;
     user_id?: string;
     created_at?: string;
+    due_at?: string | null;
+    is_deadline?: boolean;
   },
   options: { pendingCreate?: boolean } = {},
 ): Promise<void> {
@@ -68,6 +70,14 @@ export async function saveLocalNoteDraft(
     content: content as Json,
     created_at: patch.created_at ?? existing?.created_at ?? now,
     updated_at: now,
+    due_at:
+      patch.due_at !== undefined
+        ? patch.due_at
+        : (existing?.due_at ?? null),
+    is_deadline:
+      patch.is_deadline !== undefined
+        ? patch.is_deadline
+        : (existing?.is_deadline ?? false),
     dirty: true,
     pending_create: options.pendingCreate ?? existing?.pending_create ?? false,
     pending_delete: false,
@@ -150,6 +160,8 @@ export async function markPendingDelete(
       content: {} as Json,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      due_at: null,
+      is_deadline: false,
       dirty: true,
       pending_create: false,
       pending_delete: true,
@@ -178,6 +190,8 @@ export async function createLocalOnlyNote(
     } as Json,
     created_at: now,
     updated_at: now,
+    due_at: null,
+    is_deadline: false,
     dirty: true,
     pending_create: true,
     pending_delete: false,

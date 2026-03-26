@@ -80,13 +80,19 @@ async function drainNotesOutboxInner(userId: string): Promise<boolean> {
             userId,
             stored.title,
             stored.content,
-            { id: stored.id },
+            {
+              id: stored.id,
+              due_at: stored.due_at,
+              is_deadline: stored.is_deadline,
+            },
           );
           await markNoteSyncedFromServer(userId, created);
         } else {
           const updated = await updateNote(client, stored.id, {
             title: stored.title,
             content: stored.content,
+            due_at: stored.due_at,
+            is_deadline: stored.is_deadline,
           });
           await markNoteSyncedFromServer(userId, updated);
         }

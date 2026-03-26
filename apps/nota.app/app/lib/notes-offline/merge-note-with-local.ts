@@ -34,6 +34,8 @@ export function mergeNoteWithLocal(
     title: base.title,
     content: base.content,
     updated_at: base.updated_at,
+    due_at: base.due_at,
+    is_deadline: base.is_deadline,
   };
 }
 

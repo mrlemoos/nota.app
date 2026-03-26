@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   assertUrlSafeForOgFetch,
   parseOgFromHtml,
-} from '../app/lib/og-preview.server';
+} from './og-preview.server';
 
 describe('parseOgFromHtml', () => {
   it('extracts og tags and resolves relative image', () => {

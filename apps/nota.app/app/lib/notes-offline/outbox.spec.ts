@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { sortOutboxForProcessing } from '../app/lib/notes-offline/outbox';
-import type { OutboxEntry } from '../app/lib/notes-offline/types';
+import { sortOutboxForProcessing } from './outbox';
+import type { OutboxEntry } from './types';
 
 describe('sortOutboxForProcessing', () => {
   it('orders upsert before delete for the same note id', () => {

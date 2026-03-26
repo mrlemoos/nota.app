@@ -3,7 +3,7 @@ import {
   classifyNoteAttachmentFile,
   isImageFile,
   isPdfFile,
-} from '../app/lib/pdf-attachment-client';
+} from './pdf-attachment-client';
 
 describe('note attachment file classification', () => {
   it('classifies PDF by MIME type', () => {

@@ -1,7 +1,7 @@
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import { describe, expect, it } from 'vitest';
-import { NotaCodeBlock } from '../app/components/tiptap/nota-code-block';
+import { NotaCodeBlock } from './nota-code-block';
 
 function createEditorWithNotaCodeBlock(
   content: NonNullable<ConstructorParameters<typeof Editor>[0]['content']>,

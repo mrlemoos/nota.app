@@ -7,7 +7,13 @@ import {
   type ComponentProps,
   type JSX,
 } from 'react';
-import { useFetcher, useMatches, useNavigate, useParams } from 'react-router';
+import {
+  useFetcher,
+  useMatches,
+  useNavigate,
+  useParams,
+  useRevalidator,
+} from 'react-router';
 import { Dialog } from '@base-ui/react/dialog';
 import { Command } from 'cmdk';
 import {
@@ -24,8 +30,11 @@ import {
 import { HugeiconsIcon } from '@hugeicons/react';
 import { cn } from '@/lib/utils';
 import { useNoteEditorCommands } from '../context/note-editor-commands';
-import { useTheme } from './theme-provider';
+import { useRootLoaderData } from '../root';
+import { openTodaysNoteClient } from '../lib/open-todays-note';
 import { notesFromMatches } from '../lib/notes-from-matches';
+import { useNotaPreferencesStore } from '../stores/nota-preferences';
+import { useTheme } from './theme-provider';
 
 const NOTES_ACTION = '/notes';
 const LOGOUT_ACTION = '/logout';
@@ -63,8 +72,13 @@ export function CommandPalette(): JSX.Element {
   const [open, setOpen] = useState(false);
   const { noteId } = useParams();
   const navigate = useNavigate();
+  const { revalidate } = useRevalidator();
   const matches = useMatches();
   const notes = notesFromMatches(matches);
+  const { user } = useRootLoaderData() ?? { user: null };
+  const openTodaysNoteShortcut = useNotaPreferencesStore(
+    (s) => s.openTodaysNoteShortcut,
+  );
   const deleteNoteAction = noteId ? `/notes/${noteId}` : null;
   const fetcher = useFetcher();
   const busy = fetcher.state === 'submitting' || fetcher.state === 'loading';
@@ -78,12 +92,15 @@ export function CommandPalette(): JSX.Element {
   } = useNoteEditorCommands();
   const commandInputRef = useRef<HTMLInputElement | null>(null);
   const [newNoteHotkeyLabel, setNewNoteHotkeyLabel] = useState('⌘N');
+  const [todaysNoteHotkeyLabel, setTodaysNoteHotkeyLabel] = useState('⌘D');
+  const [openingTodaysNote, setOpeningTodaysNote] = useState(false);
 
   useLayoutEffect(() => {
     const isApple =
       /Mac|iPhone|iPad|iPod/i.test(navigator.platform || '') ||
       /\bMac OS X\b/i.test(navigator.userAgent);
     setNewNoteHotkeyLabel(isApple ? '⌘N' : 'Ctrl+N');
+    setTodaysNoteHotkeyLabel(isApple ? '⌘D' : 'Ctrl+D');
   }, []);
 
   const onKeyDown = useEffectEvent((e: KeyboardEvent): void => {
@@ -151,6 +168,7 @@ export function CommandPalette(): JSX.Element {
           )}
         />
         <Dialog.Popup
+          data-nota-command-palette
           className={cn(
             'fixed top-[15%] left-1/2 z-50 w-[min(100vw-2rem,28rem)] -translate-x-1/2',
             'rounded-lg bg-background/55 text-foreground shadow-lg',
@@ -208,6 +226,48 @@ export function CommandPalette(): JSX.Element {
                   </span>
                   <span className={commandKbdHintClass}>{newNoteHotkeyLabel}</span>
                 </Command.Item>
+                {openTodaysNoteShortcut && user?.id ? (
+                  <Command.Item
+                    value="open-todays-note"
+                    disabled={openingTodaysNote}
+                    keywords={['today', 'daily', 'journal', 'date', 'day']}
+                    onSelect={() => {
+                      void (async () => {
+                        setOpeningTodaysNote(true);
+                        try {
+                          await openTodaysNoteClient({
+                            notes,
+                            userId: user.id,
+                            navigate,
+                            revalidate,
+                          });
+                          setOpen(false);
+                        } finally {
+                          setOpeningTodaysNote(false);
+                        }
+                      })();
+                    }}
+                    className={cn(
+                      commandItemRowClass,
+                      'group text-foreground',
+                      'aria-selected:bg-accent aria-selected:text-accent-foreground',
+                      'aria-disabled:pointer-events-none aria-disabled:opacity-50',
+                    )}
+                  >
+                    <PaletteItemIcon
+                      icon={NoteIcon}
+                      className="text-muted-foreground group-aria-selected:text-accent-foreground"
+                    />
+                    <span className="min-w-0 flex-1">
+                      {openingTodaysNote
+                        ? 'Opening today’s note…'
+                        : 'Open today’s note'}
+                    </span>
+                    <span className={commandKbdHintClass}>
+                      {todaysNoteHotkeyLabel}
+                    </span>
+                  </Command.Item>
+                ) : null}
                 <Command.Item
                   value="open-note-graph"
                   keywords={[
