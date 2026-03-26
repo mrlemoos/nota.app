@@ -1,101 +1,80 @@
-# NotaApp
+<h1 align="center">nota.app</h1>
 
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
+<p align="center">
+  <img src="assets/welcome-screen.png" alt="nota.app welcome screen" width="720" />
+</p>
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is ready ✨.
+## Philosophy
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/getting-started/tutorials/react-monorepo-tutorial?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
+The web is noisier than it used to be. AI is in every tab, notifications compete for your attention, and sitting down to think can feel harder than it should.
 
-## Run tasks
+nota.app is meant to be a **calm place for your thoughts**: a quiet surface for writing and organising notes, without the product trying to “optimise” your time on screen. There is **no AI-generated writing** baked into the experience—what you write stays unmistakably yours. There are **no dark patterns** and no nudges whose only job is to make you click; the interface is deliberately still, so you can concentrate.
 
-To run the dev server for your app, use:
+## What it is
+
+nota.app is a personal notes app built as an [Nx](https://nx.dev) monorepo. The main web app ([`apps/nota.app`](apps/nota.app)) uses **React Router 7** with SSR, **Vite**, and **React 19**. Notes and auth live on **Supabase** (Postgres and row-level security). The editor is **TipTap** (ProseMirror). An optional **Electron** desktop shell wraps the same app—see [`apps/nota-electron/README.md`](apps/nota-electron/README.md).
+
+## Requirements
+
+- **Node.js** 20.x (aligned with this repo’s tooling)
+- **npm** (workspaces are defined at the repository root)
+
+## Install
+
+From the repository root:
 
 ```sh
-npx nx serve nota.app
+npm install
 ```
 
-To create a production bundle:
+## Environment
+
+Copy [`apps/nota.app/.env.example`](apps/nota.app/.env.example) to `apps/nota.app/.env` and set:
+
+- `VITE_SUPABASE_URL` — your Supabase project URL
+- `VITE_SUPABASE_ANON_KEY` — your Supabase anon (public) key
+
+Schema, RLS policies, and migrations are applied in Supabase from the SQL in this repo (see below)—not from these variables alone.
+
+## Database
+
+SQL migrations live under [`supabase/migrations/`](supabase/migrations/) at the repository root. If you use the [Supabase CLI](https://supabase.com/docs/guides/cli), link your project and apply migrations with your usual workflow (for example `supabase db push` against a linked project, or local `supabase start` for development).
+
+## Run the web app
+
+```sh
+npx nx dev nota.app
+```
+
+The Vite dev server listens on **http://localhost:4200**.
+
+## Build and test
 
 ```sh
 npx nx build nota.app
+npx nx test nota.app
 ```
 
-To see all available targets to run for a project, run:
+Tests use **Vitest** via the Nx Vitest plugin.
 
-```sh
-npx nx show project nota.app
-```
+## Electron
 
-These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
+The desktop app expects the web dev server at `http://localhost:4200`. From the repository root you can run:
 
-[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+- `npm run electron:dev` — Electron only (start the web app in another terminal with `npx nx dev nota.app`)
+- `npm run dev:all` — web app and Electron together (uses `concurrently`)
 
-## Add new projects
+More detail: [`apps/nota-electron/README.md`](apps/nota-electron/README.md).
 
-While you could add new projects to your workspace manually, you might want to leverage [Nx plugins](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) and their [code generation](https://nx.dev/features/generate-code?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) feature.
+## Repository layout
 
-Use the plugin's generator to create new projects.
+| Path | Purpose |
+| --- | --- |
+| `apps/nota.app/` | Main SSR web application |
+| `apps/nota-electron/` | Electron shell |
+| `supabase/` | Supabase config and SQL migrations |
+| `assets/` | Shared assets (e.g. screenshots for docs) |
 
-To generate a new application, use:
+## Licence
 
-```sh
-npx nx g @nx/react:app demo
-```
-
-To generate a new library, use:
-
-```sh
-npx nx g @nx/react:lib mylib
-```
-
-You can use `npx nx list` to get a list of installed plugins. Then, run `npx nx list <plugin-name>` to learn about more specific capabilities of a particular plugin. Alternatively, [install Nx Console](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) to browse plugins and generators in your IDE.
-
-[Learn more about Nx plugins &raquo;](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) | [Browse the plugin registry &raquo;](https://nx.dev/plugin-registry?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Set up CI!
-
-### Step 1
-
-To connect to Nx Cloud, run the following command:
-
-```sh
-npx nx connect
-```
-
-Connecting to Nx Cloud ensures a [fast and scalable CI](https://nx.dev/ci/intro/why-nx-cloud?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) pipeline. It includes features such as:
-
-- [Remote caching](https://nx.dev/ci/features/remote-cache?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task distribution across multiple machines](https://nx.dev/ci/features/distribute-task-execution?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Automated e2e test splitting](https://nx.dev/ci/features/split-e2e-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task flakiness detection and rerunning](https://nx.dev/ci/features/flaky-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-### Step 2
-
-Use the following command to configure a CI workflow for your workspace:
-
-```sh
-npx nx g ci-workflow
-```
-
-[Learn more about Nx on CI](https://nx.dev/ci/intro/ci-with-nx#ready-get-started-with-your-provider?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Install Nx Console
-
-Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
-
-[Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Useful links
-
-Learn more:
-
-- [Learn more about this workspace setup](https://nx.dev/getting-started/tutorials/react-monorepo-tutorial?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects)
-- [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-And join the Nx community:
-- [Discord](https://go.nx.dev/community)
-- [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [Our Youtube channel](https://www.youtube.com/@nxdevtools)
-- [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+MIT — see [`package.json`](package.json).
