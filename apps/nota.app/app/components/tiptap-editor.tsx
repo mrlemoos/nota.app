@@ -3,6 +3,10 @@ import { Node } from '@tiptap/pm/model';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
+import Table from '@tiptap/extension-table';
+import TableCell from '@tiptap/extension-table-cell';
+import TableHeader from '@tiptap/extension-table-header';
+import TableRow from '@tiptap/extension-table-row';
 import { NotaCodeBlock } from './tiptap/nota-code-block';
 import {
   useCallback,
@@ -26,7 +30,11 @@ import {
   uploadNoteAttachmentFile,
 } from '../lib/pdf-attachment-client';
 import type { Note, NoteAttachment } from '~/types/database.types';
-import { useRegisterNoteEditorMermaidInserter } from '../context/note-editor-commands';
+import {
+  useRegisterNoteEditorMermaidInserter,
+  useRegisterNoteEditorTableInserter,
+} from '../context/note-editor-commands';
+import { TableEditorMenu } from './tiptap/table-editor-menu';
 import { hrefForNote, parseNoteLinkPath } from '../lib/internal-note-link';
 import { notesFromMatches } from '../lib/notes-from-matches';
 import { persistedDisplayTitle } from '../lib/note-title';
@@ -174,6 +182,13 @@ export function TipTapEditor({
       LinkPreview,
       NotePdf,
       NoteImage,
+      Table.configure({
+        resizable: true,
+        HTMLAttributes: { class: 'nota-table' },
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
     ],
     content: content || { type: 'doc', content: [{ type: 'paragraph' }] },
     onUpdate: ({ editor: ed }) => {
@@ -335,6 +350,7 @@ export function TipTapEditor({
   editorRef.current = editor ?? null;
 
   useRegisterNoteEditorMermaidInserter(editor);
+  useRegisterNoteEditorTableInserter(editor);
 
   useEffect(() => {
     setIsMounted(true);
@@ -537,6 +553,7 @@ export function TipTapEditor({
               : undefined
           }
         >
+          <TableEditorMenu editor={editor} />
           <EditorContent editor={editor} />
         </div>
         <NoteLinkMentionMenu

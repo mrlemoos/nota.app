@@ -19,6 +19,7 @@ import {
   NoteIcon,
   NoteRemoveIcon,
   Sun01Icon,
+  TableIcon,
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { cn } from '@/lib/utils';
@@ -69,7 +70,12 @@ export function CommandPalette(): JSX.Element {
   const busy = fetcher.state === 'submitting' || fetcher.state === 'loading';
   const pendingAction = fetcher.formAction ?? '';
   const { theme, setTheme } = useTheme();
-  const { insertMermaidAtCursor, canInsertMermaid } = useNoteEditorCommands();
+  const {
+    insertMermaidAtCursor,
+    canInsertMermaid,
+    insertTableAtCursor,
+    canInsertTable,
+  } = useNoteEditorCommands();
   const commandInputRef = useRef<HTMLInputElement | null>(null);
   const [newNoteHotkeyLabel, setNewNoteHotkeyLabel] = useState('⌘N');
 
@@ -278,6 +284,34 @@ export function CommandPalette(): JSX.Element {
                       className="text-muted-foreground group-aria-selected:text-accent-foreground"
                     />
                     <span className="min-w-0 flex-1">Insert Mermaid diagram</span>
+                  </Command.Item>
+                  <Command.Item
+                    value="insert-table"
+                    disabled={!canInsertTable}
+                    keywords={[
+                      'table',
+                      'grid',
+                      'rows',
+                      'columns',
+                      'insert',
+                    ]}
+                    onSelect={() => {
+                      if (!canInsertTable) return;
+                      insertTableAtCursor();
+                      setOpen(false);
+                    }}
+                    className={cn(
+                      commandItemRowClass,
+                      'group text-foreground',
+                      'aria-selected:bg-accent aria-selected:text-accent-foreground',
+                      'aria-disabled:pointer-events-none aria-disabled:opacity-50',
+                    )}
+                  >
+                    <PaletteItemIcon
+                      icon={TableIcon}
+                      className="text-muted-foreground group-aria-selected:text-accent-foreground"
+                    />
+                    <span className="min-w-0 flex-1">Insert table</span>
                   </Command.Item>
                   <Command.Item
                     value="delete-this-note"

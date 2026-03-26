@@ -15,6 +15,9 @@ type NoteEditorCommandsContextValue = {
   registerMermaidInserter: (fn: (() => void) | null) => void;
   insertMermaidAtCursor: () => void;
   canInsertMermaid: boolean;
+  registerTableInserter: (fn: (() => void) | null) => void;
+  insertTableAtCursor: () => void;
+  canInsertTable: boolean;
 };
 
 const NoteEditorCommandsContext =
@@ -28,6 +31,9 @@ const fallbackValue: NoteEditorCommandsContextValue = {
   registerMermaidInserter: noopRegister,
   insertMermaidAtCursor: noopInsert,
   canInsertMermaid: false,
+  registerTableInserter: noopRegister,
+  insertTableAtCursor: noopInsert,
+  canInsertTable: false,
 };
 
 export function NoteEditorCommandsProvider({
@@ -35,16 +41,27 @@ export function NoteEditorCommandsProvider({
 }: {
   children: ReactNode;
 }) {
-  const fnRef = useRef<(() => void) | null>(null);
-  const [hasHandler, setHasHandler] = useState(false);
+  const mermaidFnRef = useRef<(() => void) | null>(null);
+  const [hasMermaid, setHasMermaid] = useState(false);
+  const tableFnRef = useRef<(() => void) | null>(null);
+  const [hasTable, setHasTable] = useState(false);
 
   const registerMermaidInserter = useCallback((fn: (() => void) | null) => {
-    fnRef.current = fn;
-    setHasHandler(fn != null);
+    mermaidFnRef.current = fn;
+    setHasMermaid(fn != null);
   }, []);
 
   const insertMermaidAtCursor = useCallback(() => {
-    fnRef.current?.();
+    mermaidFnRef.current?.();
+  }, []);
+
+  const registerTableInserter = useCallback((fn: (() => void) | null) => {
+    tableFnRef.current = fn;
+    setHasTable(fn != null);
+  }, []);
+
+  const insertTableAtCursor = useCallback(() => {
+    tableFnRef.current?.();
   }, []);
 
   const value = useMemo(
@@ -52,9 +69,19 @@ export function NoteEditorCommandsProvider({
       ({
         registerMermaidInserter,
         insertMermaidAtCursor,
-        canInsertMermaid: hasHandler,
+        canInsertMermaid: hasMermaid,
+        registerTableInserter,
+        insertTableAtCursor,
+        canInsertTable: hasTable,
       }) satisfies NoteEditorCommandsContextValue,
-    [registerMermaidInserter, insertMermaidAtCursor, hasHandler],
+    [
+      registerMermaidInserter,
+      insertMermaidAtCursor,
+      hasMermaid,
+      registerTableInserter,
+      insertTableAtCursor,
+      hasTable,
+    ],
   );
 
   return (
@@ -87,6 +114,30 @@ export function useRegisterNoteEditorMermaidInserter(
     ctx.registerMermaidInserter(run);
     return () => {
       ctx.registerMermaidInserter(null);
+    };
+  }, [editor, ctx]);
+}
+
+/** Registers TipTap `insertTable`; clears on unmount or when `editor` is null. */
+export function useRegisterNoteEditorTableInserter(editor: Editor | null): void {
+  const ctx = useContext(NoteEditorCommandsContext);
+
+  useEffect(() => {
+    if (!ctx) return;
+    if (!editor) {
+      ctx.registerTableInserter(null);
+      return;
+    }
+    const run = () => {
+      editor
+        .chain()
+        .focus()
+        .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+        .run();
+    };
+    ctx.registerTableInserter(run);
+    return () => {
+      ctx.registerTableInserter(null);
     };
   }, [editor, ctx]);
 }
