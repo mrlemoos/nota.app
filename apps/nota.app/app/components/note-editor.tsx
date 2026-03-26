@@ -13,6 +13,12 @@ import { persistedDisplayTitle } from '../lib/note-title';
 import { getBrowserClient } from '../lib/supabase/browser';
 import { useRootLoaderData } from '../root';
 import { mergeUpdatedNoteLocalContent } from '../lib/note-updated-content-merge';
+import {
+  drainNotesOutbox,
+  isLikelyOnline,
+  markNoteSyncedFromServer,
+  saveLocalNoteDraft,
+} from '../lib/notes-offline';
 import { updateNote } from '../models/notes';
 import type { Json, Note, NoteAttachment } from '~/types/database.types';
 
@@ -114,23 +120,54 @@ export function NoteEditor({
       }
       setSaveStatus('saving');
       try {
-        const client = getBrowserClient();
-        const updatedNote = await updateNote(client, note.id, { title: next });
-        lastSavedTitle.current = next;
+        if (user?.id) {
+          await saveLocalNoteDraft(user.id, {
+            id: note.id,
+            title: next,
+            content: lastSavedContent.current as Json,
+            user_id: note.user_id,
+            created_at: note.created_at,
+          });
+        }
         setSaveStatus('saved');
-        onNoteUpdated?.(
-          mergeUpdatedNoteLocalContent(
-            updatedNote,
-            pendingContentRef.current,
-            lastSavedContent.current as Json,
-          ),
-        );
+
+        if (isLikelyOnline()) {
+          const client = getBrowserClient();
+          const updatedNote = await updateNote(client, note.id, { title: next });
+          if (user?.id) {
+            await markNoteSyncedFromServer(user.id, updatedNote);
+          }
+          lastSavedTitle.current = next;
+          onNoteUpdated?.(
+            mergeUpdatedNoteLocalContent(
+              updatedNote,
+              pendingContentRef.current,
+              lastSavedContent.current as Json,
+            ),
+          );
+        } else if (user?.id) {
+          lastSavedTitle.current = next;
+          onNoteUpdated?.(
+            mergeUpdatedNoteLocalContent(
+              {
+                ...note,
+                title: next,
+                updated_at: new Date().toISOString(),
+              },
+              pendingContentRef.current,
+              lastSavedContent.current as Json,
+            ),
+          );
+        }
       } catch (error) {
         console.error('Failed to save title:', error);
         setSaveStatus('error');
+        if (user?.id) {
+          void drainNotesOutbox(user.id);
+        }
       }
     }, SAVE_DEBOUNCE_MS);
-  }, [note.id, onNoteUpdated]);
+  }, [note, onNoteUpdated, user?.id]);
 
   const handleTitleChange = useCallback(
     (e: ChangeEvent<HTMLTextAreaElement>) => {
@@ -158,26 +195,58 @@ export function NoteEditor({
         return;
       }
       try {
-        const client = getBrowserClient();
-        const updatedNote = await updateNote(client, note.id, {
-          content: toSave as Json,
-        });
+        const titleForRow = persistedDisplayTitle(titleRef.current);
+        if (user?.id) {
+          await saveLocalNoteDraft(user.id, {
+            id: note.id,
+            title: titleForRow,
+            content: toSave as Json,
+            user_id: note.user_id,
+            created_at: note.created_at,
+          });
+        }
         const mergedBody = (pendingContentRef.current ?? toSave) as Json;
         lastSavedContent.current = mergedBody;
         setSaveStatus('saved');
-        onNoteUpdated?.(
-          mergeUpdatedNoteLocalContent(
-            updatedNote,
-            pendingContentRef.current,
-            toSave as Json,
-          ),
-        );
+
+        if (isLikelyOnline()) {
+          const client = getBrowserClient();
+          const updatedNote = await updateNote(client, note.id, {
+            content: toSave as Json,
+          });
+          if (user?.id) {
+            await markNoteSyncedFromServer(user.id, updatedNote);
+          }
+          onNoteUpdated?.(
+            mergeUpdatedNoteLocalContent(
+              updatedNote,
+              pendingContentRef.current,
+              toSave as Json,
+            ),
+          );
+        } else if (user?.id) {
+          onNoteUpdated?.(
+            mergeUpdatedNoteLocalContent(
+              {
+                ...note,
+                title: titleForRow,
+                content: mergedBody,
+                updated_at: new Date().toISOString(),
+              },
+              pendingContentRef.current,
+              toSave as Json,
+            ),
+          );
+        }
       } catch (error) {
         console.error('Failed to save note:', error);
         setSaveStatus('error');
+        if (user?.id) {
+          void drainNotesOutbox(user.id);
+        }
       }
     }, SAVE_DEBOUNCE_MS);
-  }, [note.id, onNoteUpdated]);
+  }, [note, onNoteUpdated, user?.id]);
 
   const handleUpdate = useCallback(
     (content: unknown) => {

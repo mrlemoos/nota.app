@@ -1,9 +1,22 @@
 import { useEffect } from 'react';
-import { NavLink, Outlet, useLoaderData, useParams, Form } from 'react-router';
+import {
+  NavLink,
+  Outlet,
+  useLoaderData,
+  useParams,
+  Form,
+  redirect,
+  useRevalidator,
+} from 'react-router';
 import { requireAuth } from '../lib/supabase/auth';
 import { listNotes, createNote } from '../models/notes';
 import { useNotesSidebarStore } from '../stores/notes-sidebar';
-import type { LoaderFunctionArgs, ActionFunctionArgs } from 'react-router';
+import type {
+  LoaderFunctionArgs,
+  ActionFunctionArgs,
+  ClientLoaderFunctionArgs,
+  ClientActionFunctionArgs,
+} from 'react-router';
 import { Button } from '@/components/ui/button';
 import { SimpleTooltip, TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -11,7 +24,16 @@ import { useRootLoaderData } from '../root';
 import { ModeToggle } from '../components/mode-toggle';
 import { useStickyDocTitle } from '../context/sticky-doc-title';
 import { useIsElectron } from '../lib/use-is-electron';
-
+import { getBrowserClient } from '../lib/supabase/browser';
+import {
+  createLocalOnlyNote,
+  isLikelyOnline,
+  listStoredNotes,
+  mergeNoteLists,
+  putServerNoteIfNotDirty,
+  storedNoteToListRow,
+} from '../lib/notes-offline';
+import { useNotesOfflineSync } from '../lib/use-notes-offline-sync';
 export async function loader({ request }: LoaderFunctionArgs) {
   const { supabase, headers } = await requireAuth(request);
 
@@ -37,6 +59,98 @@ export async function action({ request }: ActionFunctionArgs) {
     },
   });
 }
+
+export async function notesLayoutClientLoader({
+  serverLoader,
+}: ClientLoaderFunctionArgs) {
+  let client: ReturnType<typeof getBrowserClient>;
+  try {
+    client = getBrowserClient();
+  } catch {
+    try {
+      return await serverLoader();
+    } catch {
+      return { notes: [], headers: new Headers() };
+    }
+  }
+
+  const {
+    data: { session },
+  } = await client.auth.getSession();
+  const userId = session?.user?.id;
+
+  if (!userId) {
+    try {
+      return await serverLoader();
+    } catch {
+      return { notes: [], headers: new Headers() };
+    }
+  }
+
+  try {
+    const data = await serverLoader<typeof loader>();
+    for (const n of data.notes) {
+      await putServerNoteIfNotDirty(userId, n);
+    }
+    const stored = await listStoredNotes(userId);
+    const notes = mergeNoteLists(data.notes, stored);
+    return { ...data, notes };
+  } catch (e) {
+    if (isLikelyOnline()) {
+      throw e;
+    }
+    const stored = await listStoredNotes(userId);
+    const active = stored.filter((r) => !r.pending_delete);
+    const notes = active
+      .map(storedNoteToListRow)
+      .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+    return {
+      notes,
+      headers: new Headers(),
+    };
+  }
+}
+
+export const clientLoader = Object.assign(notesLayoutClientLoader, {
+  hydrate: true,
+});
+
+export type NotesLayoutLoaderData = Awaited<
+  ReturnType<typeof notesLayoutClientLoader>
+>;
+
+async function notesLayoutClientAction({
+  request,
+  serverAction,
+}: ClientActionFunctionArgs) {
+  if (request.method !== 'POST') {
+    return serverAction();
+  }
+
+  const runLocalCreate = async () => {
+    const c = getBrowserClient();
+    const {
+      data: { session },
+    } = await c.auth.getSession();
+    if (!session?.user) {
+      throw redirect('/login');
+    }
+    const id = await createLocalOnlyNote(session.user.id);
+    throw redirect(`/notes/${id}`);
+  };
+
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    return runLocalCreate();
+  }
+
+  try {
+    return await serverAction();
+  } catch {
+    return runLocalCreate();
+  }
+}
+
+export const clientAction = notesLayoutClientAction;
 
 function SidebarToggle({ className }: { className?: string }) {
   const { open, toggle } = useNotesSidebarStore();
@@ -87,12 +201,31 @@ function SidebarToggle({ className }: { className?: string }) {
 }
 
 export default function NotesLayout() {
-  const { notes, error } = useLoaderData<typeof loader>();
+  const { notes, error } = useLoaderData() as NotesLayoutLoaderData;
   const { noteId } = useParams();
   const { open } = useNotesSidebarStore();
   const { user } = useRootLoaderData() ?? { user: null };
   const { registerScrollRoot, resetSticky, sticky } = useStickyDocTitle();
   const isElectron = useIsElectron();
+  const { revalidate } = useRevalidator();
+
+  useNotesOfflineSync(user?.id);
+
+  useEffect(() => {
+    if (!user?.id || !isLikelyOnline()) {
+      return;
+    }
+    let cancelled = false;
+    const id = window.setTimeout(() => {
+      if (!cancelled) {
+        revalidate();
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(id);
+    };
+  }, [user?.id, revalidate]);
 
   useEffect(() => {
     return () => {

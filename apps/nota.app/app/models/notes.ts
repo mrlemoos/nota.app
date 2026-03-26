@@ -49,11 +49,13 @@ export async function createNote(
   userId: string,
   title: string = 'Untitled Note',
   content: unknown = { type: 'doc', content: [{ type: 'paragraph' }] },
+  options?: { id?: string },
 ) {
   const note: NoteInsert = {
     user_id: userId,
     title,
     content: content as Json,
+    ...(options?.id ? { id: options.id } : {}),
   };
 
   const { data, error } = await client
