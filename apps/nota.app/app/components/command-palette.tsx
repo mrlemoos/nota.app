@@ -4,15 +4,26 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  type ComponentProps,
   type JSX,
 } from 'react';
 import { useFetcher, useMatches, useNavigate, useParams } from 'react-router';
 import { Dialog } from '@base-ui/react/dialog';
 import { Command } from 'cmdk';
+import {
+  ComputerIcon,
+  Flowchart01Icon,
+  Logout01Icon,
+  Moon02Icon,
+  NoteAddIcon,
+  NoteIcon,
+  NoteRemoveIcon,
+  Sun01Icon,
+} from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
 import { cn } from '@/lib/utils';
 import { useNoteEditorCommands } from '../context/note-editor-commands';
 import { useTheme } from './theme-provider';
-import type { Note } from '~/types/database.types';
 import { notesFromMatches } from '../lib/notes-from-matches';
 
 const NOTES_ACTION = '/notes';
@@ -23,6 +34,29 @@ const groupHeadingClassName =
 
 const commandKbdHintClass =
   'ml-auto shrink-0 text-muted-foreground text-xs tabular-nums';
+
+const commandItemRowClass =
+  'flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm outline-none select-none';
+
+/** Scrollable list: keep overflow but hide scrollbar (WebKit / Firefox / legacy Edge). */
+const commandListClassName = cn(
+  'max-h-72 overflow-y-auto p-1',
+  '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
+);
+
+function PaletteItemIcon({
+  icon,
+  className,
+}: {
+  icon: ComponentProps<typeof HugeiconsIcon>['icon'];
+  className?: string;
+}): JSX.Element {
+  return (
+    <span aria-hidden className={cn('inline-flex shrink-0', className)}>
+      <HugeiconsIcon icon={icon} size={16} />
+    </span>
+  );
+}
 
 export function CommandPalette(): JSX.Element {
   const [open, setOpen] = useState(false);
@@ -137,7 +171,7 @@ export function CommandPalette(): JSX.Element {
                 'text-foreground outline-none placeholder:text-muted-foreground',
               )}
             />
-            <Command.List className="max-h-72 overflow-y-auto p-1">
+            <Command.List className={commandListClassName}>
               <Command.Group heading="Notes" className={groupHeadingClassName}>
                 <Command.Item
                   value="create-note"
@@ -151,12 +185,16 @@ export function CommandPalette(): JSX.Element {
                     setOpen(false);
                   }}
                   className={cn(
-                    'flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm',
-                    'text-foreground outline-none select-none',
+                    commandItemRowClass,
+                    'group text-foreground',
                     'aria-selected:bg-accent aria-selected:text-accent-foreground',
                     'aria-disabled:pointer-events-none aria-disabled:opacity-50',
                   )}
                 >
+                  <PaletteItemIcon
+                    icon={NoteAddIcon}
+                    className="text-muted-foreground group-aria-selected:text-accent-foreground"
+                  />
                   <span className="min-w-0 flex-1">
                     {busy && pendingAction === NOTES_ACTION
                       ? 'Creating note...'
@@ -191,12 +229,18 @@ export function CommandPalette(): JSX.Element {
                         setOpen(false);
                       }}
                       className={cn(
-                        'flex cursor-pointer items-center rounded-md px-2 py-2 text-sm',
-                        'text-foreground outline-none select-none',
+                        commandItemRowClass,
+                        'group text-foreground',
                         'aria-selected:bg-accent aria-selected:text-accent-foreground',
                       )}
                     >
-                      {note.title || 'Untitled Note'}
+                      <PaletteItemIcon
+                        icon={NoteIcon}
+                        className="text-muted-foreground group-aria-selected:text-accent-foreground"
+                      />
+                      <span className="min-w-0 flex-1 truncate">
+                        {note.title || 'Untitled Note'}
+                      </span>
                     </Command.Item>
                   ))}
                 </Command.Group>
@@ -223,13 +267,17 @@ export function CommandPalette(): JSX.Element {
                       setOpen(false);
                     }}
                     className={cn(
-                      'flex cursor-pointer items-center rounded-md px-2 py-2 text-sm',
-                      'text-foreground outline-none select-none',
+                      commandItemRowClass,
+                      'group text-foreground',
                       'aria-selected:bg-accent aria-selected:text-accent-foreground',
                       'aria-disabled:pointer-events-none aria-disabled:opacity-50',
                     )}
                   >
-                    Insert Mermaid diagram
+                    <PaletteItemIcon
+                      icon={Flowchart01Icon}
+                      className="text-muted-foreground group-aria-selected:text-accent-foreground"
+                    />
+                    <span className="min-w-0 flex-1">Insert Mermaid diagram</span>
                   </Command.Item>
                   <Command.Item
                     value="delete-this-note"
@@ -248,15 +296,21 @@ export function CommandPalette(): JSX.Element {
                       setOpen(false);
                     }}
                     className={cn(
-                      'flex cursor-pointer items-center rounded-md px-2 py-2 text-sm',
-                      'text-destructive outline-none select-none',
+                      commandItemRowClass,
+                      'group text-destructive',
                       'aria-selected:bg-destructive/15 aria-selected:text-destructive',
                       'aria-disabled:pointer-events-none aria-disabled:opacity-50',
                     )}
                   >
-                    {busy && pendingAction === deleteNoteAction
-                      ? 'Deleting...'
-                      : 'Delete this note'}
+                    <PaletteItemIcon
+                      icon={NoteRemoveIcon}
+                      className="text-destructive group-aria-selected:text-destructive"
+                    />
+                    <span className="min-w-0 flex-1">
+                      {busy && pendingAction === deleteNoteAction
+                        ? 'Deleting...'
+                        : 'Delete this note'}
+                    </span>
                   </Command.Item>
                 </Command.Group>
               ) : null}
@@ -278,14 +332,18 @@ export function CommandPalette(): JSX.Element {
                     setOpen(false);
                   }}
                   className={cn(
-                    'flex cursor-pointer items-center rounded-md px-2 py-2 text-sm',
-                    'text-foreground outline-none select-none',
+                    commandItemRowClass,
+                    'group text-foreground',
                     'aria-selected:bg-accent aria-selected:text-accent-foreground',
                   )}
                 >
-                  Use light theme
+                  <PaletteItemIcon
+                    icon={Sun01Icon}
+                    className="text-muted-foreground group-aria-selected:text-accent-foreground"
+                  />
+                  <span className="min-w-0 flex-1">Use light theme</span>
                   {theme === 'light' ? (
-                    <span className="ml-auto text-muted-foreground">
+                    <span className="shrink-0 text-muted-foreground text-xs">
                       (current)
                     </span>
                   ) : null}
@@ -304,14 +362,18 @@ export function CommandPalette(): JSX.Element {
                     setOpen(false);
                   }}
                   className={cn(
-                    'flex cursor-pointer items-center rounded-md px-2 py-2 text-sm',
-                    'text-foreground outline-none select-none',
+                    commandItemRowClass,
+                    'group text-foreground',
                     'aria-selected:bg-accent aria-selected:text-accent-foreground',
                   )}
                 >
-                  Use dark theme
+                  <PaletteItemIcon
+                    icon={Moon02Icon}
+                    className="text-muted-foreground group-aria-selected:text-accent-foreground"
+                  />
+                  <span className="min-w-0 flex-1">Use dark theme</span>
                   {theme === 'dark' ? (
-                    <span className="ml-auto text-muted-foreground">
+                    <span className="shrink-0 text-muted-foreground text-xs">
                       (current)
                     </span>
                   ) : null}
@@ -333,14 +395,18 @@ export function CommandPalette(): JSX.Element {
                     setOpen(false);
                   }}
                   className={cn(
-                    'flex cursor-pointer items-center rounded-md px-2 py-2 text-sm',
-                    'text-foreground outline-none select-none',
+                    commandItemRowClass,
+                    'group text-foreground',
                     'aria-selected:bg-accent aria-selected:text-accent-foreground',
                   )}
                 >
-                  Use system theme
+                  <PaletteItemIcon
+                    icon={ComputerIcon}
+                    className="text-muted-foreground group-aria-selected:text-accent-foreground"
+                  />
+                  <span className="min-w-0 flex-1">Use system theme</span>
                   {theme === 'system' ? (
-                    <span className="ml-auto text-muted-foreground">
+                    <span className="shrink-0 text-muted-foreground text-xs">
                       (current)
                     </span>
                   ) : null}
@@ -362,15 +428,21 @@ export function CommandPalette(): JSX.Element {
                     setOpen(false);
                   }}
                   className={cn(
-                    'flex cursor-pointer items-center rounded-md px-2 py-2 text-sm',
-                    'text-destructive outline-none select-none',
+                    commandItemRowClass,
+                    'group text-destructive',
                     'aria-selected:bg-destructive/15 aria-selected:text-destructive',
                     'aria-disabled:pointer-events-none aria-disabled:opacity-50',
                   )}
                 >
-                  {busy && pendingAction === LOGOUT_ACTION
-                    ? 'Signing out...'
-                    : 'Sign out'}
+                  <PaletteItemIcon
+                    icon={Logout01Icon}
+                    className="text-destructive group-aria-selected:text-destructive"
+                  />
+                  <span className="min-w-0 flex-1">
+                    {busy && pendingAction === LOGOUT_ACTION
+                      ? 'Signing out...'
+                      : 'Sign out'}
+                  </span>
                 </Command.Item>
               </Command.Group>
             </Command.List>

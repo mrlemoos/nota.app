@@ -337,6 +337,7 @@ export default function NotesLayout() {
           ref={registerScrollRoot}
           className={cn(
             'min-h-0 flex-1 overflow-auto',
+            '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
             notesChrome,
             // Stable top inset so sidebar toggle does not shift scroll layout.
             isElectron

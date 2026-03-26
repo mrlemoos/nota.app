@@ -5,6 +5,7 @@ import type {
   NoteInsert,
   NoteUpdate,
 } from '~/types/database.types';
+import { listNoteAttachments, NOTE_PDFS_BUCKET } from './note-attachments';
 
 /**
  * `@supabase/ssr` types `createServerClient` as `SupabaseClient<Database, SchemaName, Schema>` (3 args),
@@ -88,6 +89,19 @@ export async function updateNote(
 }
 
 export async function deleteNote(client: TypedSupabaseClient, id: string) {
+  const attachments = await listNoteAttachments(client, id);
+  if (attachments.length > 0) {
+    const { error: storageError } = await client.storage
+      .from(NOTE_PDFS_BUCKET)
+      .remove(attachments.map((a) => a.storage_path));
+
+    if (storageError) {
+      throw new Error(
+        `Failed to delete note attachments from storage: ${storageError.message}`,
+      );
+    }
+  }
+
   const { error } = await client.from('notes').delete().eq('id', id);
 
   if (error) {
