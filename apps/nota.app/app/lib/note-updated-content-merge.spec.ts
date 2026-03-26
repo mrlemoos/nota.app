@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { mergeUpdatedNoteLocalContent } from '../app/lib/note-updated-content-merge';
-import type { Json, Note } from '../app/types/database.types';
+import { mergeUpdatedNoteLocalContent } from './note-updated-content-merge';
+import type { Json, Note } from '~/types/database.types';
 
 function makeNote(overrides: Partial<Note> = {}): Note {
   return {
@@ -10,6 +10,8 @@ function makeNote(overrides: Partial<Note> = {}): Note {
     content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'server' }] }] } as Json,
     created_at: '2020-01-01T00:00:00Z',
     updated_at: '2020-01-02T00:00:00Z',
+    due_at: null,
+    is_deadline: false,
     ...overrides,
   };
 }

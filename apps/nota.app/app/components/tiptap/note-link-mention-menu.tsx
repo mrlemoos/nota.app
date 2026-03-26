@@ -60,6 +60,7 @@ export function NoteLinkMentionMenu({
             <li key={note.id} role="none">
               <Button
                 type="button"
+                tabIndex={-1}
                 variant="ghost"
                 size="sm"
                 data-note-index={i}

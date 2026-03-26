@@ -10,6 +10,11 @@ import {
 } from 'react-router';
 import { requireAuth } from '../lib/supabase/auth';
 import { listNotes, createNote } from '../models/notes';
+import {
+  getUserPreferences,
+  upsertUserPreferences,
+} from '../models/user-preferences';
+import { updateUserPreferencesFormSchema } from '../lib/validation/user-preferences';
 import { useNotesSidebarStore } from '../stores/notes-sidebar';
 import type {
   LoaderFunctionArgs,
@@ -17,11 +22,12 @@ import type {
   ClientLoaderFunctionArgs,
   ClientActionFunctionArgs,
 } from 'react-router';
+import { Flowchart01Icon, Settings01Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
 import { Button } from '@/components/ui/button';
 import { SimpleTooltip, TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useRootLoaderData } from '../root';
-import { ModeToggle } from '../components/mode-toggle';
 import { useStickyDocTitle } from '../context/sticky-doc-title';
 import { useIsElectron } from '../lib/use-is-electron';
 import { getBrowserClient } from '../lib/supabase/browser';
@@ -34,20 +40,64 @@ import {
   storedNoteToListRow,
 } from '../lib/notes-offline';
 import { useNotesOfflineSync } from '../lib/use-notes-offline-sync';
-export async function loader({ request }: LoaderFunctionArgs) {
-  const { supabase, headers } = await requireAuth(request);
+import { useTodaysNoteShortcut } from '../lib/use-todays-note-shortcut';
+import { useSyncUserPreferences } from '../lib/use-sync-user-preferences';
+import { useNotaPreferencesStore } from '../stores/nota-preferences';
+import type { Note, UserPreferences } from '~/types/database.types';
 
+export async function loader({ request }: LoaderFunctionArgs) {
+  const { supabase, headers, user } = await requireAuth(request);
+
+  let notes: Note[] = [];
+  let error: string | undefined;
   try {
-    const notes = await listNotes(supabase);
-    return { notes, headers };
-  } catch (error) {
-    console.error('Failed to load notes:', error);
-    return { notes: [], headers, error: 'Failed to load notes' };
+    notes = await listNotes(supabase);
+  } catch (e) {
+    console.error('Failed to load notes:', e);
+    error = 'Failed to load notes';
   }
+
+  let userPreferences: UserPreferences;
+  try {
+    userPreferences = await getUserPreferences(supabase, user.id);
+  } catch (e) {
+    console.error('Failed to load user preferences:', e);
+    userPreferences = {
+      user_id: user.id,
+      open_todays_note_shortcut: false,
+      updated_at: new Date(0).toISOString(),
+    };
+  }
+
+  return {
+    notes,
+    userPreferences,
+    headers,
+    ...(error ? { error } : {}),
+  };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
   const { user, supabase, headers } = await requireAuth(request);
+  const formData = await request.formData();
+  const intent = formData.get('intent');
+
+  if (intent === 'updateUserPreferences') {
+    const parsed = updateUserPreferencesFormSchema.safeParse({
+      intent: 'updateUserPreferences',
+      openTodaysNoteShortcut: formData.get('openTodaysNoteShortcut'),
+    });
+    if (!parsed.success) {
+      return Response.json(
+        { ok: false as const, error: 'Invalid preferences form' },
+        { status: 400, headers },
+      );
+    }
+    const row = await upsertUserPreferences(supabase, user.id, {
+      open_todays_note_shortcut: parsed.data.openTodaysNoteShortcut,
+    });
+    return Response.json({ ok: true as const, userPreferences: row }, { headers });
+  }
 
   const newNote = await createNote(supabase, user.id);
 
@@ -70,7 +120,11 @@ export async function notesLayoutClientLoader({
     try {
       return await serverLoader();
     } catch {
-      return { notes: [], headers: new Headers() };
+      return {
+        notes: [],
+        userPreferences: null,
+        headers: new Headers(),
+      };
     }
   }
 
@@ -83,7 +137,11 @@ export async function notesLayoutClientLoader({
     try {
       return await serverLoader();
     } catch {
-      return { notes: [], headers: new Headers() };
+      return {
+        notes: [],
+        userPreferences: null,
+        headers: new Headers(),
+      };
     }
   }
 
@@ -106,6 +164,7 @@ export async function notesLayoutClientLoader({
       .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
     return {
       notes,
+      userPreferences: null,
       headers: new Headers(),
     };
   }
@@ -115,9 +174,13 @@ export const clientLoader = Object.assign(notesLayoutClientLoader, {
   hydrate: true,
 });
 
-export type NotesLayoutLoaderData = Awaited<
-  ReturnType<typeof notesLayoutClientLoader>
->;
+export type NotesLayoutLoaderData = {
+  notes: Note[];
+  headers: Headers;
+  error?: string;
+  /** Null when the client loader could not reach the server (fully offline bootstrap). */
+  userPreferences: UserPreferences | null;
+};
 
 async function notesLayoutClientAction({
   request,
@@ -125,6 +188,18 @@ async function notesLayoutClientAction({
 }: ClientActionFunctionArgs) {
   if (request.method !== 'POST') {
     return serverAction();
+  }
+
+  const formData = await request.clone().formData();
+  if (formData.get('intent') === 'updateUserPreferences') {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      return { offline: true as const };
+    }
+    try {
+      return await serverAction();
+    } catch {
+      return { offline: true as const };
+    }
   }
 
   const runLocalCreate = async () => {
@@ -201,13 +276,19 @@ function SidebarToggle({ className }: { className?: string }) {
 }
 
 export default function NotesLayout() {
-  const { notes, error } = useLoaderData() as NotesLayoutLoaderData;
+  const { notes, error, userPreferences } = useLoaderData() as unknown as NotesLayoutLoaderData;
   const { noteId } = useParams();
   const { open } = useNotesSidebarStore();
   const { user } = useRootLoaderData() ?? { user: null };
   const { registerScrollRoot, resetSticky, sticky } = useStickyDocTitle();
   const isElectron = useIsElectron();
   const { revalidate } = useRevalidator();
+  const openTodaysNoteShortcut = useNotaPreferencesStore(
+    (s) => s.openTodaysNoteShortcut,
+  );
+
+  useSyncUserPreferences(userPreferences);
+  useTodaysNoteShortcut(notes, user?.id, openTodaysNoteShortcut);
 
   useNotesOfflineSync(user?.id);
 
@@ -343,7 +424,7 @@ export default function NotesLayout() {
                 </div>
               ) : (
                 <ul className="space-y-1">
-                  {notes.map((note) => {
+                  {notes.map((note: Note) => {
                     const isActive = noteId === note.id;
                     const noteLabel = note.title || 'Untitled Note';
                     return (
@@ -429,50 +510,37 @@ export default function NotesLayout() {
               <footer className="mt-auto shrink-0 border-t border-border/40 p-3">
                 <div className="flex flex-col gap-3">
                   <NavLink
-                    to="/notes"
-                    className={({ isActive }) =>
-                      cn(
-                        'rounded-md px-3 py-2 text-sm transition-colors',
-                        isActive
-                          ? 'bg-muted font-medium text-foreground'
-                          : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
-                      )
-                    }
-                  >
-                    My Notes
-                  </NavLink>
-                  <NavLink
                     to="/notes/graph"
                     className={({ isActive }) =>
                       cn(
-                        'rounded-md px-3 py-2 text-sm transition-colors',
+                        'flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
                         isActive
                           ? 'bg-muted font-medium text-foreground'
                           : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
                       )
                     }
                   >
+                    <span className="inline-flex shrink-0" aria-hidden>
+                      <HugeiconsIcon icon={Flowchart01Icon} size={16} />
+                    </span>
                     Note Graph
                   </NavLink>
-                  <div className="flex items-center px-1">
-                    <ModeToggle />
-                  </div>
-                  <p
-                    className="truncate px-3 text-xs text-muted-foreground"
-                    title={user.email ?? undefined}
+                  <NavLink
+                    to="/notes/settings"
+                    className={({ isActive }) =>
+                      cn(
+                        'flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
+                        isActive
+                          ? 'bg-muted font-medium text-foreground'
+                          : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+                      )
+                    }
                   >
-                    {user.email}
-                  </p>
-                  <Form action="/logout" method="post" className="px-1">
-                    <Button
-                      type="submit"
-                      variant="secondary"
-                      size="sm"
-                      className="w-full"
-                    >
-                      Sign Out
-                    </Button>
-                  </Form>
+                    <span className="inline-flex shrink-0" aria-hidden>
+                      <HugeiconsIcon icon={Settings01Icon} size={16} />
+                    </span>
+                    Settings
+                  </NavLink>
                 </div>
               </footer>
             ) : null}

@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   buildNoteLinkGraph,
   extractOutgoingNoteIdsFromContent,
-} from '../app/lib/note-link-graph';
-import type { Note } from '../app/types/database.types';
+} from './note-link-graph';
+import type { Note } from '~/types/database.types';
 
 const NOTE_A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const NOTE_B = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
@@ -15,6 +15,8 @@ function minimalNote(overrides: Partial<Note> & Pick<Note, 'id'>): Note {
     content: { type: 'doc', content: [{ type: 'paragraph' }] },
     created_at: '2020-01-01T00:00:00Z',
     updated_at: '2020-01-01T00:00:00Z',
+    due_at: null,
+    is_deadline: false,
     ...overrides,
   };
 }

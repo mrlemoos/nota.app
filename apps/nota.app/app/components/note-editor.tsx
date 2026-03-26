@@ -127,6 +127,8 @@ export function NoteEditor({
             content: lastSavedContent.current as Json,
             user_id: note.user_id,
             created_at: note.created_at,
+            due_at: note.due_at,
+            is_deadline: note.is_deadline,
           });
         }
         setSaveStatus('saved');
@@ -203,6 +205,8 @@ export function NoteEditor({
             content: toSave as Json,
             user_id: note.user_id,
             created_at: note.created_at,
+            due_at: note.due_at,
+            is_deadline: note.is_deadline,
           });
         }
         const mergedBody = (pendingContentRef.current ?? toSave) as Json;
@@ -260,6 +264,63 @@ export function NoteEditor({
       scheduleContentSave();
     },
     [scheduleContentSave],
+  );
+
+  const persistDueDate = useCallback(
+    async (dueAt: string | null, isDeadline: boolean) => {
+      if (!user?.id) {
+        return;
+      }
+      const titleForRow = persistedDisplayTitle(titleRef.current);
+      const contentForRow = (pendingContentRef.current ??
+        lastSavedContent.current) as Json;
+      setSaveStatus('saving');
+      try {
+        await saveLocalNoteDraft(user.id, {
+          id: note.id,
+          title: titleForRow,
+          content: contentForRow,
+          user_id: note.user_id,
+          created_at: note.created_at,
+          due_at: dueAt,
+          is_deadline: isDeadline,
+        });
+        if (isLikelyOnline()) {
+          const client = getBrowserClient();
+          const updatedNote = await updateNote(client, note.id, {
+            due_at: dueAt,
+            is_deadline: isDeadline,
+          });
+          await markNoteSyncedFromServer(user.id, updatedNote);
+          onNoteUpdated?.(
+            mergeUpdatedNoteLocalContent(
+              updatedNote,
+              pendingContentRef.current,
+              lastSavedContent.current as Json,
+            ),
+          );
+        } else {
+          onNoteUpdated?.(
+            mergeUpdatedNoteLocalContent(
+              {
+                ...note,
+                due_at: dueAt,
+                is_deadline: isDeadline,
+                updated_at: new Date().toISOString(),
+              },
+              pendingContentRef.current,
+              lastSavedContent.current as Json,
+            ),
+          );
+        }
+        setSaveStatus('saved');
+      } catch (error) {
+        console.error('Failed to save due date:', error);
+        setSaveStatus('error');
+        void drainNotesOutbox(user.id);
+      }
+    },
+    [note, onNoteUpdated, user?.id],
   );
 
   useEffect(() => {
@@ -324,6 +385,9 @@ export function NoteEditor({
             noteId={note.id}
             userId={user?.id ?? ''}
             attachments={attachments}
+            dueAt={note.due_at}
+            isDeadline={note.is_deadline}
+            onSaveDueDate={persistDueDate}
           />
         </div>
       </ClientOnly>

@@ -17,6 +17,8 @@ export interface Database {
           content: Json;
           created_at: string;
           updated_at: string;
+          due_at: string | null;
+          is_deadline: boolean;
         };
         Insert: {
           id?: string;
@@ -25,6 +27,8 @@ export interface Database {
           content?: Json;
           created_at?: string;
           updated_at?: string;
+          due_at?: string | null;
+          is_deadline?: boolean;
         };
         Update: {
           id?: string;
@@ -33,6 +37,8 @@ export interface Database {
           content?: Json;
           created_at?: string;
           updated_at?: string;
+          due_at?: string | null;
+          is_deadline?: boolean;
         };
         Relationships: [
           {
@@ -89,6 +95,31 @@ export interface Database {
           },
         ];
       };
+      user_preferences: {
+        Row: {
+          user_id: string;
+          open_todays_note_shortcut: boolean;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          open_todays_note_shortcut?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          open_todays_note_shortcut?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_preferences_user_id_fkey';
+            columns: ['user_id'];
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -118,3 +149,7 @@ export type NoteUpdate = Updatable<'notes'>;
 
 export type NoteAttachment = Tables<'note_attachments'>;
 export type NoteAttachmentInsert = Insertable<'note_attachments'>;
+
+export type UserPreferences = Tables<'user_preferences'>;
+export type UserPreferencesInsert = Insertable<'user_preferences'>;
+export type UserPreferencesUpdate = Updatable<'user_preferences'>;

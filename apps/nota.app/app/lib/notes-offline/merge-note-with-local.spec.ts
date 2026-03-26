@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import {
-  mergeNoteLists,
-  mergeNoteWithLocal,
-} from '../app/lib/notes-offline/merge-note-with-local';
-import type { StoredNote } from '../app/lib/notes-offline/types';
-import type { Json, Note } from '../app/types/database.types';
+import { mergeNoteLists, mergeNoteWithLocal } from './merge-note-with-local';
+import type { StoredNote } from './types';
+import type { Json, Note } from '~/types/database.types';
 
 function makeNote(overrides: Partial<Note> = {}): Note {
   return {
@@ -14,6 +11,8 @@ function makeNote(overrides: Partial<Note> = {}): Note {
     content: { type: 'doc', content: [] } as Json,
     created_at: '2020-01-01T00:00:00Z',
     updated_at: '2020-01-02T00:00:00Z',
+    due_at: null,
+    is_deadline: false,
     ...overrides,
   };
 }
@@ -53,6 +52,22 @@ describe('mergeNoteWithLocal', () => {
     expect(merged.title).toBe('Local');
     expect(merged.content).toEqual(local.content);
     expect(merged.updated_at).toBe('2020-01-03T00:00:00Z');
+  });
+
+  it('prefers local due_at and is_deadline when local is dirty', () => {
+    const server = makeNote({
+      due_at: '2025-01-01T12:00:00Z',
+      is_deadline: false,
+    });
+    const local = makeStored({
+      dirty: true,
+      due_at: '2025-06-15T09:00:00Z',
+      is_deadline: true,
+      updated_at: '2020-01-03T00:00:00Z',
+    });
+    const merged = mergeNoteWithLocal(server, local);
+    expect(merged.due_at).toBe('2025-06-15T09:00:00Z');
+    expect(merged.is_deadline).toBe(true);
   });
 });
 

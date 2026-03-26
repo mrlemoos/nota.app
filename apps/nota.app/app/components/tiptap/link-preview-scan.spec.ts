@@ -1,12 +1,12 @@
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import { describe, expect, it } from 'vitest';
-import { LinkPreview } from '../app/components/tiptap/link-preview-extension';
+import { LinkPreview } from './link-preview-extension';
 import {
   convertLinkOnlyParagraphs,
   revertLinkPreviewToParagraph,
-} from '../app/components/tiptap/link-preview-scan';
-import { NotaLink } from '../app/components/tiptap/nota-link';
+} from './link-preview-scan';
+import { NotaLink } from './nota-link';
 
 function createTestEditor(
   content: NonNullable<ConstructorParameters<typeof Editor>[0]['content']>,
