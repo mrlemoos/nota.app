@@ -22,7 +22,11 @@ import type {
   ClientLoaderFunctionArgs,
   ClientActionFunctionArgs,
 } from 'react-router';
-import { Flowchart01Icon, Settings01Icon } from '@hugeicons/core-free-icons';
+import {
+  Flowchart01Icon,
+  Settings01Icon,
+  SparklesIcon,
+} from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Button } from '@/components/ui/button';
 import { SimpleTooltip, TooltipProvider } from '@/components/ui/tooltip';
@@ -528,6 +532,22 @@ export default function NotesLayout() {
                       <HugeiconsIcon icon={Flowchart01Icon} size={16} />
                     </span>
                     Note Graph
+                  </NavLink>
+                  <NavLink
+                    to="/notes/shortcuts"
+                    className={({ isActive }) =>
+                      cn(
+                        'flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
+                        isActive
+                          ? 'bg-muted font-medium text-foreground'
+                          : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+                      )
+                    }
+                  >
+                    <span className="inline-flex shrink-0" aria-hidden>
+                      <HugeiconsIcon icon={SparklesIcon} size={16} />
+                    </span>
+                    Shortcuts
                   </NavLink>
                   <NavLink
                     to="/notes/settings"

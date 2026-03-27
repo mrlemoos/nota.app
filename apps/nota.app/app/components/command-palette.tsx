@@ -29,6 +29,10 @@ import {
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { cn } from '@/lib/utils';
+import {
+  notaKbdFooterClass,
+  notaKbdHintClass,
+} from '@/lib/nota-kbd-styles';
 import { useNoteEditorCommands } from '../context/note-editor-commands';
 import { useRootLoaderData } from '../root';
 import { openTodaysNoteClient } from '../lib/open-todays-note';
@@ -41,9 +45,6 @@ const LOGOUT_ACTION = '/logout';
 
 const groupHeadingClassName =
   'px-1 py-1 text-muted-foreground text-xs [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5';
-
-const commandKbdHintClass =
-  'ml-auto shrink-0 text-muted-foreground text-xs tabular-nums';
 
 const commandItemRowClass =
   'flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm outline-none select-none';
@@ -93,6 +94,9 @@ export function CommandPalette(): JSX.Element {
   const commandInputRef = useRef<HTMLInputElement | null>(null);
   const [newNoteHotkeyLabel, setNewNoteHotkeyLabel] = useState('⌘N');
   const [todaysNoteHotkeyLabel, setTodaysNoteHotkeyLabel] = useState('⌘D');
+  const [historyBackHotkeyLabel, setHistoryBackHotkeyLabel] = useState('⌘[');
+  const [historyForwardHotkeyLabel, setHistoryForwardHotkeyLabel] =
+    useState('⌘]');
   const [openingTodaysNote, setOpeningTodaysNote] = useState(false);
 
   useLayoutEffect(() => {
@@ -101,6 +105,8 @@ export function CommandPalette(): JSX.Element {
       /\bMac OS X\b/i.test(navigator.userAgent);
     setNewNoteHotkeyLabel(isApple ? '⌘N' : 'Ctrl+N');
     setTodaysNoteHotkeyLabel(isApple ? '⌘D' : 'Ctrl+D');
+    setHistoryBackHotkeyLabel(isApple ? '⌘[' : 'Ctrl+[');
+    setHistoryForwardHotkeyLabel(isApple ? '⌘]' : 'Ctrl+]');
   }, []);
 
   const onKeyDown = useEffectEvent((e: KeyboardEvent): void => {
@@ -224,7 +230,7 @@ export function CommandPalette(): JSX.Element {
                       ? 'Creating note...'
                       : 'Create new note'}
                   </span>
-                  <span className={commandKbdHintClass}>{newNoteHotkeyLabel}</span>
+                  <span className={notaKbdHintClass}>{newNoteHotkeyLabel}</span>
                 </Command.Item>
                 {openTodaysNoteShortcut && user?.id ? (
                   <Command.Item
@@ -263,7 +269,7 @@ export function CommandPalette(): JSX.Element {
                         ? 'Opening today’s note…'
                         : 'Open today’s note'}
                     </span>
-                    <span className={commandKbdHintClass}>
+                    <span className={notaKbdHintClass}>
                       {todaysNoteHotkeyLabel}
                     </span>
                   </Command.Item>
@@ -300,7 +306,7 @@ export function CommandPalette(): JSX.Element {
                   heading={
                     <span className="flex w-full items-center gap-2 pr-1 font-normal">
                       <span className="min-w-0 flex-1">Open note</span>
-                      <span className={commandKbdHintClass}>Space</span>
+                      <span className={notaKbdHintClass}>Space</span>
                     </span>
                   }
                   className={groupHeadingClassName}
@@ -566,6 +572,20 @@ export function CommandPalette(): JSX.Element {
                 </Command.Item>
               </Command.Group>
             </Command.List>
+            <div
+              className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border/40 px-3 py-2 text-muted-foreground text-xs"
+              aria-hidden
+            >
+              <span>
+                Back <span className={notaKbdFooterClass}>{historyBackHotkeyLabel}</span>
+              </span>
+              <span>
+                Forward{' '}
+                <span className={notaKbdFooterClass}>
+                  {historyForwardHotkeyLabel}
+                </span>
+              </span>
+            </div>
           </Command>
           <Dialog.Close
             type="button"

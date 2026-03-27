@@ -1,5 +1,5 @@
 import { useLayoutEffect, useState, type JSX } from 'react';
-import { Form, useFetcher } from 'react-router';
+import { Form, Link, useFetcher } from 'react-router';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ModeToggle } from '../components/mode-toggle';
@@ -20,12 +20,16 @@ export default function NotesSettings(): JSX.Element {
     (s) => s.setOpenTodaysNoteShortcut,
   );
   const [modDLabel, setModDLabel] = useState('⌘D');
+  const [historyBackLabel, setHistoryBackLabel] = useState('⌘[');
+  const [historyForwardLabel, setHistoryForwardLabel] = useState('⌘]');
 
   useLayoutEffect(() => {
     const isApple =
       /Mac|iPhone|iPad|iPod/i.test(navigator.platform || '') ||
       /\bMac OS X\b/i.test(navigator.userAgent);
     setModDLabel(isApple ? '⌘D' : 'Ctrl+D');
+    setHistoryBackLabel(isApple ? '⌘[' : 'Ctrl+[');
+    setHistoryForwardLabel(isApple ? '⌘]' : 'Ctrl+]');
   }, []);
 
   return (
@@ -71,6 +75,25 @@ export default function NotesSettings(): JSX.Element {
               Open today’s note with {modDLabel}
             </span>
           </label>
+          <p className="text-sm text-muted-foreground">
+            Go back and forward through recently visited notes with{' '}
+            <span className="tabular-nums text-foreground/80">
+              {historyBackLabel}
+            </span>{' '}
+            and{' '}
+            <span className="tabular-nums text-foreground/80">
+              {historyForwardLabel}
+            </span>
+            .
+          </p>
+          <p className="text-sm text-muted-foreground">
+            <Link
+              to="/notes/shortcuts"
+              className="text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground"
+            >
+              View all shortcuts
+            </Link>
+          </p>
         </section>
 
         {user ? (
