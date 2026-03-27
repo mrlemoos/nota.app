@@ -10,6 +10,8 @@ We leave silence alone on purpose. Boredom at the cursor is the sound of a thoug
 
 ## What it is
 
+![Welcome screen](assets/welcome-screen.png)
+
 nota.app is a personal notes app built as an [Nx](https://nx.dev) monorepo. The main web app (`[apps/nota.app](apps/nota.app)`) uses **React Router 7** with SSR, **Vite**, and **React 19**. Notes and auth live on **Supabase** (Postgres and row-level security). The editor is **TipTap** (ProseMirror). An optional **Electron** desktop shell wraps the same app—see `[apps/nota-electron/README.md](apps/nota-electron/README.md)`.
 
 ## Requirements
