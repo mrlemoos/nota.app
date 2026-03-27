@@ -14,6 +14,11 @@ import { getNote, deleteNote } from '../models/notes';
 import { listNoteAttachments } from '../models/note-attachments';
 import { NoteEditor } from '../components/note-editor';
 import { NoteBacklinksPanel } from '../components/note-backlinks-panel';
+import { cn } from '@/lib/utils';
+import {
+  noteSurfaceClassNames,
+  parseNoteEditorSettings,
+} from '../lib/note-editor-settings';
 import type { Note, NoteAttachment } from '~/types/database.types';
 import { getBrowserClient } from '../lib/supabase/browser';
 import {
@@ -201,15 +206,30 @@ export default function NoteDetail() {
     [revalidate],
   );
 
+  const layout = noteSurfaceClassNames(
+    parseNoteEditorSettings(note.editor_settings),
+  );
+
   return (
     <div className="px-4 py-8">
-      <div className="mx-auto w-full max-w-3xl">
+      <div
+        className={cn(
+          'mx-auto w-full transition-[max-width] duration-300 ease-in-out',
+          layout.maxWidthClass,
+        )}
+      >
         <NoteEditor
           note={note}
           attachments={attachments}
+          titleFontClassName={layout.titleFontClass}
+          bodyFontClassName={layout.bodyFontClass}
           onNoteUpdated={handleNoteUpdated}
         />
-        {noteId ? <NoteBacklinksPanel noteId={noteId} /> : null}
+        {noteId ? (
+          <div className={layout.bodyFontClass}>
+            <NoteBacklinksPanel noteId={noteId} />
+          </div>
+        ) : null}
       </div>
     </div>
   );

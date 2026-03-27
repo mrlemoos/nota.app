@@ -19,6 +19,7 @@ export interface Database {
           updated_at: string;
           due_at: string | null;
           is_deadline: boolean;
+          editor_settings: Json;
         };
         Insert: {
           id?: string;
@@ -29,6 +30,7 @@ export interface Database {
           updated_at?: string;
           due_at?: string | null;
           is_deadline?: boolean;
+          editor_settings?: Json;
         };
         Update: {
           id?: string;
@@ -39,6 +41,7 @@ export interface Database {
           updated_at?: string;
           due_at?: string | null;
           is_deadline?: boolean;
+          editor_settings?: Json;
         };
         Relationships: [
           {

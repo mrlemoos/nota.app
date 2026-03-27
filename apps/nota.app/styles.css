@@ -6,6 +6,7 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/inter";
 @import "@fontsource/instrument-serif/400.css";
+@import "@fontsource-variable/source-serif-4";
 
 @source "../../apps";
 @source "../../packages";
@@ -435,6 +436,8 @@
   --font-heading: var(--font-sans);
   --font-sans: 'Inter Variable', sans-serif;
   --font-serif: 'Instrument Serif', ui-serif, Georgia, serif;
+  /* Long-form note body when per-note font is serif (title stays Instrument). */
+  --font-note-body: 'Source Serif 4 Variable', Georgia, 'Times New Roman', serif;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);

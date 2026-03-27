@@ -21,10 +21,19 @@ import {
 } from '../lib/notes-offline';
 import { updateNote } from '../models/notes';
 import type { Json, Note, NoteAttachment } from '~/types/database.types';
+import {
+  noteEditorSettingsToJson,
+  parseNoteEditorSettings,
+  type NoteEditorSettings,
+} from '../lib/note-editor-settings';
+import { NoteLayoutMenu } from './note-layout-menu';
+import { cn } from '@/lib/utils';
 
 interface NoteEditorProps {
   note: Note;
   attachments: NoteAttachment[];
+  titleFontClassName: string;
+  bodyFontClassName: string;
   onNoteUpdated?: (note: Note) => void;
 }
 
@@ -33,6 +42,8 @@ const SAVE_DEBOUNCE_MS = 800;
 export function NoteEditor({
   note,
   attachments,
+  titleFontClassName,
+  bodyFontClassName,
   onNoteUpdated,
 }: NoteEditorProps) {
   const { user } = useRootLoaderData() ?? { user: null };
@@ -135,6 +146,7 @@ export function NoteEditor({
             created_at: note.created_at,
             due_at: note.due_at,
             is_deadline: note.is_deadline,
+            editor_settings: noteRef.current.editor_settings,
           });
         }
         setSaveStatus('saved');
@@ -213,6 +225,7 @@ export function NoteEditor({
             created_at: note.created_at,
             due_at: note.due_at,
             is_deadline: note.is_deadline,
+            editor_settings: noteRef.current.editor_settings,
           });
         }
         const mergedBody = (pendingContentRef.current ?? toSave) as Json;
@@ -291,6 +304,7 @@ export function NoteEditor({
         created_at: n.created_at,
         due_at: dueAt,
         is_deadline: isDeadline,
+        editor_settings: n.editor_settings,
       });
       if (isLikelyOnline()) {
         const client = getBrowserClient();
@@ -328,6 +342,62 @@ export function NoteEditor({
     }
   }, []);
 
+  const persistEditorSettings = useCallback(async (next: NoteEditorSettings) => {
+    const userId = userIdRef.current;
+    if (!userId) {
+      return;
+    }
+    const n = noteRef.current;
+    const json = noteEditorSettingsToJson(next);
+    const titleForRow = persistedDisplayTitle(titleRef.current);
+    const contentForRow = (pendingContentRef.current ??
+      lastSavedContent.current) as Json;
+    setSaveStatus('saving');
+    try {
+      await saveLocalNoteDraft(userId, {
+        id: n.id,
+        title: titleForRow,
+        content: contentForRow,
+        user_id: n.user_id,
+        created_at: n.created_at,
+        due_at: n.due_at,
+        is_deadline: n.is_deadline,
+        editor_settings: json,
+      });
+      if (isLikelyOnline()) {
+        const client = getBrowserClient();
+        const updatedNote = await updateNote(client, n.id, {
+          editor_settings: json,
+        });
+        await markNoteSyncedFromServer(userId, updatedNote);
+        onNoteUpdatedRef.current?.(
+          mergeUpdatedNoteLocalContent(
+            updatedNote,
+            pendingContentRef.current,
+            lastSavedContent.current as Json,
+          ),
+        );
+      } else {
+        onNoteUpdatedRef.current?.(
+          mergeUpdatedNoteLocalContent(
+            {
+              ...n,
+              editor_settings: json,
+              updated_at: new Date().toISOString(),
+            },
+            pendingContentRef.current,
+            lastSavedContent.current as Json,
+          ),
+        );
+      }
+      setSaveStatus('saved');
+    } catch (error) {
+      console.error('Failed to save note layout:', error);
+      setSaveStatus('error');
+      void drainNotesOutbox(userId);
+    }
+  }, []);
+
   useEffect(() => {
     return () => {
       if (contentDebounceRef.current) {
@@ -351,12 +421,20 @@ export function NoteEditor({
           autoComplete="off"
           aria-label="Note title"
           rows={1}
-          className="min-h-0 min-w-0 flex-1 resize-none overflow-hidden break-words border-0 bg-transparent p-0 font-sans text-4xl font-extrabold leading-tight tracking-tight text-pretty text-foreground placeholder:text-muted-foreground/70 focus:outline-none md:text-5xl"
+          className={cn(
+            'min-h-0 min-w-0 flex-1 resize-none overflow-hidden break-words border-0 bg-transparent p-0 text-4xl font-extrabold leading-tight tracking-tight text-pretty text-foreground placeholder:text-muted-foreground/70 focus:outline-none md:text-5xl',
+            titleFontClassName,
+          )}
         />
         <div
           className="flex shrink-0 items-start justify-end gap-2 pt-3 md:pt-4"
           aria-live="polite"
         >
+          <NoteLayoutMenu
+            settings={parseNoteEditorSettings(note.editor_settings)}
+            onSettingsChange={persistEditorSettings}
+            disabled={!user?.id}
+          />
           {saveStatus === 'saving' && (
             <span
               className="mt-1 inline-block h-2.5 w-2.5 rounded-full bg-foreground/50"
@@ -372,7 +450,7 @@ export function NoteEditor({
 
       <ClientOnly
         fallback={
-          <div className="min-h-[50vh] pb-24">
+          <div className={cn('min-h-[50vh] pb-24', bodyFontClassName)}>
             <div className="animate-pulse space-y-3">
               <div className="h-4 w-full rounded bg-muted"></div>
               <div className="h-4 w-5/6 rounded bg-muted"></div>
@@ -382,7 +460,7 @@ export function NoteEditor({
           </div>
         }
       >
-        <div className="min-h-[50vh] pb-24">
+        <div className={cn('min-h-[50vh] pb-24', bodyFontClassName)}>
           <TipTapEditor
             content={note.content}
             onUpdate={handleUpdate}

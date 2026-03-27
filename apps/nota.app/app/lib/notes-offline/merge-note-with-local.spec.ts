@@ -13,6 +13,7 @@ function makeNote(overrides: Partial<Note> = {}): Note {
     updated_at: '2020-01-02T00:00:00Z',
     due_at: null,
     is_deadline: false,
+    editor_settings: {} as Json,
     ...overrides,
   };
 }
@@ -52,6 +53,19 @@ describe('mergeNoteWithLocal', () => {
     expect(merged.title).toBe('Local');
     expect(merged.content).toEqual(local.content);
     expect(merged.updated_at).toBe('2020-01-03T00:00:00Z');
+  });
+
+  it('prefers local editor_settings when local is dirty', () => {
+    const server = makeNote({
+      editor_settings: { font: 'sans' } as Json,
+    });
+    const local = makeStored({
+      dirty: true,
+      editor_settings: { font: 'mono', measure: 'narrow' } as Json,
+      updated_at: '2020-01-03T00:00:00Z',
+    });
+    const merged = mergeNoteWithLocal(server, local);
+    expect(merged.editor_settings).toEqual({ font: 'mono', measure: 'narrow' });
   });
 
   it('prefers local due_at and is_deadline when local is dirty', () => {

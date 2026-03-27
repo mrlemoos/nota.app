@@ -3,7 +3,7 @@ import {
   buildNoteLinkGraph,
   extractOutgoingNoteIdsFromContent,
 } from './note-link-graph';
-import type { Note } from '~/types/database.types';
+import type { Json, Note } from '~/types/database.types';
 
 const NOTE_A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const NOTE_B = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
@@ -12,11 +12,12 @@ function minimalNote(overrides: Partial<Note> & Pick<Note, 'id'>): Note {
   return {
     user_id: 'u',
     title: '',
-    content: { type: 'doc', content: [{ type: 'paragraph' }] },
+    content: { type: 'doc', content: [{ type: 'paragraph' }] } as Json,
     created_at: '2020-01-01T00:00:00Z',
     updated_at: '2020-01-01T00:00:00Z',
     due_at: null,
     is_deadline: false,
+    editor_settings: {} as Json,
     ...overrides,
   };
 }

@@ -12,6 +12,7 @@ function makeNote(overrides: Partial<Note> = {}): Note {
     updated_at: '2020-01-02T00:00:00Z',
     due_at: null,
     is_deadline: false,
+    editor_settings: {} as Json,
     ...overrides,
   };
 }

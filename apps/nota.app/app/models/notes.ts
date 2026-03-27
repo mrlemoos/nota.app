@@ -53,6 +53,7 @@ export async function createNote(
     id?: string;
     due_at?: string | null;
     is_deadline?: boolean;
+    editor_settings?: Json;
   },
 ) {
   const note: NoteInsert = {
@@ -63,6 +64,9 @@ export async function createNote(
     ...(options?.due_at !== undefined ? { due_at: options.due_at } : {}),
     ...(options?.is_deadline !== undefined
       ? { is_deadline: options.is_deadline }
+      : {}),
+    ...(options?.editor_settings !== undefined
+      ? { editor_settings: options.editor_settings }
       : {}),
   };
 

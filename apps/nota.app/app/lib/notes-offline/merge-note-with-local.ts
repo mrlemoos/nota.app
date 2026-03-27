@@ -1,5 +1,5 @@
 import type { StoredNote } from './types';
-import type { Note } from '~/types/database.types';
+import type { Json, Note } from '~/types/database.types';
 
 function noteFromStored(stored: StoredNote): Note {
   const {
@@ -36,6 +36,10 @@ export function mergeNoteWithLocal(
     updated_at: base.updated_at,
     due_at: base.due_at,
     is_deadline: base.is_deadline,
+    editor_settings:
+      (base.editor_settings as Json | undefined) ??
+      server.editor_settings ??
+      ({} as Json),
   };
 }
 
