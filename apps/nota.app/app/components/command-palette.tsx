@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useEffectEvent,
   useLayoutEffect,
@@ -15,6 +16,7 @@ import {
   useRevalidator,
 } from 'react-router';
 import { Dialog } from '@base-ui/react/dialog';
+import type { DialogRoot } from '@base-ui/react/dialog';
 import { Command } from 'cmdk';
 import {
   ComputerIcon,
@@ -29,16 +31,22 @@ import {
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { cn } from '@/lib/utils';
-import {
-  notaKbdFooterClass,
-  notaKbdHintClass,
-} from '@/lib/nota-kbd-styles';
+import { notaKbdFooterClass, notaKbdHintClass } from '@/lib/nota-kbd-styles';
 import { useNoteEditorCommands } from '../context/note-editor-commands';
 import { useRootLoaderData } from '../root';
 import { openTodaysNoteClient } from '../lib/open-todays-note';
 import { notesFromMatches } from '../lib/notes-from-matches';
 import { useNotaPreferencesStore } from '../stores/nota-preferences';
 import { useTheme } from './theme-provider';
+import {
+  gsap,
+  NOTA_MOTION_EASE_IN,
+  NOTA_MOTION_EASE_OUT,
+  NOTA_PALETTE_ENTER_S,
+  NOTA_PALETTE_EXIT_S,
+  useGSAP,
+  usePrefersReducedMotion,
+} from '@/lib/nota-motion';
 
 const NOTES_ACTION = '/notes';
 const LOGOUT_ACTION = '/logout';
@@ -71,6 +79,10 @@ function PaletteItemIcon({
 
 export function CommandPalette(): JSX.Element {
   const [open, setOpen] = useState(false);
+  const prefersReducedMotion = usePrefersReducedMotion();
+  const dialogActionsRef = useRef<DialogRoot.Actions | null>(null);
+  const backdropRef = useRef<HTMLDivElement | null>(null);
+  const popupMotionRef = useRef<HTMLDivElement | null>(null);
   const { noteId } = useParams();
   const navigate = useNavigate();
   const { revalidate } = useRevalidator();
@@ -99,6 +111,94 @@ export function CommandPalette(): JSX.Element {
     useState('⌘]');
   const [openingTodaysNote, setOpeningTodaysNote] = useState(false);
 
+  const closePalette = useCallback((): void => {
+    dialogActionsRef.current?.close();
+  }, []);
+
+  const handleDialogOpenChange = useCallback(
+    (next: boolean, eventDetails: DialogRoot.ChangeEventDetails): void => {
+      if (next) {
+        setOpen(true);
+        return;
+      }
+      if (prefersReducedMotion) {
+        setOpen(false);
+        return;
+      }
+      // Keep the portal mounted until GSAP finishes; then call `unmount()` on the dialog actions ref.
+      eventDetails.preventUnmountOnClose();
+      setOpen(false);
+    },
+    [prefersReducedMotion],
+  );
+
+  useGSAP(
+    () => {
+      const backdrop = backdropRef.current;
+      const panel = popupMotionRef.current;
+      if (!backdrop || !panel) {
+        return;
+      }
+
+      if (prefersReducedMotion) {
+        if (open) {
+          gsap.set([backdrop, panel], { clearProps: 'all' });
+        }
+        return;
+      }
+
+      if (open) {
+        gsap.set(backdrop, { autoAlpha: 0 });
+        gsap.set(panel, { autoAlpha: 0, scale: 0.96, y: -8 });
+        gsap
+          .timeline()
+          .to(backdrop, {
+            autoAlpha: 1,
+            duration: NOTA_PALETTE_ENTER_S,
+            ease: NOTA_MOTION_EASE_OUT,
+          })
+          .to(
+            panel,
+            {
+              autoAlpha: 1,
+              scale: 1,
+              y: 0,
+              duration: NOTA_PALETTE_ENTER_S,
+              ease: NOTA_MOTION_EASE_OUT,
+            },
+            0,
+          );
+        return;
+      }
+
+      const tl = gsap.timeline({
+        onComplete: () => {
+          dialogActionsRef.current?.unmount();
+        },
+      });
+      tl.to(panel, {
+        autoAlpha: 0,
+        scale: 0.96,
+        y: -8,
+        duration: NOTA_PALETTE_EXIT_S,
+        ease: NOTA_MOTION_EASE_IN,
+      }).to(
+        backdrop,
+        {
+          autoAlpha: 0,
+          duration: NOTA_PALETTE_EXIT_S,
+          ease: NOTA_MOTION_EASE_IN,
+        },
+        0,
+      );
+
+      return () => {
+        tl.kill();
+      };
+    },
+    { dependencies: [open, prefersReducedMotion] },
+  );
+
   useLayoutEffect(() => {
     const isApple =
       /Mac|iPhone|iPad|iPod/i.test(navigator.platform || '') ||
@@ -114,7 +214,7 @@ export function CommandPalette(): JSX.Element {
     if (mod && (e.key === 'k' || e.key === 'K')) {
       if (open) {
         e.preventDefault();
-        setOpen(false);
+        dialogActionsRef.current?.close();
         return;
       }
 
@@ -127,19 +227,14 @@ export function CommandPalette(): JSX.Element {
       return;
     }
 
-    if (
-      mod &&
-      (e.key === 'n' || e.key === 'N') &&
-      !e.shiftKey &&
-      !e.altKey
-    ) {
+    if (mod && (e.key === 'n' || e.key === 'N') && !e.shiftKey && !e.altKey) {
       e.preventDefault();
       if (!busy) {
         fetcher.submit(null, {
           method: 'post',
           action: NOTES_ACTION,
         });
-        setOpen(false);
+        closePalette();
       }
       return;
     }
@@ -147,11 +242,7 @@ export function CommandPalette(): JSX.Element {
     if (e.key === ' ') {
       const input = commandInputRef.current;
       const t = e.target;
-      if (
-        input &&
-        t instanceof Node &&
-        (input === t || input.contains(t))
-      ) {
+      if (input && t instanceof Node && (input === t || input.contains(t))) {
         return;
       }
       e.preventDefault();
@@ -165,93 +256,61 @@ export function CommandPalette(): JSX.Element {
   }, [onKeyDown]);
 
   return (
-    <Dialog.Root open={open} onOpenChange={setOpen}>
+    <Dialog.Root
+      open={open}
+      onOpenChange={handleDialogOpenChange}
+      actionsRef={dialogActionsRef}
+    >
       <Dialog.Portal>
         <Dialog.Backdrop
-          className={cn(
-            'fixed inset-0 z-50 bg-black/40',
-            'transition-opacity data-ending-style:opacity-0 data-starting-style:opacity-0',
-          )}
+          ref={backdropRef}
+          className={cn('fixed inset-0 z-50 bg-black/40')}
         />
         <Dialog.Popup
           data-nota-command-palette
           className={cn(
-            'fixed top-[15%] left-1/2 z-50 w-[min(100vw-2rem,28rem)] -translate-x-1/2',
-            'rounded-lg bg-background/55 text-foreground shadow-lg',
-            'backdrop-blur-xl backdrop-saturate-150',
-            'outline-none',
-            'transition-[opacity,transform] data-ending-style:scale-95 data-starting-style:scale-95',
-            'data-ending-style:opacity-0 data-starting-style:opacity-0',
+            'fixed top-[15%] left-1/2 z-50 w-[min(100vw-2rem,28rem)] -translate-x-1/2 outline-none',
           )}
         >
-          <Dialog.Title className="sr-only">Command palette</Dialog.Title>
-          <Dialog.Description className="sr-only">
-            Search for a command. Use arrow keys to move, Enter to run.
-          </Dialog.Description>
-          <Command
-            className="overflow-hidden"
-            label="Command palette"
-            vimBindings={false}
+          <div
+            ref={popupMotionRef}
+            className={cn(
+              'rounded-lg bg-background/55 text-foreground shadow-lg',
+              'backdrop-blur-xl backdrop-saturate-150',
+            )}
           >
-            <Command.Input
-              ref={commandInputRef}
-              placeholder="Type a command…"
-              className={cn(
-                'w-full bg-transparent px-3 py-3 text-sm',
-                'text-foreground outline-none placeholder:text-muted-foreground',
-              )}
-            />
-            <Command.List className={commandListClassName}>
-              <Command.Group heading="Notes" className={groupHeadingClassName}>
-                <Command.Item
-                  value="create-note"
-                  disabled={busy}
-                  keywords={['new', 'add']}
-                  onSelect={() => {
-                    fetcher.submit(null, {
-                      method: 'post',
-                      action: NOTES_ACTION,
-                    });
-                    setOpen(false);
-                  }}
-                  className={cn(
-                    commandItemRowClass,
-                    'group text-foreground',
-                    'aria-selected:bg-accent aria-selected:text-accent-foreground',
-                    'aria-disabled:pointer-events-none aria-disabled:opacity-50',
-                  )}
+            <Dialog.Title className="sr-only">Command palette</Dialog.Title>
+            <Dialog.Description className="sr-only">
+              Search for a command. Use arrow keys to move, Enter to run.
+            </Dialog.Description>
+            <Command
+              className="overflow-hidden"
+              label="Command palette"
+              vimBindings={false}
+            >
+              <Command.Input
+                ref={commandInputRef}
+                placeholder="Type a command…"
+                className={cn(
+                  'w-full bg-transparent px-3 py-3 text-sm',
+                  'text-foreground outline-none placeholder:text-muted-foreground',
+                )}
+              />
+              <Command.List className={commandListClassName}>
+                <Command.Group
+                  heading="Notes"
+                  className={groupHeadingClassName}
                 >
-                  <PaletteItemIcon
-                    icon={NoteAddIcon}
-                    className="text-muted-foreground group-aria-selected:text-accent-foreground"
-                  />
-                  <span className="min-w-0 flex-1">
-                    {busy && pendingAction === NOTES_ACTION
-                      ? 'Creating note...'
-                      : 'Create new note'}
-                  </span>
-                  <span className={notaKbdHintClass}>{newNoteHotkeyLabel}</span>
-                </Command.Item>
-                {openTodaysNoteShortcut && user?.id ? (
                   <Command.Item
-                    value="open-todays-note"
-                    disabled={openingTodaysNote}
-                    keywords={['today', 'daily', 'journal', 'date', 'day']}
+                    value="create-note"
+                    disabled={busy}
+                    keywords={['new', 'add']}
                     onSelect={() => {
-                      void (async () => {
-                        setOpeningTodaysNote(true);
-                        try {
-                          await openTodaysNoteClient({
-                            notes,
-                            userId: user.id,
-                            navigate,
-                            revalidate,
-                          });
-                          setOpen(false);
-                        } finally {
-                          setOpeningTodaysNote(false);
-                        }
-                      })();
+                      fetcher.submit(null, {
+                        method: 'post',
+                        action: NOTES_ACTION,
+                      });
+                      closePalette();
                     }}
                     className={cn(
                       commandItemRowClass,
@@ -261,165 +320,334 @@ export function CommandPalette(): JSX.Element {
                     )}
                   >
                     <PaletteItemIcon
-                      icon={NoteIcon}
+                      icon={NoteAddIcon}
                       className="text-muted-foreground group-aria-selected:text-accent-foreground"
                     />
                     <span className="min-w-0 flex-1">
-                      {openingTodaysNote
-                        ? 'Opening today’s note…'
-                        : 'Open today’s note'}
+                      {busy && pendingAction === NOTES_ACTION
+                        ? 'Creating note...'
+                        : 'Create new note'}
                     </span>
                     <span className={notaKbdHintClass}>
-                      {todaysNoteHotkeyLabel}
+                      {newNoteHotkeyLabel}
                     </span>
                   </Command.Item>
-                ) : null}
-                <Command.Item
-                  value="open-note-graph"
-                  keywords={[
-                    'graph',
-                    'map',
-                    'visual',
-                    'links',
-                    'connections',
-                    'network',
-                  ]}
-                  onSelect={() => {
-                    navigate('/notes/graph');
-                    setOpen(false);
-                  }}
-                  className={cn(
-                    commandItemRowClass,
-                    'group text-foreground',
-                    'aria-selected:bg-accent aria-selected:text-accent-foreground',
-                  )}
-                >
-                  <PaletteItemIcon
-                    icon={Flowchart01Icon}
-                    className="text-muted-foreground group-aria-selected:text-accent-foreground"
-                  />
-                  <span className="min-w-0 flex-1">Open note graph</span>
-                </Command.Item>
-              </Command.Group>
-              {notes.length > 0 ? (
-                <Command.Group
-                  heading={
-                    <span className="flex w-full items-center gap-2 pr-1 font-normal">
-                      <span className="min-w-0 flex-1">Open note</span>
-                      <span className={notaKbdHintClass}>Space</span>
-                    </span>
-                  }
-                  className={groupHeadingClassName}
-                >
-                  {notes.map((note) => (
+                  {openTodaysNoteShortcut && user?.id ? (
                     <Command.Item
-                      key={note.id}
-                      value={`${note.title} ${note.id}`}
-                      keywords={[
-                        'go',
-                        'open',
-                        'switch',
-                        note.title,
-                        note.id.slice(0, 8),
-                      ]}
+                      value="open-todays-note"
+                      disabled={openingTodaysNote}
+                      keywords={['today', 'daily', 'journal', 'date', 'day']}
                       onSelect={() => {
-                        navigate(`/notes/${note.id}`);
-                        setOpen(false);
+                        void (async () => {
+                          setOpeningTodaysNote(true);
+                          try {
+                            await openTodaysNoteClient({
+                              notes,
+                              userId: user.id,
+                              navigate,
+                              revalidate,
+                            });
+                            closePalette();
+                          } finally {
+                            setOpeningTodaysNote(false);
+                          }
+                        })();
                       }}
                       className={cn(
                         commandItemRowClass,
                         'group text-foreground',
                         'aria-selected:bg-accent aria-selected:text-accent-foreground',
+                        'aria-disabled:pointer-events-none aria-disabled:opacity-50',
                       )}
                     >
                       <PaletteItemIcon
                         icon={NoteIcon}
                         className="text-muted-foreground group-aria-selected:text-accent-foreground"
                       />
-                      <span className="min-w-0 flex-1 truncate">
-                        {note.title || 'Untitled Note'}
+                      <span className="min-w-0 flex-1">
+                        {openingTodaysNote
+                          ? 'Opening today’s note…'
+                          : 'Open today’s note'}
+                      </span>
+                      <span className={notaKbdHintClass}>
+                        {todaysNoteHotkeyLabel}
                       </span>
                     </Command.Item>
-                  ))}
-                </Command.Group>
-              ) : null}
-              {deleteNoteAction ? (
-                <Command.Group
-                  heading="This note"
-                  className={groupHeadingClassName}
-                >
+                  ) : null}
                   <Command.Item
-                    value="insert-mermaid-diagram"
-                    disabled={!canInsertMermaid}
+                    value="open-note-graph"
                     keywords={[
-                      'mermaid',
-                      'diagram',
-                      'flowchart',
-                      'chart',
                       'graph',
-                      'insert',
+                      'map',
+                      'visual',
+                      'links',
+                      'connections',
+                      'network',
                     ]}
                     onSelect={() => {
-                      if (!canInsertMermaid) return;
-                      insertMermaidAtCursor();
-                      setOpen(false);
+                      navigate('/notes/graph');
+                      closePalette();
                     }}
                     className={cn(
                       commandItemRowClass,
                       'group text-foreground',
                       'aria-selected:bg-accent aria-selected:text-accent-foreground',
-                      'aria-disabled:pointer-events-none aria-disabled:opacity-50',
                     )}
                   >
                     <PaletteItemIcon
                       icon={Flowchart01Icon}
                       className="text-muted-foreground group-aria-selected:text-accent-foreground"
                     />
-                    <span className="min-w-0 flex-1">Insert Mermaid diagram</span>
+                    <span className="min-w-0 flex-1">Open note graph</span>
                   </Command.Item>
+                </Command.Group>
+                {notes.length > 0 ? (
+                  <Command.Group
+                    heading={
+                      <span className="flex w-full items-center gap-2 pr-1 font-normal">
+                        <span className="min-w-0 flex-1">Open note</span>
+                        <span className={notaKbdHintClass}>Space</span>
+                      </span>
+                    }
+                    className={groupHeadingClassName}
+                  >
+                    {notes.map((note) => (
+                      <Command.Item
+                        key={note.id}
+                        value={`${note.title} ${note.id}`}
+                        keywords={[
+                          'go',
+                          'open',
+                          'switch',
+                          note.title,
+                          note.id.slice(0, 8),
+                        ]}
+                        onSelect={() => {
+                          navigate(`/notes/${note.id}`);
+                          closePalette();
+                        }}
+                        className={cn(
+                          commandItemRowClass,
+                          'group text-foreground',
+                          'aria-selected:bg-accent aria-selected:text-accent-foreground',
+                        )}
+                      >
+                        <PaletteItemIcon
+                          icon={NoteIcon}
+                          className="text-muted-foreground group-aria-selected:text-accent-foreground"
+                        />
+                        <span className="min-w-0 flex-1 truncate">
+                          {note.title || 'Untitled Note'}
+                        </span>
+                      </Command.Item>
+                    ))}
+                  </Command.Group>
+                ) : null}
+                {deleteNoteAction ? (
+                  <Command.Group
+                    heading="This note"
+                    className={groupHeadingClassName}
+                  >
+                    <Command.Item
+                      value="insert-mermaid-diagram"
+                      disabled={!canInsertMermaid}
+                      keywords={[
+                        'mermaid',
+                        'diagram',
+                        'flowchart',
+                        'chart',
+                        'graph',
+                        'insert',
+                      ]}
+                      onSelect={() => {
+                        if (!canInsertMermaid) return;
+                        insertMermaidAtCursor();
+                        closePalette();
+                      }}
+                      className={cn(
+                        commandItemRowClass,
+                        'group text-foreground',
+                        'aria-selected:bg-accent aria-selected:text-accent-foreground',
+                        'aria-disabled:pointer-events-none aria-disabled:opacity-50',
+                      )}
+                    >
+                      <PaletteItemIcon
+                        icon={Flowchart01Icon}
+                        className="text-muted-foreground group-aria-selected:text-accent-foreground"
+                      />
+                      <span className="min-w-0 flex-1">
+                        Insert Mermaid diagram
+                      </span>
+                    </Command.Item>
+                    <Command.Item
+                      value="insert-table"
+                      disabled={!canInsertTable}
+                      keywords={['table', 'grid', 'rows', 'columns', 'insert']}
+                      onSelect={() => {
+                        if (!canInsertTable) return;
+                        insertTableAtCursor();
+                        closePalette();
+                      }}
+                      className={cn(
+                        commandItemRowClass,
+                        'group text-foreground',
+                        'aria-selected:bg-accent aria-selected:text-accent-foreground',
+                        'aria-disabled:pointer-events-none aria-disabled:opacity-50',
+                      )}
+                    >
+                      <PaletteItemIcon
+                        icon={TableIcon}
+                        className="text-muted-foreground group-aria-selected:text-accent-foreground"
+                      />
+                      <span className="min-w-0 flex-1">Insert table</span>
+                    </Command.Item>
+                    <Command.Item
+                      value="delete-this-note"
+                      disabled={busy}
+                      keywords={['remove', 'trash', 'delete note']}
+                      onSelect={() => {
+                        if (
+                          !confirm('Are you sure you want to delete this note?')
+                        ) {
+                          return;
+                        }
+                        fetcher.submit(null, {
+                          method: 'post',
+                          action: deleteNoteAction,
+                        });
+                        closePalette();
+                      }}
+                      className={cn(
+                        commandItemRowClass,
+                        'group text-destructive',
+                        'aria-selected:bg-destructive/15 aria-selected:text-destructive',
+                        'aria-disabled:pointer-events-none aria-disabled:opacity-50',
+                      )}
+                    >
+                      <PaletteItemIcon
+                        icon={NoteRemoveIcon}
+                        className="text-destructive group-aria-selected:text-destructive"
+                      />
+                      <span className="min-w-0 flex-1">
+                        {busy && pendingAction === deleteNoteAction
+                          ? 'Deleting...'
+                          : 'Delete this note'}
+                      </span>
+                    </Command.Item>
+                  </Command.Group>
+                ) : null}
+                <Command.Group
+                  heading="Appearance"
+                  className={groupHeadingClassName}
+                >
                   <Command.Item
-                    value="insert-table"
-                    disabled={!canInsertTable}
+                    value="use-light-theme"
                     keywords={[
-                      'table',
-                      'grid',
-                      'rows',
-                      'columns',
-                      'insert',
+                      'light',
+                      'appearance',
+                      'theme',
+                      'color scheme',
+                      'mode',
                     ]}
                     onSelect={() => {
-                      if (!canInsertTable) return;
-                      insertTableAtCursor();
-                      setOpen(false);
+                      setTheme('light');
+                      closePalette();
                     }}
                     className={cn(
                       commandItemRowClass,
                       'group text-foreground',
                       'aria-selected:bg-accent aria-selected:text-accent-foreground',
-                      'aria-disabled:pointer-events-none aria-disabled:opacity-50',
                     )}
                   >
                     <PaletteItemIcon
-                      icon={TableIcon}
+                      icon={Sun01Icon}
                       className="text-muted-foreground group-aria-selected:text-accent-foreground"
                     />
-                    <span className="min-w-0 flex-1">Insert table</span>
+                    <span className="min-w-0 flex-1">Use light theme</span>
+                    {theme === 'light' ? (
+                      <span className="shrink-0 text-muted-foreground text-xs">
+                        (current)
+                      </span>
+                    ) : null}
                   </Command.Item>
                   <Command.Item
-                    value="delete-this-note"
-                    disabled={busy}
-                    keywords={['remove', 'trash', 'delete note']}
+                    value="use-dark-theme"
+                    keywords={[
+                      'dark',
+                      'appearance',
+                      'theme',
+                      'color scheme',
+                      'mode',
+                    ]}
                     onSelect={() => {
-                      if (
-                        !confirm('Are you sure you want to delete this note?')
-                      ) {
-                        return;
-                      }
+                      setTheme('dark');
+                      closePalette();
+                    }}
+                    className={cn(
+                      commandItemRowClass,
+                      'group text-foreground',
+                      'aria-selected:bg-accent aria-selected:text-accent-foreground',
+                    )}
+                  >
+                    <PaletteItemIcon
+                      icon={Moon02Icon}
+                      className="text-muted-foreground group-aria-selected:text-accent-foreground"
+                    />
+                    <span className="min-w-0 flex-1">Use dark theme</span>
+                    {theme === 'dark' ? (
+                      <span className="shrink-0 text-muted-foreground text-xs">
+                        (current)
+                      </span>
+                    ) : null}
+                  </Command.Item>
+                  <Command.Item
+                    value="use-system-theme"
+                    keywords={[
+                      'system',
+                      'auto',
+                      'os',
+                      'default',
+                      'appearance',
+                      'theme',
+                      'color scheme',
+                      'mode',
+                    ]}
+                    onSelect={() => {
+                      setTheme('system');
+                      closePalette();
+                    }}
+                    className={cn(
+                      commandItemRowClass,
+                      'group text-foreground',
+                      'aria-selected:bg-accent aria-selected:text-accent-foreground',
+                    )}
+                  >
+                    <PaletteItemIcon
+                      icon={ComputerIcon}
+                      className="text-muted-foreground group-aria-selected:text-accent-foreground"
+                    />
+                    <span className="min-w-0 flex-1">Use system theme</span>
+                    {theme === 'system' ? (
+                      <span className="shrink-0 text-muted-foreground text-xs">
+                        (current)
+                      </span>
+                    ) : null}
+                  </Command.Item>
+                </Command.Group>
+                <Command.Group
+                  heading="Account"
+                  className={groupHeadingClassName}
+                >
+                  <Command.Item
+                    value="sign-out"
+                    disabled={busy}
+                    keywords={['logout', 'log out', 'exit']}
+                    onSelect={() => {
                       fetcher.submit(null, {
                         method: 'post',
-                        action: deleteNoteAction,
+                        action: LOGOUT_ACTION,
                       });
-                      setOpen(false);
+                      closePalette();
                     }}
                     className={cn(
                       commandItemRowClass,
@@ -429,171 +657,43 @@ export function CommandPalette(): JSX.Element {
                     )}
                   >
                     <PaletteItemIcon
-                      icon={NoteRemoveIcon}
+                      icon={Logout01Icon}
                       className="text-destructive group-aria-selected:text-destructive"
                     />
                     <span className="min-w-0 flex-1">
-                      {busy && pendingAction === deleteNoteAction
-                        ? 'Deleting...'
-                        : 'Delete this note'}
+                      {busy && pendingAction === LOGOUT_ACTION
+                        ? 'Signing out...'
+                        : 'Sign out'}
                     </span>
                   </Command.Item>
                 </Command.Group>
-              ) : null}
-              <Command.Group
-                heading="Appearance"
-                className={groupHeadingClassName}
+              </Command.List>
+              <div
+                className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border/40 px-3 py-2 text-muted-foreground text-xs"
+                aria-hidden
               >
-                <Command.Item
-                  value="use-light-theme"
-                  keywords={[
-                    'light',
-                    'appearance',
-                    'theme',
-                    'color scheme',
-                    'mode',
-                  ]}
-                  onSelect={() => {
-                    setTheme('light');
-                    setOpen(false);
-                  }}
-                  className={cn(
-                    commandItemRowClass,
-                    'group text-foreground',
-                    'aria-selected:bg-accent aria-selected:text-accent-foreground',
-                  )}
-                >
-                  <PaletteItemIcon
-                    icon={Sun01Icon}
-                    className="text-muted-foreground group-aria-selected:text-accent-foreground"
-                  />
-                  <span className="min-w-0 flex-1">Use light theme</span>
-                  {theme === 'light' ? (
-                    <span className="shrink-0 text-muted-foreground text-xs">
-                      (current)
-                    </span>
-                  ) : null}
-                </Command.Item>
-                <Command.Item
-                  value="use-dark-theme"
-                  keywords={[
-                    'dark',
-                    'appearance',
-                    'theme',
-                    'color scheme',
-                    'mode',
-                  ]}
-                  onSelect={() => {
-                    setTheme('dark');
-                    setOpen(false);
-                  }}
-                  className={cn(
-                    commandItemRowClass,
-                    'group text-foreground',
-                    'aria-selected:bg-accent aria-selected:text-accent-foreground',
-                  )}
-                >
-                  <PaletteItemIcon
-                    icon={Moon02Icon}
-                    className="text-muted-foreground group-aria-selected:text-accent-foreground"
-                  />
-                  <span className="min-w-0 flex-1">Use dark theme</span>
-                  {theme === 'dark' ? (
-                    <span className="shrink-0 text-muted-foreground text-xs">
-                      (current)
-                    </span>
-                  ) : null}
-                </Command.Item>
-                <Command.Item
-                  value="use-system-theme"
-                  keywords={[
-                    'system',
-                    'auto',
-                    'os',
-                    'default',
-                    'appearance',
-                    'theme',
-                    'color scheme',
-                    'mode',
-                  ]}
-                  onSelect={() => {
-                    setTheme('system');
-                    setOpen(false);
-                  }}
-                  className={cn(
-                    commandItemRowClass,
-                    'group text-foreground',
-                    'aria-selected:bg-accent aria-selected:text-accent-foreground',
-                  )}
-                >
-                  <PaletteItemIcon
-                    icon={ComputerIcon}
-                    className="text-muted-foreground group-aria-selected:text-accent-foreground"
-                  />
-                  <span className="min-w-0 flex-1">Use system theme</span>
-                  {theme === 'system' ? (
-                    <span className="shrink-0 text-muted-foreground text-xs">
-                      (current)
-                    </span>
-                  ) : null}
-                </Command.Item>
-              </Command.Group>
-              <Command.Group
-                heading="Account"
-                className={groupHeadingClassName}
-              >
-                <Command.Item
-                  value="sign-out"
-                  disabled={busy}
-                  keywords={['logout', 'log out', 'exit']}
-                  onSelect={() => {
-                    fetcher.submit(null, {
-                      method: 'post',
-                      action: LOGOUT_ACTION,
-                    });
-                    setOpen(false);
-                  }}
-                  className={cn(
-                    commandItemRowClass,
-                    'group text-destructive',
-                    'aria-selected:bg-destructive/15 aria-selected:text-destructive',
-                    'aria-disabled:pointer-events-none aria-disabled:opacity-50',
-                  )}
-                >
-                  <PaletteItemIcon
-                    icon={Logout01Icon}
-                    className="text-destructive group-aria-selected:text-destructive"
-                  />
-                  <span className="min-w-0 flex-1">
-                    {busy && pendingAction === LOGOUT_ACTION
-                      ? 'Signing out...'
-                      : 'Sign out'}
+                <span>
+                  Back{' '}
+                  <span className={notaKbdFooterClass}>
+                    {historyBackHotkeyLabel}
                   </span>
-                </Command.Item>
-              </Command.Group>
-            </Command.List>
-            <div
-              className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border/40 px-3 py-2 text-muted-foreground text-xs"
-              aria-hidden
-            >
-              <span>
-                Back <span className={notaKbdFooterClass}>{historyBackHotkeyLabel}</span>
-              </span>
-              <span>
-                Forward{' '}
-                <span className={notaKbdFooterClass}>
-                  {historyForwardHotkeyLabel}
                 </span>
-              </span>
-            </div>
-          </Command>
-          <Dialog.Close
-            type="button"
-            className="sr-only"
-            aria-label="Close command palette"
-          >
-            Close
-          </Dialog.Close>
+                <span>
+                  Forward{' '}
+                  <span className={notaKbdFooterClass}>
+                    {historyForwardHotkeyLabel}
+                  </span>
+                </span>
+              </div>
+            </Command>
+            <Dialog.Close
+              type="button"
+              className="sr-only"
+              aria-label="Close command palette"
+            >
+              Close
+            </Dialog.Close>
+          </div>
         </Dialog.Popup>
       </Dialog.Portal>
     </Dialog.Root>

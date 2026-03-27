@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import {
   NavLink,
   Outlet,
@@ -50,6 +50,14 @@ import { useTodaysNoteShortcut } from '../lib/use-todays-note-shortcut';
 import { useSyncUserPreferences } from '../lib/use-sync-user-preferences';
 import { useNotaPreferencesStore } from '../stores/nota-preferences';
 import type { Note, UserPreferences } from '~/types/database.types';
+import {
+  gsap,
+  NOTA_MOTION_EASE_IN_OUT,
+  NOTA_SIDEBAR_S,
+  NOTA_SIDEBAR_WIDTH_PX,
+  useGSAP,
+  usePrefersReducedMotion,
+} from '@/lib/nota-motion';
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { supabase, headers, user } = await requireAuth(request);
@@ -102,7 +110,10 @@ export async function action({ request }: ActionFunctionArgs) {
     const row = await upsertUserPreferences(supabase, user.id, {
       open_todays_note_shortcut: parsed.data.openTodaysNoteShortcut,
     });
-    return Response.json({ ok: true as const, userPreferences: row }, { headers });
+    return Response.json(
+      { ok: true as const, userPreferences: row },
+      { headers },
+    );
   }
 
   const newNote = await createNote(supabase, user.id);
@@ -282,9 +293,13 @@ function SidebarToggle({ className }: { className?: string }) {
 }
 
 export default function NotesLayout() {
-  const { notes, error, userPreferences } = useLoaderData() as unknown as NotesLayoutLoaderData;
+  const { notes, error, userPreferences } =
+    useLoaderData() as unknown as NotesLayoutLoaderData;
   const { noteId } = useParams();
   const { open } = useNotesSidebarStore();
+  const asideRef = useRef<HTMLElement>(null);
+  const prefersReducedMotion = usePrefersReducedMotion();
+  const sidebarMotionReadyRef = useRef(false);
   const { user } = useRootLoaderData() ?? { user: null };
   const { registerScrollRoot, resetSticky, sticky } = useStickyDocTitle();
   const isElectron = useIsElectron();
@@ -322,6 +337,41 @@ export default function NotesLayout() {
       resetSticky();
     };
   }, [registerScrollRoot, resetSticky]);
+
+  useGSAP(
+    () => {
+      const el = asideRef.current;
+      if (!el) {
+        return;
+      }
+
+      if (prefersReducedMotion) {
+        gsap.set(el, {
+          maxWidth: open ? NOTA_SIDEBAR_WIDTH_PX : 0,
+          opacity: open ? 1 : 0,
+        });
+        return;
+      }
+
+      if (!sidebarMotionReadyRef.current) {
+        sidebarMotionReadyRef.current = true;
+        gsap.set(el, {
+          maxWidth: open ? NOTA_SIDEBAR_WIDTH_PX : 0,
+          opacity: open ? 1 : 0,
+        });
+        return;
+      }
+
+      gsap.to(el, {
+        maxWidth: open ? NOTA_SIDEBAR_WIDTH_PX : 0,
+        opacity: open ? 1 : 0,
+        duration: NOTA_SIDEBAR_S,
+        ease: NOTA_MOTION_EASE_IN_OUT,
+        overwrite: 'auto',
+      });
+    },
+    { dependencies: [open, prefersReducedMotion] },
+  );
 
   const notesChrome =
     'bg-background/55 backdrop-blur-xl backdrop-saturate-150 text-foreground';
@@ -361,10 +411,11 @@ export default function NotesLayout() {
           </div>
         ) : null}
         <aside
+          ref={asideRef}
           className={cn(
-            'flex h-full min-h-0 flex-col transition-all duration-300 ease-in-out',
+            'flex h-full min-h-0 min-w-0 shrink-0 flex-col overflow-hidden',
             notesChrome,
-            open ? 'w-72 opacity-100' : 'w-0 overflow-hidden opacity-0',
+            !open && 'pointer-events-none',
           )}
           aria-hidden={!open}
         >
