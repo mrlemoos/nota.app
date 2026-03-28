@@ -21,6 +21,7 @@ files:
     filter:
       - "**/*"
 mac:
+  icon: buildResources/icon.icns
   entitlements: buildResources/entitlements.mac.plist
   entitlementsInherit: buildResources/entitlements.mac.plist
   category: public.app-category.productivity
