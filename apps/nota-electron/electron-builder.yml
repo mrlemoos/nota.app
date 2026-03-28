@@ -1,6 +1,8 @@
 appId: app.nota.desktop
 productName: Nota
 electronVersion: 35.7.5
+# Workspaces: production install in appDir prunes the repo root node_modules.
+npmRebuild: false
 publish:
   provider: github
   owner: mrlemoos
