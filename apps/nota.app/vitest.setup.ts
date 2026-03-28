@@ -11,12 +11,15 @@ if (typeof HTMLCanvasElement !== 'undefined') {
 
 process.env.VITE_SUPABASE_URL = 'http://localhost:54321';
 process.env.VITE_SUPABASE_ANON_KEY = 'test-anon-key';
+process.env.VITE_REVENUECAT_API_KEY = '';
+process.env.REVENUECAT_SECRET_API_KEY = '';
 
 vi.stubGlobal('import', {
   meta: {
     env: {
       VITE_SUPABASE_URL: 'http://localhost:54321',
       VITE_SUPABASE_ANON_KEY: 'test-anon-key',
+      VITE_REVENUECAT_API_KEY: '',
     },
   },
 });

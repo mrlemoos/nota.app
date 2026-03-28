@@ -48,6 +48,15 @@ import { useNotesHistoryShortcut } from '../lib/use-notes-history-shortcut';
 import { useNotesSidebarShortcut } from '../lib/use-notes-sidebar-shortcut';
 import { useTodaysNoteShortcut } from '../lib/use-todays-note-shortcut';
 import { useSyncUserPreferences } from '../lib/use-sync-user-preferences';
+import { NotaProGate } from '../components/nota-pro-gate';
+import {
+  invalidateServerNotaProCache,
+  getServerNotaProEntitled,
+} from '../lib/revenuecat/subscriber.server';
+import {
+  readNotaServerEntitledSession,
+  syncNotaServerEntitledSession,
+} from '../lib/revenuecat/nota-notes-entitled-session';
 import { useNotaPreferencesStore } from '../stores/nota-preferences';
 import type { Note, UserPreferences } from '~/types/database.types';
 import {
@@ -61,6 +70,21 @@ import {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { supabase, headers, user } = await requireAuth(request);
+
+  const hasNotaPro = await getServerNotaProEntitled(user.id);
+
+  if (!hasNotaPro) {
+    return {
+      notaProLocked: true as const,
+      notes: [] as Note[],
+      userPreferences: {
+        user_id: user.id,
+        open_todays_note_shortcut: false,
+        updated_at: new Date(0).toISOString(),
+      },
+      headers,
+    };
+  }
 
   let notes: Note[] = [];
   let error: string | undefined;
@@ -84,6 +108,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return {
+    notaProLocked: false as const,
     notes,
     userPreferences,
     headers,
@@ -95,6 +120,19 @@ export async function action({ request }: ActionFunctionArgs) {
   const { user, supabase, headers } = await requireAuth(request);
   const formData = await request.formData();
   const intent = formData.get('intent');
+
+  if (intent === 'invalidateNotaProCache') {
+    invalidateServerNotaProCache(user.id);
+    return Response.json({ ok: true as const }, { headers });
+  }
+
+  const hasNotaPro = await getServerNotaProEntitled(user.id);
+  if (!hasNotaPro) {
+    return Response.json(
+      { ok: false as const, error: 'nota_pro_required' as const },
+      { status: 403, headers },
+    );
+  }
 
   if (intent === 'updateUserPreferences') {
     const parsed = updateUserPreferencesFormSchema.safeParse({
@@ -135,9 +173,12 @@ export async function notesLayoutClientLoader({
     client = getBrowserClient();
   } catch {
     try {
-      return await serverLoader();
+      const data = await serverLoader<typeof loader>();
+      syncNotaServerEntitledSession(!data.notaProLocked);
+      return data;
     } catch {
       return {
+        notaProLocked: true as const,
         notes: [],
         userPreferences: null,
         headers: new Headers(),
@@ -152,9 +193,12 @@ export async function notesLayoutClientLoader({
 
   if (!userId) {
     try {
-      return await serverLoader();
+      const data = await serverLoader<typeof loader>();
+      syncNotaServerEntitledSession(!data.notaProLocked);
+      return data;
     } catch {
       return {
+        notaProLocked: true as const,
         notes: [],
         userPreferences: null,
         headers: new Headers(),
@@ -164,6 +208,10 @@ export async function notesLayoutClientLoader({
 
   try {
     const data = await serverLoader<typeof loader>();
+    syncNotaServerEntitledSession(!data.notaProLocked);
+    if (data.notaProLocked) {
+      return { ...data };
+    }
     for (const n of data.notes) {
       await putServerNoteIfNotDirty(userId, n);
     }
@@ -174,12 +222,21 @@ export async function notesLayoutClientLoader({
     if (isLikelyOnline()) {
       throw e;
     }
+    if (!readNotaServerEntitledSession()) {
+      return {
+        notaProLocked: true as const,
+        notes: [],
+        userPreferences: null,
+        headers: new Headers(),
+      };
+    }
     const stored = await listStoredNotes(userId);
     const active = stored.filter((r) => !r.pending_delete);
     const notes = active
       .map(storedNoteToListRow)
       .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
     return {
+      notaProLocked: false as const,
       notes,
       userPreferences: null,
       headers: new Headers(),
@@ -192,6 +249,7 @@ export const clientLoader = Object.assign(notesLayoutClientLoader, {
 });
 
 export type NotesLayoutLoaderData = {
+  notaProLocked: boolean;
   notes: Note[];
   headers: Headers;
   error?: string;
@@ -293,7 +351,7 @@ function SidebarToggle({ className }: { className?: string }) {
 }
 
 export default function NotesLayout() {
-  const { notes, error, userPreferences } =
+  const { notes, error, userPreferences, notaProLocked } =
     useLoaderData() as unknown as NotesLayoutLoaderData;
   const { noteId } = useParams();
   const { open } = useNotesSidebarStore();
@@ -301,6 +359,7 @@ export default function NotesLayout() {
   const prefersReducedMotion = usePrefersReducedMotion();
   const sidebarMotionReadyRef = useRef(false);
   const { user } = useRootLoaderData() ?? { user: null };
+  const notesUnlocked = !notaProLocked;
   const { registerScrollRoot, resetSticky, sticky } = useStickyDocTitle();
   const isElectron = useIsElectron();
   const { revalidate } = useRevalidator();
@@ -309,11 +368,15 @@ export default function NotesLayout() {
   );
 
   useSyncUserPreferences(userPreferences);
-  useNotesHistoryShortcut(user?.id);
-  useNotesSidebarShortcut(user?.id);
-  useTodaysNoteShortcut(notes, user?.id, openTodaysNoteShortcut);
+  useNotesHistoryShortcut(user?.id, notesUnlocked);
+  useNotesSidebarShortcut(user?.id, notesUnlocked);
+  useTodaysNoteShortcut(
+    notes,
+    user?.id,
+    openTodaysNoteShortcut && notesUnlocked,
+  );
 
-  useNotesOfflineSync(user?.id);
+  useNotesOfflineSync(user?.id, notesUnlocked);
 
   useEffect(() => {
     if (!user?.id || !isLikelyOnline()) {
@@ -375,6 +438,10 @@ export default function NotesLayout() {
 
   const notesChrome =
     'bg-background/55 backdrop-blur-xl backdrop-saturate-150 text-foreground';
+
+  if (!notesUnlocked) {
+    return <NotaProGate />;
+  }
 
   return (
     <>

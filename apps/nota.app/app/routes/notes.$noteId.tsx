@@ -10,6 +10,7 @@ import {
 } from 'react-router';
 import { useState, useCallback, useEffect } from 'react';
 import { requireAuth } from '../lib/supabase/auth';
+import { getServerNotaProEntitled } from '../lib/revenuecat/subscriber.server';
 import { getNote, deleteNote } from '../models/notes';
 import { listNoteAttachments } from '../models/note-attachments';
 import { NoteEditor } from '../components/note-editor';
@@ -32,7 +33,7 @@ import {
 } from '../lib/notes-offline';
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { supabase, headers } = await requireAuth(request);
+  const { supabase, headers, user } = await requireAuth(request);
   const { noteId } = params;
 
   if (!noteId) {
@@ -40,6 +41,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       status: 302,
       headers: { ...headers, Location: '/notes' },
     });
+  }
+
+  if (!(await getServerNotaProEntitled(user.id))) {
+    const resHeaders = new Headers(headers);
+    resHeaders.set('Content-Type', 'application/json');
+    throw new Response(
+      JSON.stringify({ error: 'nota_pro_required' as const }),
+      { status: 403, headers: resHeaders },
+    );
   }
 
   const note = await getNote(supabase, noteId);
@@ -54,7 +64,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { supabase, headers } = await requireAuth(request);
+  const { supabase, headers, user } = await requireAuth(request);
   const { noteId } = params;
 
   if (!noteId) {
@@ -62,6 +72,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
       status: 302,
       headers: { ...headers, Location: '/notes' },
     });
+  }
+
+  if (!(await getServerNotaProEntitled(user.id))) {
+    return Response.json(
+      { ok: false as const, error: 'nota_pro_required' as const },
+      { status: 403, headers },
+    );
   }
 
   await deleteNote(supabase, noteId);
@@ -84,7 +101,10 @@ export async function noteDetailClientLoader({
   } catch {
     try {
       return await serverLoader();
-    } catch {
+    } catch (e) {
+      if (e instanceof Response && e.status === 403) {
+        throw redirect('/notes');
+      }
       throw new Response('Note not found', { status: 404 });
     }
   }
@@ -97,7 +117,10 @@ export async function noteDetailClientLoader({
   if (!noteId) {
     try {
       return await serverLoader();
-    } catch {
+    } catch (e) {
+      if (e instanceof Response && e.status === 403) {
+        throw redirect('/notes');
+      }
       throw redirect('/notes');
     }
   }
@@ -105,7 +128,10 @@ export async function noteDetailClientLoader({
   if (!userId) {
     try {
       return await serverLoader();
-    } catch {
+    } catch (e) {
+      if (e instanceof Response && e.status === 403) {
+        throw redirect('/notes');
+      }
       throw new Response('Note not found', { status: 404 });
     }
   }
@@ -117,6 +143,9 @@ export async function noteDetailClientLoader({
     const note = mergeNoteWithLocal(data.note, local);
     return { ...data, note };
   } catch (e) {
+    if (e instanceof Response && e.status === 403) {
+      throw redirect('/notes');
+    }
     const local = await getStoredNote(userId, noteId);
     if (local && !local.pending_delete && local.pending_create) {
       const note = storedNoteToListRow(local);

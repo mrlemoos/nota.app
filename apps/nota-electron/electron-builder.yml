@@ -1,5 +1,9 @@
 appId: app.nota.desktop
 productName: Nota
+publish:
+  provider: github
+  owner: mrlemoos
+  repo: nota.app
 directories:
   output: release
   buildResources: buildResources
@@ -14,6 +18,8 @@ files:
     filter:
       - "**/*"
 mac:
+  entitlements: buildResources/entitlements.mac.plist
+  entitlementsInherit: buildResources/entitlements.mac.plist
   category: public.app-category.productivity
   target:
     - target: dmg
@@ -25,6 +31,8 @@ mac:
         - arm64
         - x64
   hardenedRuntime: true
+  # When CSC_* env vars and APPLE_ID / APPLE_APP_SPECIFIC_PASSWORD / APPLE_TEAM_ID are set in CI, set to true for notarisation.
+  notarize: false
 dmg:
   contents:
     - x: 130

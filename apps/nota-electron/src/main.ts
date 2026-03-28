@@ -1,5 +1,6 @@
 import { app, BrowserWindow } from 'electron';
-import { existsSync } from 'node:fs';
+import { autoUpdater } from 'electron-updater';
+import { existsSync, readdirSync, statSync } from 'node:fs';
 import { spawn, ChildProcess } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -87,23 +88,40 @@ async function startServer(): Promise<void> {
   // In prod, spawn react-router-serve
   const appRoot = getAppRoot();
 
-  // Try multiple possible server build paths
+  const serverDir = path.join(appRoot, 'nota.app', 'build', 'server');
   const possibleServerPaths = [
-    path.join(appRoot, 'nota.app', 'build', 'server', 'index.js'),
+    path.join(serverDir, 'index.js'),
     path.join(appRoot, 'nota.app', 'build', 'index.js'),
     path.join(appRoot, 'nota.app', 'dist', 'server', 'index.js'),
     path.join(appRoot, 'nota.app', 'dist', 'index.js'),
   ];
 
   let serverBuildPath = '';
-  for (const path of possibleServerPaths) {
+  for (const candidate of possibleServerPaths) {
     try {
-      await import('fs').then(({ promises }) => promises.access(path));
-      serverBuildPath = path;
-      console.log(`Found server build at: ${path}`);
+      await import('fs').then(({ promises }) => promises.access(candidate));
+      serverBuildPath = candidate;
+      console.log(`Found server build at: ${candidate}`);
       break;
     } catch {
       // Path doesn't exist, try next
+    }
+  }
+
+  if (!serverBuildPath && existsSync(serverDir)) {
+    try {
+      for (const name of readdirSync(serverDir)) {
+        const sub = path.join(serverDir, name);
+        if (!statSync(sub).isDirectory()) continue;
+        const nestedIndex = path.join(sub, 'index.js');
+        if (existsSync(nestedIndex)) {
+          serverBuildPath = nestedIndex;
+          console.log(`Found server build at: ${nestedIndex}`);
+          break;
+        }
+      }
+    } catch {
+      // ignore
     }
   }
 
@@ -190,6 +208,20 @@ function stopServer(): void {
   }
 }
 
+function registerAutoUpdater(): void {
+  if (!app.isPackaged) {
+    return;
+  }
+  autoUpdater.autoDownload = true;
+  autoUpdater.on('error', (error) => {
+    console.error('[nota-electron] auto-updater error', error);
+  });
+  autoUpdater.on('update-downloaded', () => {
+    console.log('[nota-electron] update downloaded; restart to apply');
+  });
+  void autoUpdater.checkForUpdatesAndNotify();
+}
+
 // Single instance lock
 const gotTheLock = app.requestSingleInstanceLock();
 
@@ -210,6 +242,7 @@ if (!gotTheLock) {
     try {
       await startServer();
       createWindow();
+      registerAutoUpdater();
     } catch (error) {
       console.error('Failed to start app:', error);
       app.quit();

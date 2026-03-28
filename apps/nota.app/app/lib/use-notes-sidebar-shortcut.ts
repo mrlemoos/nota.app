@@ -1,9 +1,12 @@
 import { useEffect, useEffectEvent } from 'react';
 import { useNotesSidebarStore } from '../stores/notes-sidebar';
 
-export function useNotesSidebarShortcut(userId: string | undefined): void {
+export function useNotesSidebarShortcut(
+  userId: string | undefined,
+  enabled = true,
+): void {
   const onKeyDown = useEffectEvent((e: KeyboardEvent): void => {
-    if (!userId) {
+    if (!userId || !enabled) {
       return;
     }
 
@@ -30,10 +33,10 @@ export function useNotesSidebarShortcut(userId: string | undefined): void {
   });
 
   useEffect(() => {
-    if (!userId) {
+    if (!userId || !enabled) {
       return;
     }
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [userId, onKeyDown]);
+  }, [userId, enabled, onKeyDown]);
 }

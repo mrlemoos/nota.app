@@ -5,11 +5,14 @@ import { drainNotesOutbox } from './notes-offline/sync-notes';
 /**
  * Periodically drains the notes outbox when the tab is visible or the network is back.
  */
-export function useNotesOfflineSync(userId: string | undefined): void {
+export function useNotesOfflineSync(
+  userId: string | undefined,
+  enabled = true,
+): void {
   const { revalidate } = useRevalidator();
 
   useEffect(() => {
-    if (!userId) {
+    if (!userId || !enabled) {
       return;
     }
 
@@ -38,5 +41,5 @@ export function useNotesOfflineSync(userId: string | undefined): void {
       document.removeEventListener('visibilitychange', onVisibility);
       window.clearInterval(intervalId);
     };
-  }, [userId, revalidate]);
+  }, [userId, enabled, revalidate]);
 }

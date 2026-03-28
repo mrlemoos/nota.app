@@ -12,6 +12,7 @@ import {
 
 import '../styles.css';
 
+import { RevenueCatBootstrap } from './components/revenuecat-bootstrap';
 import { SignedInCommandPalette } from './signed-in-command-palette';
 import { NoteEditorCommandsProvider } from './context/note-editor-commands';
 import { StickyDocTitleProvider } from './context/sticky-doc-title';
@@ -63,12 +64,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body className="font-sans">
         <ThemeProvider defaultTheme="system" storageKey="nota-ui-theme">
-          <StickyDocTitleProvider>
-            <NoteEditorCommandsProvider>
-              <SignedInCommandPalette />
-              {children}
-            </NoteEditorCommandsProvider>
-          </StickyDocTitleProvider>
+          <RevenueCatBootstrap>
+            <StickyDocTitleProvider>
+              <NoteEditorCommandsProvider>
+                <SignedInCommandPalette />
+                {children}
+              </NoteEditorCommandsProvider>
+            </StickyDocTitleProvider>
+          </RevenueCatBootstrap>
         </ThemeProvider>
         <ScrollRestoration />
         <Scripts />

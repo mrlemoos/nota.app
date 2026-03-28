@@ -1,0 +1,73 @@
+name: Release Electron (macOS)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Semver for this build (e.g. 1.2.3), written to apps/nota-electron/package.json'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set Electron package version from tag or input
+        working-directory: apps/nota-electron
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          fi
+          npm version "$VERSION" --no-git-tag-version --allow-same-version
+
+      - name: Prepare Apple code signing (optional)
+        id: signing
+        env:
+          APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          if [ -z "$APPLE_CERTIFICATE_BASE64" ]; then
+            echo "csc_link=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "$APPLE_CERTIFICATE_BASE64" | base64 --decode > "$RUNNER_TEMP/nota-certificate.p12"
+          security create-keychain -p actions nota-build.keychain
+          security default-keychain -s nota-build.keychain
+          security unlock-keychain -p actions nota-build.keychain
+          security set-keychain-settings -lut 21600 nota-build.keychain
+          security import "$RUNNER_TEMP/nota-certificate.p12" -k nota-build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k actions nota-build.keychain
+          echo "csc_link=$RUNNER_TEMP/nota-certificate.p12" >> "$GITHUB_OUTPUT"
+
+      - name: Build web app and publish Electron release
+        env:
+          CSC_LINK: ${{ steps.signing.outputs.csc_link }}
+          CSC_KEY_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          npx nx build @nota.app/nota.app
+          cd apps/nota-electron
+          npm run build
+          npx electron-builder --publish always

@@ -1,11 +1,14 @@
 import { useEffect, useEffectEvent } from 'react';
 import { useNavigate } from 'react-router';
 
-export function useNotesHistoryShortcut(userId: string | undefined): void {
+export function useNotesHistoryShortcut(
+  userId: string | undefined,
+  enabled = true,
+): void {
   const navigate = useNavigate();
 
   const onKeyDown = useEffectEvent((e: KeyboardEvent): void => {
-    if (!userId) {
+    if (!userId || !enabled) {
       return;
     }
 
@@ -31,11 +34,11 @@ export function useNotesHistoryShortcut(userId: string | undefined): void {
   });
 
   useEffect(() => {
-    if (!userId) {
+    if (!userId || !enabled) {
       return;
     }
     document.addEventListener('keydown', onKeyDown, { capture: true });
     return () =>
       document.removeEventListener('keydown', onKeyDown, { capture: true });
-  }, [userId, onKeyDown]);
+  }, [userId, enabled, onKeyDown]);
 }

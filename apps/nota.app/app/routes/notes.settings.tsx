@@ -9,9 +9,11 @@ import {
   type PreferencesFetcherData,
 } from '../lib/use-sync-user-preferences';
 import { useNotaPreferencesStore } from '../stores/nota-preferences';
+import { useRevenueCatSubscription } from '../context/revenuecat-subscription';
 
 export default function NotesSettings(): JSX.Element {
   const { user } = useRootLoaderData() ?? { user: null };
+  const revenueCat = useRevenueCatSubscription();
   const prefsFetcher = useFetcher<PreferencesFetcherData>();
   const openTodaysNoteShortcut = useNotaPreferencesStore(
     (s) => s.openTodaysNoteShortcut,
@@ -40,7 +42,7 @@ export default function NotesSettings(): JSX.Element {
             Settings
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Appearance, shortcuts, and your account.
+            Appearance, shortcuts, Nota Pro, and your account.
           </p>
         </div>
 
@@ -95,6 +97,87 @@ export default function NotesSettings(): JSX.Element {
             </Link>
           </p>
         </section>
+
+        {user ? (
+          <section className="space-y-3">
+            <h2 className="text-sm font-medium text-foreground">Nota Pro</h2>
+            <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 px-4 py-3">
+              {!revenueCat.available ? (
+                <p className="text-sm text-muted-foreground">
+                  Subscriptions are not configured in this environment (missing{' '}
+                  <span className="font-mono text-xs">VITE_REVENUECAT_API_KEY</span>
+                  ).
+                </p>
+              ) : revenueCat.isLoading ? (
+                <p className="text-sm text-muted-foreground">
+                  Checking subscription…
+                </p>
+              ) : (
+                <>
+                  {revenueCat.error ? (
+                    <div className="space-y-2">
+                      <p className="text-sm text-destructive">{revenueCat.error}</p>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => void revenueCat.refreshCustomerInfo()}
+                      >
+                        Try again
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-sm text-muted-foreground">
+                        {revenueCat.isPro
+                          ? 'You have an active Nota Pro entitlement on this account.'
+                          : 'Unlock Nota Pro with a monthly, yearly, or lifetime plan.'}
+                      </p>
+                      {revenueCat.paywallError ? (
+                        <p className="text-sm text-destructive">
+                          {revenueCat.paywallError}
+                        </p>
+                      ) : null}
+                      {!revenueCat.isPro ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled={
+                            !revenueCat.ready ||
+                            revenueCat.isPaywallBusy ||
+                            revenueCat.isLoading
+                          }
+                          onClick={() => void revenueCat.openPaywall()}
+                        >
+                          {revenueCat.isPaywallBusy ? 'Opening…' : 'Upgrade'}
+                        </Button>
+                      ) : null}
+                      {revenueCat.isPro && revenueCat.managementURL ? (
+                        <p className="text-sm">
+                          <a
+                            href={revenueCat.managementURL}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground"
+                          >
+                            Manage billing
+                          </a>
+                        </p>
+                      ) : null}
+                      {revenueCat.isPro && !revenueCat.managementURL ? (
+                        <p className="text-sm text-muted-foreground">
+                          Use the link in your subscription email from RevenueCat to
+                          open the customer portal, or contact support if you need
+                          help managing billing.
+                        </p>
+                      ) : null}
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          </section>
+        ) : null}
 
         {user ? (
           <section className="space-y-3">

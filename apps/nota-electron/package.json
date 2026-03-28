@@ -17,6 +17,7 @@
     "typescript": "~5.9.2"
   },
   "dependencies": {
+    "electron-updater": "^6.8.3",
     "wait-on": "^8.0.0"
   },
   "nx": {
