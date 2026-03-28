@@ -49,6 +49,10 @@ export default defineConfig(({ mode }) => {
       transformMixedEsModules: true,
     },
   },
+  ssr: {
+    // GSAP ships ESM; leaving it external makes Node's CJS loader choke on Vercel SSR.
+    noExternal: ['gsap', '@gsap/react'],
+  },
   test: {
     name: '@nota.app/nota.app',
     watch: false,
