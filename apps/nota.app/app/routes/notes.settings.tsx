@@ -1,6 +1,6 @@
 import { useLayoutEffect, useState, type JSX } from 'react';
 import { Form, Link, useFetcher } from 'react-router';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ModeToggle } from '../components/mode-toggle';
 import { useRootLoaderData } from '../root';
@@ -152,24 +152,52 @@ export default function NotesSettings(): JSX.Element {
                           {revenueCat.isPaywallBusy ? 'Opening…' : 'Upgrade'}
                         </Button>
                       ) : null}
-                      {revenueCat.isPro && revenueCat.managementURL ? (
-                        <p className="text-sm">
-                          <a
-                            href={revenueCat.managementURL}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground"
-                          >
-                            Manage billing
-                          </a>
-                        </p>
-                      ) : null}
-                      {revenueCat.isPro && !revenueCat.managementURL ? (
-                        <p className="text-sm text-muted-foreground">
-                          Use the link in your subscription email from RevenueCat to
-                          open the customer portal, or contact support if you need
-                          help managing billing.
-                        </p>
+                      {revenueCat.isPro ? (
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              disabled={
+                                !revenueCat.ready ||
+                                revenueCat.isPaywallBusy ||
+                                revenueCat.isLoading
+                              }
+                              onClick={() => void revenueCat.openPaywall()}
+                            >
+                              {revenueCat.isPaywallBusy
+                                ? 'Opening…'
+                                : 'Change subscription'}
+                            </Button>
+                            {revenueCat.managementURL ? (
+                              <a
+                                href={revenueCat.managementURL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={buttonVariants({
+                                  variant: 'outline',
+                                  size: 'sm',
+                                })}
+                              >
+                                Cancel subscription
+                              </a>
+                            ) : null}
+                          </div>
+                          {revenueCat.managementURL ? (
+                            <p className="text-sm text-muted-foreground">
+                              Billing opens in a new tab.
+                            </p>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">
+                              If you subscribed through the App Store or Google Play,
+                              manage or cancel in that store’s subscription
+                              settings. For web billing, use the link in your
+                              RevenueCat subscription email to open the customer
+                              portal. Contact support if you still cannot find a way
+                              to manage your plan.
+                            </p>
+                          )}
+                        </div>
                       ) : null}
                     </>
                   )}
