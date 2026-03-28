@@ -1,5 +1,6 @@
 appId: app.nota.desktop
 productName: Nota
+electronVersion: 35.7.5
 publish:
   provider: github
   owner: mrlemoos
