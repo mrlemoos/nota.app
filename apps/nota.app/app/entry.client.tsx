@@ -9,11 +9,18 @@ import { HydratedRouter } from 'react-router/dom';
 import { startTransition, StrictMode } from 'react';
 import { hydrateRoot } from 'react-dom/client';
 
+const POSTHOG_OPTIONS = {
+  api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST,
+  defaults: '2026-01-30',
+} as const;
+
+const POSTHOG_PROJECT_TOKEN = import.meta.env.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN;
+
 startTransition(() => {
   hydrateRoot(
     document,
     <StrictMode>
-      <PostHogProvider>
+      <PostHogProvider apiKey={POSTHOG_PROJECT_TOKEN} options={POSTHOG_OPTIONS}>
         <HydratedRouter />
       </PostHogProvider>
     </StrictMode>,
