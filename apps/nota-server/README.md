@@ -43,7 +43,7 @@ Use the **repository root** as the Railway service root (not `apps/nota-server` 
 
 [`railway.json`](../../railway.json) at the repo root sets:
 
-- **Build:** `npm ci && npx nx run @nota.app/nota-server:build`
+- **Build:** [`tools/railway-nota-server-build.sh`](../../tools/railway-nota-server-build.sh) — runs `rm -rf node_modules apps/*/node_modules` before `npm ci` to avoid **EBUSY** when npm replaces nested `node_modules` (e.g. Astro’s `.astro` under `apps/nota-marketing`), then `npm run build` in `apps/nota-server`.
 - **Start:** `node apps/nota-server/dist/index.js`
 
 Railpack picks **Node 22** from the root `package.json` `engines.node` and `apps/nota-server` `engines.node`. Set the same environment variables as in `.env.example`. Point `VITE_NOTA_SERVER_API_URL` in the SPA build to this service’s public URL (no trailing slash). Railway injects **`PORT`**; the server reads it automatically.
