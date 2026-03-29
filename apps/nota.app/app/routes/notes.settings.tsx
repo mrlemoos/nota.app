@@ -1,7 +1,7 @@
 import { useLayoutEffect, useState, type JSX } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { ModeToggle } from '../components/mode-toggle';
+import { ThemeMenu } from '../components/theme-menu';
 import { useRootLoaderData } from '../context/spa-session-context';
 import { useNotesData } from '../context/notes-data-context';
 import { submitUserPreferencesToggle } from '../lib/use-sync-user-preferences';
@@ -53,9 +53,9 @@ export default function NotesSettings(): JSX.Element {
 
         <section className="space-y-3">
           <h2 className="text-sm font-medium text-foreground">Appearance</h2>
-          <div className="flex items-center gap-3 rounded-lg border border-border/60 bg-muted/20 px-4 py-3">
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/20 px-4 py-3">
             <span className="text-sm text-muted-foreground">Theme</span>
-            <ModeToggle />
+            <ThemeMenu />
           </div>
         </section>
 
