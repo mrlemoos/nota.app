@@ -21,20 +21,47 @@ Desktop wrapper for nota.app using Electron.
 
 ## Production build (local)
 
-From the monorepo root:
+From the monorepo root, pack macOS artefacts without publishing (no GitHub token required):
 
 ```bash
-npx nx build @nota.app/nota.app
-cd apps/nota-electron && npm run build && npx electron-builder
+npx nx run @nota.app/nota-electron:electron:pack
 ```
 
-`electron-builder` copies `../nota.app/dist` into the app bundle. Output is under `apps/nota-electron/release/` (DMG and ZIP per architecture).
+Or the equivalent shorthand:
+
+```bash
+npm run electron:pack
+```
+
+`electron-builder` copies `../nota.app/dist` into the app bundle. Output is under `apps/nota-electron/release/` (DMG and ZIP per architecture). **macOS** is required for the current `electron-builder.yml` targets.
+
+## Publish to GitHub Releases (local)
+
+Set **`GH_TOKEN`** or **`GITHUB_TOKEN`** to a token with **`repo`** scope (classic PAT or fine-grained with contents read/write for this repository). Then from the monorepo root:
+
+```bash
+npm run release:electron
+```
+
+Same as:
+
+```bash
+npx nx run @nota.app/nota-electron:electron:release
+```
+
+Optional: bump `apps/nota-electron/package.json` for this run only (same as CI’s `npm version`):
+
+```bash
+npx nx run @nota.app/nota-electron:electron:release -- --version 1.2.3
+```
+
+If you omit `--version`, the version already in `apps/nota-electron/package.json` is used.
 
 ## GitHub Releases and auto-updates
 
 - **`electron-builder`** is configured with **`publish.provider: github`** (`owner` / `repo` in `electron-builder.yml`). Packaged apps embed **`app-update.yml`** for **`electron-updater`**.
 - **`main.ts`** calls **`checkForUpdatesAndNotify()`** only when **`app.isPackaged`**. Updates use the **ZIP** assets attached to each release (DMG is for first install).
-- **CI**: `.github/workflows/release-electron.yml` runs on **`v*`** tags and on **`workflow_dispatch`** (semver input). It syncs `apps/nota-electron/package.json` version, runs **`electron-builder --publish always`**, and uses **`GITHUB_TOKEN`** to upload assets and `latest-mac.yml`.
+- **CI**: `.github/workflows/release-electron.yml` runs on **`v*`** tags and on **`workflow_dispatch`** (semver input). It syncs `apps/nota-electron/package.json` version, then runs **`npx nx run @nota.app/nota-electron:electron:release`** (build + **`electron-builder --publish always`** via [`tools/electron-github-release.mjs`](../../tools/electron-github-release.mjs)). Actions sets **`GH_TOKEN`** from **`GITHUB_TOKEN`** to upload assets and `latest-mac.yml`.
 
 ### Optional repository secrets (macOS signing / notarisation)
 

@@ -53,6 +53,24 @@
             "cd apps/nota-electron && npx electron-builder"
           ]
         }
+      },
+      "electron:release": {
+        "executor": "nx:run-commands",
+        "dependsOn": [
+          {
+            "target": "build",
+            "projects": "nota.app"
+          },
+          {
+            "target": "build",
+            "projects": "self"
+          }
+        ],
+        "options": {
+          "cwd": ".",
+          "command": "node tools/electron-github-release.mjs",
+          "forwardAllArgs": true
+        }
       }
     },
     "tags": []

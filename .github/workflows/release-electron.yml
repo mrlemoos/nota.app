@@ -64,12 +64,9 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          npx nx build @nota.app/nota.app
-          cd apps/nota-electron
-          npm run build
           CSC_LINK_VALUE='${{ steps.signing.outputs.csc_link }}'
           if [ -n "$CSC_LINK_VALUE" ]; then
             export CSC_LINK="$CSC_LINK_VALUE"
             export CSC_KEY_PASSWORD='${{ secrets.APPLE_CERTIFICATE_PASSWORD }}'
           fi
-          npx electron-builder --publish always
+          npx nx run @nota.app/nota-electron:electron:release
