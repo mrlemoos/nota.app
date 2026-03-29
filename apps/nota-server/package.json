@@ -2,8 +2,13 @@
   "name": "@nota.app/nota-server",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
-    "start": "bun run src/index.ts",
+    "build": "npx esbuild src/index.ts --bundle --platform=node --target=node22 --format=esm --packages=external --outfile=dist/index.js",
+    "dev": "bun run src/index.ts",
+    "start": "node dist/index.js",
     "test": "bun test src/"
   },
   "dependencies": {
@@ -20,6 +25,22 @@
   "nx": {
     "sourceRoot": "apps/nota-server/src",
     "projectType": "application",
-    "tags": []
+    "tags": [],
+    "targets": {
+      "build": {
+        "executor": "nx:run-commands",
+        "options": {
+          "cwd": "apps/nota-server",
+          "command": "npm run build"
+        }
+      },
+      "dev": {
+        "executor": "nx:run-commands",
+        "options": {
+          "cwd": "apps/nota-server",
+          "command": "npm run dev"
+        }
+      }
+    }
   }
 }

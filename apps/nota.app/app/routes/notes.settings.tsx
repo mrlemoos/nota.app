@@ -12,7 +12,7 @@ import { hashForScreen, setAppHash } from '../lib/app-navigation';
 
 export default function NotesSettings(): JSX.Element {
   const { user } = useRootLoaderData();
-  const { setUserPreferencesInState } = useNotesData();
+  const { setUserPreferencesInState, notaProEntitled } = useNotesData();
   const openTodaysNoteShortcut = useNotaPreferencesStore(
     (s) => s.openTodaysNoteShortcut,
   );
@@ -77,6 +77,7 @@ export default function NotesSettings(): JSX.Element {
                   checked,
                   user?.id,
                   setUserPreferencesInState,
+                  notaProEntitled,
                 );
               }}
               className="mt-0.5 size-4 shrink-0 rounded border border-input accent-primary"

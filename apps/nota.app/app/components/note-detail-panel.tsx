@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Note, NoteAttachment } from '~/types/database.types';
 import { NoteEditor } from './note-editor';
 import { NoteBacklinksPanel } from './note-backlinks-panel';
@@ -20,9 +20,11 @@ import { listNoteAttachments } from '../models/note-attachments';
 import { hashForScreen } from '../lib/app-navigation';
 import { useNotesData } from '../context/notes-data-context';
 export function NoteDetailPanel({ noteId }: { noteId: string }): React.ReactNode {
-  const { notes, refreshNotesList } = useNotesData();
+  const { notes, refreshNotesList, notaProEntitled } = useNotesData();
   const [note, setNote] = useState<Note | null>(null);
   const [attachments, setAttachments] = useState<NoteAttachment[]>([]);
+  const notesRef = useRef(notes);
+  notesRef.current = notes;
 
   /** List row for the open id — avoids an empty state flash while the full fetch runs after a note switch. */
   const noteFromList = notes.find((n) => n.id === noteId) ?? null;
@@ -43,6 +45,38 @@ export function NoteDetailPanel({ noteId }: { noteId: string }): React.ReactNode
         return;
       }
 
+      const finishFromLocal = async (): Promise<void> => {
+        const local = await getStoredNote(uid, noteId);
+        const rowFromList =
+          notesRef.current.find((n) => n.id === noteId) ?? null;
+        if (local && !local.pending_delete) {
+          const merged = rowFromList
+            ? mergeNoteWithLocal(rowFromList, local)
+            : storedNoteToListRow(local);
+          if (!cancelled) {
+            setNote(merged);
+            setAttachments([]);
+          }
+          return;
+        }
+        if (rowFromList) {
+          if (!cancelled) {
+            setNote(rowFromList);
+            setAttachments([]);
+          }
+          return;
+        }
+        if (!cancelled) {
+          setNote(null);
+          setAttachments([]);
+        }
+      };
+
+      if (!notaProEntitled) {
+        await finishFromLocal();
+        return;
+      }
+
       try {
         const row = await getNote(client, noteId);
         if (row) {
@@ -58,35 +92,11 @@ export function NoteDetailPanel({ noteId }: { noteId: string }): React.ReactNode
         }
       } catch (e) {
         if (isLikelyOnline()) {
-          if (!cancelled) {
-            setNote(null);
-            setAttachments([]);
-          }
-          throw e;
+          console.error(e);
         }
       }
 
-      const local = await getStoredNote(uid, noteId);
-      if (local && !local.pending_delete && local.pending_create) {
-        const synthetic = storedNoteToListRow(local);
-        if (!cancelled) {
-          setNote(synthetic);
-          setAttachments([]);
-        }
-        return;
-      }
-      if (!isLikelyOnline() && local && !local.pending_delete) {
-        const synthetic = storedNoteToListRow(local);
-        if (!cancelled) {
-          setNote(synthetic);
-          setAttachments([]);
-        }
-        return;
-      }
-      if (!cancelled) {
-        setNote(null);
-        setAttachments([]);
-      }
+      await finishFromLocal();
     }
 
     void load().catch(() => {
@@ -99,7 +109,7 @@ export function NoteDetailPanel({ noteId }: { noteId: string }): React.ReactNode
     return () => {
       cancelled = true;
     };
-  }, [noteId]);
+  }, [noteId, notaProEntitled]);
 
   const handleNoteUpdated = useCallback(
     (updatedNote: Note) => {

@@ -13,6 +13,7 @@ import { useStickyDocTitle } from '../context/sticky-doc-title';
 import { persistedDisplayTitle } from '../lib/note-title';
 import { getBrowserClient } from '../lib/supabase/browser';
 import { useRootLoaderData } from '../context/spa-session-context';
+import { useNotesData } from '../context/notes-data-context';
 import { mergeUpdatedNoteLocalContent } from '../lib/note-updated-content-merge';
 import {
   drainNotesOutbox,
@@ -49,6 +50,7 @@ export function NoteEditor({
   onNoteUpdated,
 }: NoteEditorProps) {
   const { user } = useRootLoaderData() ?? { user: null };
+  const { notaProEntitled } = useNotesData();
   const { scrollRootRef, scrollRootEpoch, setSticky, resetSticky } =
     useStickyDocTitle();
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>(
@@ -68,9 +70,11 @@ export function NoteEditor({
   const noteRef = useRef(note);
   const onNoteUpdatedRef = useRef(onNoteUpdated);
   const userIdRef = useRef(user?.id);
+  const notaProEntitledRef = useRef(notaProEntitled);
   noteRef.current = note;
   onNoteUpdatedRef.current = onNoteUpdated;
   userIdRef.current = user?.id;
+  notaProEntitledRef.current = notaProEntitled;
 
   useEffect(() => {
     resetSticky();
@@ -154,7 +158,7 @@ export function NoteEditor({
         }
         setSaveStatus('saved');
 
-        if (isLikelyOnline()) {
+        if (isLikelyOnline() && notaProEntitledRef.current) {
           const client = getBrowserClient();
           const updatedNote = await updateNote(client, note.id, { title: next });
           if (user?.id) {
@@ -185,7 +189,7 @@ export function NoteEditor({
       } catch (error) {
         console.error('Failed to save title:', error);
         setSaveStatus('error');
-        if (user?.id) {
+        if (user?.id && notaProEntitledRef.current) {
           void drainNotesOutbox(user.id);
         }
       }
@@ -249,7 +253,7 @@ export function NoteEditor({
         lastSavedContent.current = mergedBody;
         setSaveStatus('saved');
 
-        if (isLikelyOnline()) {
+        if (isLikelyOnline() && notaProEntitledRef.current) {
           const client = getBrowserClient();
           const updatedNote = await updateNote(client, note.id, {
             content: toSave as Json,
@@ -281,7 +285,7 @@ export function NoteEditor({
       } catch (error) {
         console.error('Failed to save note:', error);
         setSaveStatus('error');
-        if (user?.id) {
+        if (user?.id && notaProEntitledRef.current) {
           void drainNotesOutbox(user.id);
         }
       }
@@ -323,7 +327,7 @@ export function NoteEditor({
         is_deadline: isDeadline,
         editor_settings: n.editor_settings,
       });
-      if (isLikelyOnline()) {
+      if (isLikelyOnline() && notaProEntitledRef.current) {
         const client = getBrowserClient();
         const updatedNote = await updateNote(client, n.id, {
           due_at: dueAt,
@@ -355,7 +359,9 @@ export function NoteEditor({
     } catch (error) {
       console.error('Failed to save due date:', error);
       setSaveStatus('error');
-      void drainNotesOutbox(userId);
+      if (notaProEntitledRef.current) {
+        void drainNotesOutbox(userId);
+      }
     }
   }, []);
 
@@ -381,7 +387,7 @@ export function NoteEditor({
         is_deadline: n.is_deadline,
         editor_settings: json,
       });
-      if (isLikelyOnline()) {
+      if (isLikelyOnline() && notaProEntitledRef.current) {
         const client = getBrowserClient();
         const updatedNote = await updateNote(client, n.id, {
           editor_settings: json,
@@ -411,7 +417,9 @@ export function NoteEditor({
     } catch (error) {
       console.error('Failed to save note layout:', error);
       setSaveStatus('error');
-      void drainNotesOutbox(userId);
+      if (notaProEntitledRef.current) {
+        void drainNotesOutbox(userId);
+      }
     }
   }, []);
 

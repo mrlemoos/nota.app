@@ -85,6 +85,7 @@ export function CommandPalette(): JSX.Element {
       : null;
   const {
     notes,
+    notaProEntitled,
     refreshNotesList,
     insertNoteAtFront,
     removeNoteFromList,
@@ -234,7 +235,11 @@ export function CommandPalette(): JSX.Element {
         setBusyAction('create');
         void (async () => {
           try {
-            await spaCreateNote({ insertNoteAtFront, refreshNotesList });
+            await spaCreateNote({
+              insertNoteAtFront,
+              refreshNotesList,
+              notaProEntitled,
+            });
             closePalette();
           } finally {
             setBusyAction(null);
@@ -317,6 +322,7 @@ export function CommandPalette(): JSX.Element {
                           await spaCreateNote({
                             insertNoteAtFront,
                             refreshNotesList,
+                            notaProEntitled,
                           });
                           closePalette();
                         } finally {
@@ -360,6 +366,7 @@ export function CommandPalette(): JSX.Element {
                               revalidate: () => {
                                 void refreshNotesList();
                               },
+                              notaProEntitled,
                             });
                             closePalette();
                           } finally {
@@ -531,6 +538,7 @@ export function CommandPalette(): JSX.Element {
                             await spaDeleteNoteById(activeNoteId, {
                               removeNoteFromList,
                               refreshNotesList,
+                              notaProEntitled,
                             });
                             closePalette();
                           } finally {

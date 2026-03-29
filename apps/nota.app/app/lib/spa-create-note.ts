@@ -7,6 +7,7 @@ import type { Note } from '~/types/database.types';
 export async function spaCreateNote(options: {
   insertNoteAtFront: (n: Note) => void;
   refreshNotesList: () => Promise<void>;
+  notaProEntitled: boolean;
 }): Promise<void> {
   const c = getBrowserClient();
   const {
@@ -20,7 +21,7 @@ export async function spaCreateNote(options: {
     setAppHash({ kind: 'notes', panel: 'note', noteId: id });
   }
 
-  if (!isLikelyOnline()) {
+  if (!isLikelyOnline() || !options.notaProEntitled) {
     const id = await createLocalOnlyNote(session.user.id);
     goToNote(id);
     await options.refreshNotesList();

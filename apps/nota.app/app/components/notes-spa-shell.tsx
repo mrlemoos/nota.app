@@ -15,7 +15,6 @@ import { useNotesHistoryShortcut } from '../lib/use-notes-history-shortcut';
 import { useNotesSidebarShortcut } from '../lib/use-notes-sidebar-shortcut';
 import { useTodaysNoteShortcut } from '../lib/use-todays-note-shortcut';
 import { useSyncUserPreferences } from '../lib/use-sync-user-preferences';
-import { NotaProGate } from './nota-pro-gate';
 import { useNotaPreferencesStore } from '../stores/nota-preferences';
 import type { Note } from '~/types/database.types';
 import {
@@ -158,7 +157,8 @@ export function NotesSpaShell(): JSX.Element {
     notes,
     loadError,
     userPreferences,
-    notaProLocked,
+    notaProEntitled,
+    loading,
     refreshNotesList,
     insertNoteAtFront,
     removeNoteFromList,
@@ -169,7 +169,7 @@ export function NotesSpaShell(): JSX.Element {
   const prefersReducedMotion = usePrefersReducedMotion();
   const sidebarMotionReadyRef = useRef(false);
   const { user } = useRootLoaderData();
-  const notesUnlocked = !notaProLocked;
+  const shellReady = !loading;
   const { registerScrollRoot, resetSticky, sticky } = useStickyDocTitle();
   const isElectron = useIsElectron();
   const openTodaysNoteShortcut = useNotaPreferencesStore(
@@ -180,17 +180,19 @@ export function NotesSpaShell(): JSX.Element {
     userPreferences,
     user?.id,
     setUserPreferencesInState,
+    notaProEntitled,
   );
 
-  useNotesHistoryShortcut(user?.id, notesUnlocked);
-  useNotesSidebarShortcut(user?.id, notesUnlocked);
+  useNotesHistoryShortcut(user?.id, shellReady);
+  useNotesSidebarShortcut(user?.id, shellReady);
   useTodaysNoteShortcut(
     notes,
     user?.id,
-    openTodaysNoteShortcut && notesUnlocked,
+    openTodaysNoteShortcut && shellReady,
+    notaProEntitled,
   );
 
-  useNotesOfflineSync(user?.id, notesUnlocked);
+  useNotesOfflineSync(user?.id, notaProEntitled && shellReady);
 
   useEffect(() => {
     return () => {
@@ -238,12 +240,12 @@ export function NotesSpaShell(): JSX.Element {
     'bg-background/55 backdrop-blur-xl backdrop-saturate-150 text-foreground';
 
   const onCreateNote = (): void => {
-    void spaCreateNote({ insertNoteAtFront, refreshNotesList });
+    void spaCreateNote({
+      insertNoteAtFront,
+      refreshNotesList,
+      notaProEntitled,
+    });
   };
-
-  if (!notesUnlocked) {
-    return <NotaProGate />;
-  }
 
   const graphHref = hashForScreen({
     kind: 'notes',
@@ -417,6 +419,7 @@ export function NotesSpaShell(): JSX.Element {
                                   void spaDeleteNoteById(note.id, {
                                     removeNoteFromList,
                                     refreshNotesList,
+                                    notaProEntitled,
                                   });
                                 }}
                               >

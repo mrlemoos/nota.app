@@ -6,7 +6,7 @@ import {
   notaProInvalidateHandler,
 } from './routes/nota-pro.ts';
 
-const PORT = Number(process.env.NOTA_SERVER_PORT ?? '8787');
+const PORT = Number(process.env.PORT ?? '8787');
 
 function parseCorsOrigins(): string[] {
   const raw = process.env.NOTA_SERVER_CORS_ORIGINS?.trim();

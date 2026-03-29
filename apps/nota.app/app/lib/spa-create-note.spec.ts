@@ -1,0 +1,91 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { spaCreateNote } from './spa-create-note';
+
+const getSession = vi.fn();
+const insertNoteAtFront = vi.fn();
+const refreshNotesList = vi.fn();
+
+vi.mock('./supabase/browser', () => ({
+  getBrowserClient: () => ({
+    auth: { getSession },
+  }),
+}));
+
+vi.mock('./notes-offline', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./notes-offline')>();
+  return {
+    ...actual,
+    createLocalOnlyNote: vi.fn(() => Promise.resolve('local-note-id')),
+    isLikelyOnline: vi.fn(),
+  };
+});
+
+vi.mock('../models/notes', () => ({
+  createNote: vi.fn(() =>
+    Promise.resolve({
+      id: 'server-note-id',
+      user_id: 'u1',
+      title: 'Untitled Note',
+      content: { type: 'doc', content: [] },
+      created_at: '',
+      updated_at: '',
+    }),
+  ),
+}));
+
+vi.mock('./app-navigation', () => ({
+  setAppHash: vi.fn(),
+}));
+
+import { createLocalOnlyNote, isLikelyOnline } from './notes-offline';
+import { createNote } from '../models/notes';
+
+describe('spaCreateNote', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    getSession.mockResolvedValue({
+      data: { session: { user: { id: 'u1' } } },
+    });
+  });
+
+  it('creates a local-only note when online but not Nota Pro', async () => {
+    vi.mocked(isLikelyOnline).mockReturnValue(true);
+
+    await spaCreateNote({
+      insertNoteAtFront,
+      refreshNotesList,
+      notaProEntitled: false,
+    });
+
+    expect(createNote).not.toHaveBeenCalled();
+    expect(createLocalOnlyNote).toHaveBeenCalledWith('u1');
+    expect(refreshNotesList).toHaveBeenCalled();
+  });
+
+  it('creates on the server when online and Nota Pro', async () => {
+    vi.mocked(isLikelyOnline).mockReturnValue(true);
+
+    await spaCreateNote({
+      insertNoteAtFront,
+      refreshNotesList,
+      notaProEntitled: true,
+    });
+
+    expect(createNote).toHaveBeenCalled();
+    expect(createLocalOnlyNote).not.toHaveBeenCalled();
+    expect(insertNoteAtFront).toHaveBeenCalled();
+  });
+
+  it('creates a local-only note when offline regardless of Pro', async () => {
+    vi.mocked(isLikelyOnline).mockReturnValue(false);
+
+    await spaCreateNote({
+      insertNoteAtFront,
+      refreshNotesList,
+      notaProEntitled: true,
+    });
+
+    expect(createNote).not.toHaveBeenCalled();
+    expect(createLocalOnlyNote).toHaveBeenCalledWith('u1');
+  });
+});

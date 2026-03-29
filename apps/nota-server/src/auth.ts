@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 
 /**
  * Resolves the Supabase user id from `Authorization: Bearer <access_token>`.
- * Uses the service role key server-side only (never exposed to clients).
+ * Uses the Supabase secret key server-side only (never exposed to clients).
  */
 export async function getUserIdFromBearer(
   request: Request,
@@ -19,15 +19,17 @@ export async function getUserIdFromBearer(
   const url =
     process.env.SUPABASE_URL?.trim() ||
     process.env.VITE_SUPABASE_URL?.trim();
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  const secretKey =
+    process.env.SUPABASE_SECRET_KEY?.trim() ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
 
-  if (!url || !serviceKey) {
+  if (!url || !secretKey) {
     throw new Error(
-      'nota-server: set SUPABASE_URL (or VITE_SUPABASE_URL) and SUPABASE_SERVICE_ROLE_KEY',
+      'nota-server: set SUPABASE_URL (or VITE_SUPABASE_URL) and SUPABASE_SECRET_KEY',
     );
   }
 
-  const supabase = createClient(url, serviceKey);
+  const supabase = createClient(url, secretKey);
   const {
     data: { user },
     error,

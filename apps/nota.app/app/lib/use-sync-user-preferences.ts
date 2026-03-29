@@ -13,6 +13,7 @@ export function useSyncUserPreferences(
   userPreferencesFromServer: UserPreferences | null,
   userId: string | undefined,
   onServerRowCommitted?: (row: UserPreferences) => void,
+  cloudSyncEnabled = true,
 ): void {
   const hydratePreferencesFromServer = useNotaPreferencesStore(
     (s) => s.hydratePreferencesFromServer,
@@ -42,7 +43,7 @@ export function useSyncUserPreferences(
 
   useEffect(() => {
     const tryFlush = (): void => {
-      if (!userId || !isLikelyOnline()) {
+      if (!userId || !isLikelyOnline() || !cloudSyncEnabled) {
         return;
       }
       const { preferencesPendingSync, openTodaysNoteShortcut } =
@@ -72,15 +73,16 @@ export function useSyncUserPreferences(
       window.removeEventListener('online', tryFlush);
       window.clearInterval(intervalId);
     };
-  }, [userId, markPreferencesSynced, onServerRowCommitted]);
+  }, [userId, markPreferencesSynced, onServerRowCommitted, cloudSyncEnabled]);
 }
 
 export function submitUserPreferencesToggle(
   open: boolean,
   userId: string | undefined,
   onServerRowCommitted?: (row: UserPreferences) => void,
+  cloudSyncEnabled = true,
 ): void {
-  if (!userId || !isLikelyOnline()) {
+  if (!userId || !isLikelyOnline() || !cloudSyncEnabled) {
     return;
   }
   void (async () => {

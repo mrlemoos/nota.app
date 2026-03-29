@@ -224,7 +224,10 @@ export function TipTapEditor({
   >(async () => {});
 
   const [isMounted, setIsMounted] = useState(false);
-  const { refreshNotesList, notes: sidebarNotes } = useNotesData();
+  const { refreshNotesList, notes: sidebarNotes, notaProEntitled } =
+    useNotesData();
+  const notaProEntitledRef = useRef(notaProEntitled);
+  notaProEntitledRef.current = notaProEntitled;
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [pendingAttachments, setPendingAttachments] = useState<
@@ -464,15 +467,17 @@ export function TipTapEditor({
         },
         dragover: (_view, event) => {
           const dt = event.dataTransfer;
-          if (
-            !canInsertAttachmentsRef.current ||
-            uploadingRef.current ||
-            !dt ||
-            !dt.types.includes('Files')
-          ) {
+          if (!dt || !dt.types.includes('Files')) {
             return false;
           }
           event.preventDefault();
+          if (
+            !canInsertAttachmentsRef.current ||
+            uploadingRef.current ||
+            !notaProEntitledRef.current
+          ) {
+            return false;
+          }
           setIsFileDragOver(true);
           return false;
         },
@@ -490,12 +495,7 @@ export function TipTapEditor({
         drop: (_view, event) => {
           setIsFileDragOver(false);
           const dt = event.dataTransfer;
-          if (
-            !canInsertAttachmentsRef.current ||
-            uploadingRef.current ||
-            !dt ||
-            !dt.types.includes('Files')
-          ) {
+          if (!dt || !dt.types.includes('Files')) {
             return false;
           }
           const { files } = dt;
@@ -503,6 +503,13 @@ export function TipTapEditor({
             return false;
           }
           event.preventDefault();
+          if (!canInsertAttachmentsRef.current || uploadingRef.current) {
+            return true;
+          }
+          if (!notaProEntitledRef.current) {
+            setUploadError('Cloud attachments require Nota Pro.');
+            return true;
+          }
           void processFilesRef.current(files);
           return true;
         },
@@ -619,6 +626,10 @@ export function TipTapEditor({
       if (!files || !editor) return;
       const list = Array.from(files);
       if (list.length === 0) return;
+      if (!notaProEntitledRef.current) {
+        setUploadError('Cloud attachments require Nota Pro.');
+        return;
+      }
 
       setUploadError(null);
       setUploading(true);
@@ -710,7 +721,10 @@ export function TipTapEditor({
         ) : null}
         <div
           className={
-            isFileDragOver && canInsertAttachments && !uploading
+            isFileDragOver &&
+            canInsertAttachments &&
+            notaProEntitled &&
+            !uploading
               ? 'rounded-md ring-2 ring-ring/50 ring-offset-2 ring-offset-background'
               : undefined
           }

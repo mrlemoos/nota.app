@@ -10,8 +10,9 @@ export async function openTodaysNoteClient(options: {
   userId: string;
   navigate: (to: string) => void;
   revalidate: () => void;
+  notaProEntitled: boolean;
 }): Promise<void> {
-  const { notes, userId, navigate, revalidate } = options;
+  const { notes, userId, navigate, revalidate, notaProEntitled } = options;
   const dateKey = localDateKey(new Date());
   const {
     dailyNoteIdByLocalDate,
@@ -32,7 +33,7 @@ export async function openTodaysNoteClient(options: {
   clearDailyNoteForLocalDate(dateKey);
 
   let createdId: string;
-  if (isLikelyOnline()) {
+  if (isLikelyOnline() && notaProEntitled) {
     try {
       const client = getBrowserClient();
       const {

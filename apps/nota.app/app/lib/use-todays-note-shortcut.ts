@@ -8,6 +8,7 @@ export function useTodaysNoteShortcut(
   notes: Pick<Note, 'id'>[],
   userId: string | undefined,
   enabled: boolean,
+  notaProEntitled: boolean,
 ): void {
   const notesData = useOptionalNotesData();
   const refreshRef = useRef(notesData?.refreshNotesList);
@@ -45,6 +46,7 @@ export function useTodaysNoteShortcut(
       revalidate: () => {
         void refreshRef.current?.();
       },
+      notaProEntitled,
     });
   });
 

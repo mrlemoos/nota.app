@@ -26,7 +26,8 @@ import {
 import { useSpaSession } from './spa-session-context';
 
 export type NotesDataContextValue = {
-  notaProLocked: boolean;
+  /** Server-confirmed Nota Pro: cloud read/write, outbox drain, prefs sync. */
+  notaProEntitled: boolean;
   notes: Note[];
   userPreferences: UserPreferences | null;
   loadError?: string;
@@ -44,7 +45,7 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
   const { user } = useSpaSession();
   const userId = user?.id;
 
-  const [notaProLocked, setNotaProLocked] = useState(true);
+  const [notaProEntitled, setNotaProEntitled] = useState(false);
   const [notes, setNotes] = useState<Note[]>([]);
   const [userPreferences, setUserPreferences] =
     useState<UserPreferences | null>(null);
@@ -54,7 +55,7 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
   const refreshNotesList = useCallback(async () => {
     if (!userId) {
       setLoading(false);
-      setNotaProLocked(true);
+      setNotaProEntitled(false);
       setNotes([]);
       setUserPreferences(null);
       return;
@@ -69,19 +70,12 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
       updated_at: new Date(0).toISOString(),
     });
 
-    const offlineEntitledBootstrap = async (): Promise<void> => {
-      if (!readNotaServerEntitledSession()) {
-        setNotaProLocked(true);
-        setNotes([]);
-        setUserPreferences(null);
-        return;
-      }
+    const bootstrapVaultFromIdb = async (): Promise<void> => {
       const stored = await listStoredNotes(userId);
       const active = stored.filter((r) => !r.pending_delete);
       const merged = active
         .map(storedNoteToListRow)
         .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
-      setNotaProLocked(false);
       setNotes(merged);
       setUserPreferences(null);
     };
@@ -91,25 +85,25 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
       try {
         entRes = await fetchNotaProEntitled();
       } catch {
+        await bootstrapVaultFromIdb();
         if (isLikelyOnline()) {
           setLoadError('Failed to load notes');
-          setLoading(false);
-          return;
+          setNotaProEntitled(false);
+        } else {
+          setNotaProEntitled(readNotaServerEntitledSession());
         }
-        await offlineEntitledBootstrap();
         setLoading(false);
         return;
       }
 
       if (!entRes.ok) {
+        await bootstrapVaultFromIdb();
         if (isLikelyOnline()) {
-          setNotaProLocked(true);
-          setNotes([]);
-          setUserPreferences(defaultPrefs());
-          setLoading(false);
-          return;
+          setLoadError('Failed to load notes');
+          setNotaProEntitled(false);
+        } else {
+          setNotaProEntitled(readNotaServerEntitledSession());
         }
-        await offlineEntitledBootstrap();
         setLoading(false);
         return;
       }
@@ -119,14 +113,13 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
       syncNotaServerEntitledSession(entitled);
 
       if (!entitled) {
-        setNotaProLocked(true);
-        setNotes([]);
-        setUserPreferences(defaultPrefs());
+        setNotaProEntitled(false);
+        await bootstrapVaultFromIdb();
         setLoading(false);
         return;
       }
 
-      setNotaProLocked(false);
+      setNotaProEntitled(true);
 
       const client = getBrowserClient();
       let serverNotes: Note[] = [];
@@ -153,10 +146,12 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
       setNotes(mergeNoteLists(serverNotes, stored));
     } catch (e) {
       console.error(e);
+      await bootstrapVaultFromIdb();
       if (isLikelyOnline()) {
         setLoadError('Failed to load notes');
+        setNotaProEntitled(false);
       } else {
-        await offlineEntitledBootstrap();
+        setNotaProEntitled(readNotaServerEntitledSession());
       }
     } finally {
       setLoading(false);
@@ -203,7 +198,7 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () =>
       ({
-        notaProLocked,
+        notaProEntitled,
         notes,
         userPreferences,
         loadError,
@@ -215,7 +210,7 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
         setUserPreferencesInState: setUserPreferences,
       }) satisfies NotesDataContextValue,
     [
-      notaProLocked,
+      notaProEntitled,
       notes,
       userPreferences,
       loadError,

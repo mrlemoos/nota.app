@@ -13,6 +13,7 @@ export async function spaDeleteNoteById(
   options: {
     removeNoteFromList: (id: string) => void;
     refreshNotesList: () => Promise<void>;
+    notaProEntitled: boolean;
   },
 ): Promise<void> {
   const client = getBrowserClient();
@@ -27,12 +28,14 @@ export async function spaDeleteNoteById(
   const runLocalDelete = async (): Promise<void> => {
     const stored = await getStoredNote(uid, noteId);
     await markPendingDelete(uid, noteId, !stored?.pending_create);
-    void drainNotesOutbox(uid);
+    if (options.notaProEntitled) {
+      void drainNotesOutbox(uid);
+    }
     options.removeNoteFromList(noteId);
     setAppHash({ kind: 'notes', panel: 'list', noteId: null });
   };
 
-  if (!isLikelyOnline()) {
+  if (!isLikelyOnline() || !options.notaProEntitled) {
     await runLocalDelete();
     return;
   }
