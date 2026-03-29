@@ -1,19 +1,18 @@
 import { useLayoutEffect, useState, type JSX } from 'react';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ThemeMenu } from '../components/theme-menu';
 import { useRootLoaderData } from '../context/spa-session-context';
 import { useNotesData } from '../context/notes-data-context';
 import { submitUserPreferencesToggle } from '../lib/use-sync-user-preferences';
 import { useNotaPreferencesStore } from '../stores/nota-preferences';
-import { useRevenueCatSubscription } from '../context/revenuecat-subscription';
+import { NotaProSettingsSection } from '../components/nota-pro-settings-section';
 import { getBrowserClient } from '../lib/supabase/browser';
 import { hashForScreen, setAppHash } from '../lib/app-navigation';
 
 export default function NotesSettings(): JSX.Element {
   const { user } = useRootLoaderData();
   const { setUserPreferencesInState } = useNotesData();
-  const revenueCat = useRevenueCatSubscription();
   const openTodaysNoteShortcut = useNotaPreferencesStore(
     (s) => s.openTodaysNoteShortcut,
   );
@@ -107,114 +106,7 @@ export default function NotesSettings(): JSX.Element {
           </p>
         </section>
 
-        {user ? (
-          <section className="space-y-3">
-            <h2 className="text-sm font-medium text-foreground">Nota Pro</h2>
-            <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 px-4 py-3">
-              {!revenueCat.available ? (
-                <p className="text-sm text-muted-foreground">
-                  Subscriptions are not configured in this environment (missing{' '}
-                  <span className="font-mono text-xs">VITE_REVENUECAT_API_KEY</span>
-                  ).
-                </p>
-              ) : revenueCat.isLoading ? (
-                <p className="text-sm text-muted-foreground">
-                  Checking subscription…
-                </p>
-              ) : (
-                <>
-                  {revenueCat.error ? (
-                    <div className="space-y-2">
-                      <p className="text-sm text-destructive">{revenueCat.error}</p>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => void revenueCat.refreshCustomerInfo()}
-                      >
-                        Try again
-                      </Button>
-                    </div>
-                  ) : (
-                    <>
-                      <p className="text-sm text-muted-foreground">
-                        {revenueCat.isPro
-                          ? 'You have an active Nota Pro entitlement on this account.'
-                          : 'Unlock Nota Pro with a monthly, yearly, or lifetime plan.'}
-                      </p>
-                      {revenueCat.paywallError ? (
-                        <p className="text-sm text-destructive">
-                          {revenueCat.paywallError}
-                        </p>
-                      ) : null}
-                      {!revenueCat.isPro ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          disabled={
-                            !revenueCat.ready ||
-                            revenueCat.isPaywallBusy ||
-                            revenueCat.isLoading
-                          }
-                          onClick={() => void revenueCat.openPaywall()}
-                        >
-                          {revenueCat.isPaywallBusy ? 'Opening…' : 'Upgrade'}
-                        </Button>
-                      ) : null}
-                      {revenueCat.isPro ? (
-                        <div className="space-y-2">
-                          <div className="flex flex-wrap gap-2">
-                            <Button
-                              type="button"
-                              size="sm"
-                              disabled={
-                                !revenueCat.ready ||
-                                revenueCat.isPaywallBusy ||
-                                revenueCat.isLoading
-                              }
-                              onClick={() => void revenueCat.openPaywall()}
-                            >
-                              {revenueCat.isPaywallBusy
-                                ? 'Opening…'
-                                : 'Change subscription'}
-                            </Button>
-                            {revenueCat.managementURL ? (
-                              <a
-                                href={revenueCat.managementURL}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className={buttonVariants({
-                                  variant: 'outline',
-                                  size: 'sm',
-                                })}
-                              >
-                                Cancel subscription
-                              </a>
-                            ) : null}
-                          </div>
-                          {revenueCat.managementURL ? (
-                            <p className="text-sm text-muted-foreground">
-                              Billing opens in a new tab.
-                            </p>
-                          ) : (
-                            <p className="text-sm text-muted-foreground">
-                              If you subscribed through the App Store or Google Play,
-                              manage or cancel in that store’s subscription
-                              settings. For web billing, use the link in your
-                              RevenueCat subscription email to open the customer
-                              portal. Contact support if you still cannot find a way
-                              to manage your plan.
-                            </p>
-                          )}
-                        </div>
-                      ) : null}
-                    </>
-                  )}
-                </>
-              )}
-            </div>
-          </section>
-        ) : null}
+        {user ? <NotaProSettingsSection /> : null}
 
         {user ? (
           <section className="space-y-3">

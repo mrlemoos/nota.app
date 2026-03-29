@@ -1,8 +1,12 @@
 import type {
   CustomerInfo,
+  Offering,
+  Offerings,
   PaywallPurchaseResult,
   PresentPaywallParams,
+  Product,
 } from '@revenuecat/purchases-js';
+import { PeriodUnit, ProductType } from '@revenuecat/purchases-js';
 import { ENTITLEMENT_NOTA_PRO } from './constants';
 
 export function getRevenueCatApiKey(): string | undefined {
@@ -55,6 +59,78 @@ export async function getCustomerInfoSafe(): Promise<CustomerInfo | null> {
     return null;
   }
   return Purchases.getSharedInstance().getCustomerInfo();
+}
+
+export async function getOfferingsSafe(): Promise<Offerings | null> {
+  const { Purchases } = await loadPurchasesModule();
+  if (!Purchases.isConfigured()) {
+    return null;
+  }
+  try {
+    return await Purchases.getSharedInstance().getOfferings();
+  } catch {
+    return null;
+  }
+}
+
+function formatProductCadenceLabel(product: Product): string {
+  if (product.productType === ProductType.NonConsumable) {
+    return 'one-time';
+  }
+  if (product.productType === ProductType.Subscription && product.period) {
+    const n = product.period.number;
+    const u = product.period.unit;
+    if (u === PeriodUnit.Month) {
+      return n === 1 ? 'per month' : `every ${n} months`;
+    }
+    if (u === PeriodUnit.Year) {
+      return n === 1 ? 'per year' : `every ${n} years`;
+    }
+    if (u === PeriodUnit.Week) {
+      return n === 1 ? 'per week' : `every ${n} weeks`;
+    }
+    if (u === PeriodUnit.Day) {
+      return n === 1 ? 'per day' : `every ${n} days`;
+    }
+  }
+  return '';
+}
+
+/**
+ * Resolves dashboard title, formatted price, and cadence for a product id from cached offerings.
+ */
+export function findWebBillingProductForProductId(
+  offerings: Offerings,
+  productId: string,
+): { title: string; formattedPrice: string; cadenceLabel: string } | null {
+  const tryOffering = (o: Offering | null | undefined) => {
+    if (!o) {
+      return null;
+    }
+    for (const pkg of o.availablePackages) {
+      if (pkg.webBillingProduct.identifier !== productId) {
+        continue;
+      }
+      const product = pkg.webBillingProduct;
+      return {
+        title: product.title,
+        formattedPrice: product.price.formattedPrice,
+        cadenceLabel: formatProductCadenceLabel(product),
+      };
+    }
+    return null;
+  };
+  const fromCurrent = tryOffering(offerings.current);
+  if (fromCurrent) {
+    return fromCurrent;
+  }
+  for (const key of Object.keys(offerings.all)) {
+    const hit = tryOffering(offerings.all[key]);
+    if (hit) {
+      return hit;
+    }
+  }
+  return null;
 }
 
 export async function presentPaywall(
