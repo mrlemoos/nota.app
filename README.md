@@ -61,7 +61,7 @@ Tests use **Vitest** via the Nx Vitest plugin.
 
 The desktop app expects the web dev server at `http://localhost:4200`. From the repository root you can run:
 
-- `npm run electron:dev` — Electron only (start the web app in another terminal with `npx nx dev nota.app`)
+- `npm run electron:dev` — Electron only (start the web app in another terminal with `npx nx dev @nota.app/nota.app`, or run `npx nx run-many -t dev` to start Vite and Electron together)
 - `npm run dev:all` — web app and Electron together (uses `concurrently`)
 
 More detail: `[apps/nota-electron/README.md](apps/nota-electron/README.md)`.

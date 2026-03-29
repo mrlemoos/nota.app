@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { useRevalidator } from 'react-router';
 import { drainNotesOutbox } from './notes-offline/sync-notes';
+import { useOptionalNotesData } from '../context/notes-data-context';
 
 /**
  * Periodically drains the notes outbox when the tab is visible or the network is back.
@@ -9,7 +9,7 @@ export function useNotesOfflineSync(
   userId: string | undefined,
   enabled = true,
 ): void {
-  const { revalidate } = useRevalidator();
+  const notesData = useOptionalNotesData();
 
   useEffect(() => {
     if (!userId || !enabled) {
@@ -20,7 +20,7 @@ export function useNotesOfflineSync(
       void (async () => {
         const progressed = await drainNotesOutbox(userId);
         if (progressed) {
-          revalidate();
+          void notesData?.refreshNotesList();
         }
       })();
     };
@@ -41,5 +41,5 @@ export function useNotesOfflineSync(
       document.removeEventListener('visibilitychange', onVisibility);
       window.clearInterval(intervalId);
     };
-  }, [userId, enabled, revalidate]);
+  }, [userId, enabled, notesData]);
 }

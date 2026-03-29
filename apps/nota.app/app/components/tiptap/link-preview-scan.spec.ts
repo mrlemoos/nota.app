@@ -1,4 +1,4 @@
-import { Editor } from '@tiptap/core';
+import { Editor, type JSONContent } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import { describe, expect, it } from 'vitest';
 import { LinkPreview } from './link-preview-extension';
@@ -8,9 +8,7 @@ import {
 } from './link-preview-scan';
 import { NotaLink } from './nota-link';
 
-function createTestEditor(
-  content: NonNullable<ConstructorParameters<typeof Editor>[0]['content']>,
-) {
+function createTestEditor(content: JSONContent | string) {
   return new Editor({
     extensions: [
       StarterKit,

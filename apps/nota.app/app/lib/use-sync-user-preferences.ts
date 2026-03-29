@@ -1,32 +1,19 @@
 import { useEffect, useRef } from 'react';
-import { useFetcher, useRevalidator } from 'react-router';
 import type { UserPreferences } from '~/types/database.types';
 import { isLikelyOnline } from './notes-offline';
 import { useNotaPreferencesStore } from '../stores/nota-preferences';
-
-export type PreferencesFetcherData =
-  | { ok: true; userPreferences: UserPreferences }
-  | { ok: false; error?: string }
-  | { offline: true };
-
-function buildPreferencesFormData(open: boolean): FormData {
-  const fd = new FormData();
-  fd.append('intent', 'updateUserPreferences');
-  fd.append('openTodaysNoteShortcut', open ? 'true' : 'false');
-  return fd;
-}
+import { getBrowserClient } from './supabase/browser';
+import { upsertUserPreferences } from '../models/user-preferences';
 
 /**
- * Hydrates shortcut preference from the notes layout loader, applies fetcher responses,
- * and retries when `pendingSync` after reconnect or on a timer (same idea as notes outbox sync).
+ * Hydrates shortcut preference from server data, flushes pending toggles when online,
+ * and notifies the notes data layer when a server row is committed.
  */
 export function useSyncUserPreferences(
-  userPreferencesFromLoader: UserPreferences | null,
+  userPreferencesFromServer: UserPreferences | null,
+  userId: string | undefined,
+  onServerRowCommitted?: (row: UserPreferences) => void,
 ): void {
-  const fetcher = useFetcher<PreferencesFetcherData>();
-  const fetcherRef = useRef(fetcher);
-  fetcherRef.current = fetcher;
-  const { revalidate } = useRevalidator();
   const hydratePreferencesFromServer = useNotaPreferencesStore(
     (s) => s.hydratePreferencesFromServer,
   );
@@ -37,50 +24,44 @@ export function useSyncUserPreferences(
   const hydratedLoaderRef = useRef<UserPreferences | null>(null);
 
   useEffect(() => {
-    if (!userPreferencesFromLoader) {
+    if (!userPreferencesFromServer) {
       return;
     }
     if (
       hydratedLoaderRef.current &&
       hydratedLoaderRef.current.updated_at ===
-        userPreferencesFromLoader.updated_at &&
+        userPreferencesFromServer.updated_at &&
       hydratedLoaderRef.current.open_todays_note_shortcut ===
-        userPreferencesFromLoader.open_todays_note_shortcut
+        userPreferencesFromServer.open_todays_note_shortcut
     ) {
       return;
     }
-    hydratedLoaderRef.current = userPreferencesFromLoader;
-    hydratePreferencesFromServer(userPreferencesFromLoader);
-  }, [userPreferencesFromLoader, hydratePreferencesFromServer]);
-
-  useEffect(() => {
-    if (fetcher.state !== 'idle' || !fetcher.data) {
-      return;
-    }
-    if ('offline' in fetcher.data) {
-      return;
-    }
-    if (fetcher.data.ok && 'userPreferences' in fetcher.data) {
-      markPreferencesSynced(fetcher.data.userPreferences);
-      void revalidate();
-    }
-  }, [fetcher.state, fetcher.data, markPreferencesSynced, revalidate]);
+    hydratedLoaderRef.current = userPreferencesFromServer;
+    hydratePreferencesFromServer(userPreferencesFromServer);
+  }, [userPreferencesFromServer, hydratePreferencesFromServer]);
 
   useEffect(() => {
     const tryFlush = (): void => {
-      const f = fetcherRef.current;
-      if (f.state !== 'idle') {
+      if (!userId || !isLikelyOnline()) {
         return;
       }
       const { preferencesPendingSync, openTodaysNoteShortcut } =
         useNotaPreferencesStore.getState();
-      if (!preferencesPendingSync || !isLikelyOnline()) {
+      if (!preferencesPendingSync) {
         return;
       }
-      f.submit(buildPreferencesFormData(openTodaysNoteShortcut), {
-        method: 'post',
-        action: '/notes',
-      });
+      void (async () => {
+        try {
+          const client = getBrowserClient();
+          const row = await upsertUserPreferences(client, userId, {
+            open_todays_note_shortcut: openTodaysNoteShortcut,
+          });
+          markPreferencesSynced(row);
+          onServerRowCommitted?.(row);
+        } catch {
+          /* keep pending */
+        }
+      })();
     };
 
     window.addEventListener('online', tryFlush);
@@ -91,18 +72,27 @@ export function useSyncUserPreferences(
       window.removeEventListener('online', tryFlush);
       window.clearInterval(intervalId);
     };
-  }, []);
+  }, [userId, markPreferencesSynced, onServerRowCommitted]);
 }
 
 export function submitUserPreferencesToggle(
-  fetcher: ReturnType<typeof useFetcher<PreferencesFetcherData>>,
   open: boolean,
+  userId: string | undefined,
+  onServerRowCommitted?: (row: UserPreferences) => void,
 ): void {
-  if (!isLikelyOnline()) {
+  if (!userId || !isLikelyOnline()) {
     return;
   }
-  fetcher.submit(buildPreferencesFormData(open), {
-    method: 'post',
-    action: '/notes',
-  });
+  void (async () => {
+    try {
+      const client = getBrowserClient();
+      const row = await upsertUserPreferences(client, userId, {
+        open_todays_note_shortcut: open,
+      });
+      useNotaPreferencesStore.getState().markPreferencesSynced(row);
+      onServerRowCommitted?.(row);
+    } catch {
+      /* ignore */
+    }
+  })();
 }

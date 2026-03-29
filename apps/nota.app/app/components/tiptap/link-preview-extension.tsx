@@ -22,7 +22,7 @@ type OgErrorJson = {
 
 async function fetchOgPreviewClient(href: string): Promise<OgPreviewJson> {
   const res = await fetch(
-    `/og-preview?url=${encodeURIComponent(href)}`,
+    `/api/og-preview?url=${encodeURIComponent(href)}`,
     { credentials: 'same-origin' },
   );
   const data = (await res.json()) as OgPreviewJson | OgErrorJson;

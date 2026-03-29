@@ -1,18 +1,10 @@
-import { createRoutesStub } from 'react-router';
-import { render, screen, waitFor } from '@testing-library/react';
-import App from './app';
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
+import { LandingPage } from './components/landing-page';
 
-test('renders home page', async () => {
-  const ReactRouterStub = createRoutesStub([
-    {
-      path: '/',
-      Component: App,
-    },
-  ]);
-
-  render(<ReactRouterStub />);
-
-  await waitFor(() => screen.findByText('Think clearly. Write slowly.'));
-  expect(screen.getByRole('link', { name: 'Continue with email' })).toBeDefined();
-  expect(screen.getByRole('link', { name: 'Create an account' })).toBeDefined();
+describe('SPA shell', () => {
+  it('renders the marketing landing call to action', () => {
+    render(<LandingPage />);
+    expect(screen.getByText(/Continue with email/i)).toBeTruthy();
+  });
 });

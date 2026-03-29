@@ -1,29 +1,12 @@
-import { useMatches } from 'react-router';
 import { CommandPalette } from './components/command-palette';
-import { useRootLoaderData } from './root';
-
-function useNotesUnlockedFromRouteData(): boolean {
-  const matches = useMatches();
-  let unlocked = false;
-  let sawNotesEntitlement = false;
-  for (const m of matches) {
-    const d = m.data;
-    if (
-      d &&
-      typeof d === 'object' &&
-      'notaProLocked' in d &&
-      typeof (d as { notaProLocked: unknown }).notaProLocked === 'boolean'
-    ) {
-      sawNotesEntitlement = true;
-      unlocked = !(d as { notaProLocked: boolean }).notaProLocked;
-    }
-  }
-  return sawNotesEntitlement && unlocked;
-}
+import { useRootLoaderData } from './context/spa-session-context';
+import { useOptionalNotesData } from './context/notes-data-context';
 
 export function SignedInCommandPalette() {
-  const { user } = useRootLoaderData() ?? { user: null };
-  const notesUnlocked = useNotesUnlockedFromRouteData();
+  const { user } = useRootLoaderData();
+  const notesData = useOptionalNotesData();
+  const notesUnlocked =
+    !!notesData && !notesData.notaProLocked && !notesData.loading;
 
   if (!user) {
     return null;

@@ -1,15 +1,17 @@
-import { useEffect, useEffectEvent } from 'react';
-import { useNavigate, useRevalidator } from 'react-router';
+import { useEffect, useEffectEvent, useRef } from 'react';
 import { openTodaysNoteClient } from './open-todays-note';
 import type { Note } from '~/types/database.types';
+import { navigateFromLegacyPath } from './app-navigation';
+import { useOptionalNotesData } from '../context/notes-data-context';
 
 export function useTodaysNoteShortcut(
   notes: Pick<Note, 'id'>[],
   userId: string | undefined,
   enabled: boolean,
 ): void {
-  const navigate = useNavigate();
-  const { revalidate } = useRevalidator();
+  const notesData = useOptionalNotesData();
+  const refreshRef = useRef(notesData?.refreshNotesList);
+  refreshRef.current = notesData?.refreshNotesList;
 
   const onKeyDown = useEffectEvent((e: KeyboardEvent): void => {
     if (!enabled || !userId) {
@@ -39,8 +41,10 @@ export function useTodaysNoteShortcut(
     void openTodaysNoteClient({
       notes,
       userId,
-      navigate,
-      revalidate,
+      navigate: navigateFromLegacyPath,
+      revalidate: () => {
+        void refreshRef.current?.();
+      },
     });
   });
 

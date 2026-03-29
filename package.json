@@ -7,19 +7,15 @@
     "url": "https://github.com/mrlemoos/nota.app.git"
   },
   "scripts": {
-    "electron:dev": "nx electron:dev nota-electron",
+    "electron:dev": "nx dev nota-electron",
     "electron:pack": "nx electron:pack nota-electron",
-    "dev:all": "concurrently \"nx dev nota.app\" \"sleep 3 && nx electron:dev nota-electron\"",
+    "dev:all": "concurrently \"nx dev nota.app\" \"sleep 3 && nx dev nota-electron\"",
     "generate:nota-icons": "node apps/nota.app/scripts/generate-nota-icons.mjs"
   },
   "private": true,
   "dependencies": {
-    "@react-router/node": "^7.12.0",
-    "@react-router/serve": "^7.12.0",
-    "isbot": "^5.1.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-router": "^7.12.0"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.8.0",
@@ -31,7 +27,6 @@
     "@nx/vitest": "22.6.1",
     "@nx/web": "22.6.1",
     "@nx/workspace": "22.6.1",
-    "@react-router/dev": "^7.12.0",
     "@swc-node/register": "~1.11.1",
     "@swc/cli": "~0.8.0",
     "@swc/core": "~1.15.5",

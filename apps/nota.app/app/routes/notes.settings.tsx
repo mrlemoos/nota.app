@@ -1,20 +1,19 @@
 import { useLayoutEffect, useState, type JSX } from 'react';
-import { Form, Link, useFetcher } from 'react-router';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ModeToggle } from '../components/mode-toggle';
-import { useRootLoaderData } from '../root';
-import {
-  submitUserPreferencesToggle,
-  type PreferencesFetcherData,
-} from '../lib/use-sync-user-preferences';
+import { useRootLoaderData } from '../context/spa-session-context';
+import { useNotesData } from '../context/notes-data-context';
+import { submitUserPreferencesToggle } from '../lib/use-sync-user-preferences';
 import { useNotaPreferencesStore } from '../stores/nota-preferences';
 import { useRevenueCatSubscription } from '../context/revenuecat-subscription';
+import { getBrowserClient } from '../lib/supabase/browser';
+import { hashForScreen, setAppHash } from '../lib/app-navigation';
 
 export default function NotesSettings(): JSX.Element {
-  const { user } = useRootLoaderData() ?? { user: null };
+  const { user } = useRootLoaderData();
+  const { setUserPreferencesInState } = useNotesData();
   const revenueCat = useRevenueCatSubscription();
-  const prefsFetcher = useFetcher<PreferencesFetcherData>();
   const openTodaysNoteShortcut = useNotaPreferencesStore(
     (s) => s.openTodaysNoteShortcut,
   );
@@ -24,6 +23,12 @@ export default function NotesSettings(): JSX.Element {
   const [modDLabel, setModDLabel] = useState('⌘D');
   const [historyBackLabel, setHistoryBackLabel] = useState('⌘[');
   const [historyForwardLabel, setHistoryForwardLabel] = useState('⌘]');
+
+  const shortcutsHref = hashForScreen({
+    kind: 'notes',
+    panel: 'shortcuts',
+    noteId: null,
+  });
 
   useLayoutEffect(() => {
     const isApple =
@@ -69,7 +74,11 @@ export default function NotesSettings(): JSX.Element {
               onChange={(e) => {
                 const checked = e.target.checked;
                 setOpenTodaysNoteShortcut(checked);
-                submitUserPreferencesToggle(prefsFetcher, checked);
+                submitUserPreferencesToggle(
+                  checked,
+                  user?.id,
+                  setUserPreferencesInState,
+                );
               }}
               className="mt-0.5 size-4 shrink-0 rounded border border-input accent-primary"
             />
@@ -89,12 +98,12 @@ export default function NotesSettings(): JSX.Element {
             .
           </p>
           <p className="text-sm text-muted-foreground">
-            <Link
-              to="/notes/shortcuts"
+            <a
+              href={shortcutsHref}
               className="text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground"
             >
               View all shortcuts
-            </Link>
+            </a>
           </p>
         </section>
 
@@ -217,11 +226,21 @@ export default function NotesSettings(): JSX.Element {
               >
                 {user.email}
               </p>
-              <Form action="/logout" method="post" className="mt-4">
-                <Button type="submit" variant="secondary" size="sm">
+              <div className="mt-4">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    void (async () => {
+                      await getBrowserClient().auth.signOut();
+                      setAppHash({ kind: 'landing' });
+                    })();
+                  }}
+                >
                   Sign out
                 </Button>
-              </Form>
+              </div>
             </div>
           </section>
         ) : null}

@@ -1,8 +1,10 @@
-import { Form, type JSX } from 'react-router';
+import type { JSX } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useRevenueCatSubscription } from '../context/revenuecat-subscription';
 import { useIsElectron } from '../lib/use-is-electron';
+import { getBrowserClient } from '../lib/supabase/browser';
+import { setAppHash } from '../lib/app-navigation';
 
 /**
  * Full-screen block when the signed-in user cannot use notes without an active Nota Pro entitlement.
@@ -77,11 +79,19 @@ export function NotaProGate(): JSX.Element {
           ) : null}
 
           <div className="border-t border-border/40 pt-6">
-            <Form action="/logout" method="post">
-              <Button type="submit" variant="ghost" size="sm">
-                Sign out
-              </Button>
-            </Form>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                void (async () => {
+                  await getBrowserClient().auth.signOut();
+                  setAppHash({ kind: 'landing' });
+                })();
+              }}
+            >
+              Sign out
+            </Button>
           </div>
         </div>
       </main>

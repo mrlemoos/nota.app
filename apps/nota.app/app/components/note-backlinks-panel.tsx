@@ -1,12 +1,13 @@
 import { useMemo, type JSX } from 'react';
-import { NavLink, useMatches } from 'react-router';
-import { notesFromMatches } from '../lib/notes-from-matches';
 import { buildNoteLinkGraph } from '../lib/note-link-graph';
 import { cn } from '@/lib/utils';
+import { useNotesData } from '../context/notes-data-context';
+import { useAppNavigationScreen } from '../hooks/use-app-navigation-screen';
+import { noteHashHref } from './note-detail-panel';
 
 export function NoteBacklinksPanel({ noteId }: { noteId: string }): JSX.Element {
-  const matches = useMatches();
-  const notes = notesFromMatches(matches);
+  const { notes } = useNotesData();
+  const screen = useAppNavigationScreen();
 
   const { backlinkIds, byId } = useMemo(() => {
     const { backlinks } = buildNoteLinkGraph(notes);
@@ -36,21 +37,23 @@ export function NoteBacklinksPanel({ noteId }: { noteId: string }): JSX.Element 
             const note = byId.get(id);
             if (!note) return null;
             const label = note.title?.trim() ? note.title : 'Untitled Note';
+            const isActive =
+              screen.kind === 'notes' &&
+              screen.panel === 'note' &&
+              screen.noteId === id;
             return (
               <li key={id}>
-                <NavLink
-                  to={`/notes/${id}`}
-                  className={({ isActive }) =>
-                    cn(
-                      'block rounded-md px-2 py-1.5 text-sm transition-colors',
-                      isActive
-                        ? 'bg-muted font-medium text-foreground'
-                        : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
-                    )
-                  }
+                <a
+                  href={noteHashHref(id)}
+                  className={cn(
+                    'block rounded-md px-2 py-1.5 text-sm transition-colors',
+                    isActive
+                      ? 'bg-muted font-medium text-foreground'
+                      : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+                  )}
                 >
                   {label}
-                </NavLink>
+                </a>
               </li>
             );
           })}

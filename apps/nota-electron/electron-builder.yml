@@ -12,12 +12,8 @@ directories:
   buildResources: buildResources
 files:
   - dist/**/*
-  - from: ../nota.app/build
-    to: nota.app/build
-    filter:
-      - "**/*"
-  - from: ../nota.app/node_modules
-    to: nota.app/node_modules
+  - from: ../nota.app/dist
+    to: nota.app/dist
     filter:
       - "**/*"
 mac:

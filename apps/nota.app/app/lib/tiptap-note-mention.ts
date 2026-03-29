@@ -32,13 +32,16 @@ function blockTextMap(
   let text = '';
   const indexToPos: number[] = [];
   state.doc.nodesBetween(blockStart, to, (node, pos) => {
-    if (!node.isText || !node.text) return;
+    if (!node.isText || !node.text) {
+      return undefined;
+    }
     for (let o = 0; o < node.text.length; o++) {
       const docPos = pos + o;
       if (docPos >= to) return false;
       text += node.text[o]!;
       indexToPos.push(docPos);
     }
+    return undefined;
   });
   return { text, indexToPos };
 }

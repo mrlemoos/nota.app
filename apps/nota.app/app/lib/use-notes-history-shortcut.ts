@@ -1,12 +1,9 @@
 import { useEffect, useEffectEvent } from 'react';
-import { useNavigate } from 'react-router';
 
 export function useNotesHistoryShortcut(
   userId: string | undefined,
   enabled = true,
 ): void {
-  const navigate = useNavigate();
-
   const onKeyDown = useEffectEvent((e: KeyboardEvent): void => {
     if (!userId || !enabled) {
       return;
@@ -30,7 +27,11 @@ export function useNotesHistoryShortcut(
     }
 
     e.preventDefault();
-    navigate(e.key === '[' ? -1 : 1);
+    if (e.key === '[') {
+      window.history.back();
+    } else {
+      window.history.forward();
+    }
   });
 
   useEffect(() => {

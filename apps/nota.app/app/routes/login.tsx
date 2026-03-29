@@ -1,49 +1,43 @@
-import {
-  Form,
-  Link,
-  redirect,
-  useActionData,
-  type ActionFunctionArgs,
-} from 'react-router';
+import { useState, type FormEvent, type JSX } from 'react';
 import { AuthCardEpigraph } from '@/components/auth-card-epigraph';
 import { CartoonLandscape } from '@/components/cartoon-landscape';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useIsElectron } from '../lib/use-is-electron';
-import { createSupabaseServerClient } from '../lib/supabase/server';
 import { loginSchema } from '../lib/validation/auth';
+import { getBrowserClient } from '../lib/supabase/browser';
+import { hashForScreen } from '../lib/app-navigation';
 
-export async function action({ request }: ActionFunctionArgs) {
-  const formData = await request.formData();
+export default function Login(): JSX.Element {
+  const [error, setError] = useState<string | null>(null);
 
-  const result = loginSchema.safeParse({
-    email: formData.get('email'),
-    password: formData.get('password'),
-  });
-
-  if (!result.success) {
-    const firstError = result.error.errors[0];
-    return { error: firstError.message };
-  }
-
-  const { email, password } = result.data;
-  const { supabase, headers } = createSupabaseServerClient(request);
-
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (error) {
-    return { error: error.message };
-  }
-
-  throw redirect('/notes', { headers });
-}
-
-export default function Login() {
-  const actionData = useActionData<typeof action>();
-  const isElectron = useIsElectron();
+  const onSubmit = (e: FormEvent<HTMLFormElement>): void => {
+    e.preventDefault();
+    setError(null);
+    const fd = new FormData(e.currentTarget);
+    const result = loginSchema.safeParse({
+      email: fd.get('email'),
+      password: fd.get('password'),
+    });
+    if (!result.success) {
+      setError(result.error.errors[0]?.message ?? 'Invalid input');
+      return;
+    }
+    const { email, password } = result.data;
+    void (async () => {
+      const { error: signErr } = await getBrowserClient().auth.signInWithPassword(
+        { email, password },
+      );
+      if (signErr) {
+        setError(signErr.message);
+        return;
+      }
+      window.location.hash = hashForScreen({
+        kind: 'notes',
+        panel: 'list',
+        noteId: null,
+      }).slice(1);
+    })();
+  };
 
   return (
     <main
@@ -69,13 +63,13 @@ export default function Login() {
           Sign In
         </h1>
 
-        {actionData?.error && (
+        {error && (
           <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-            {actionData.error}
+            {error}
           </div>
         )}
 
-        <Form method="post" className="space-y-4">
+        <form onSubmit={onSubmit} className="space-y-4">
           <div>
             <label
               htmlFor="email"
@@ -119,19 +113,19 @@ export default function Login() {
           >
             Sign In
           </button>
-        </Form>
+        </form>
 
         <p className="mt-4 text-center text-sm text-muted-foreground">
           Don&apos;t have an account?{' '}
-          <Link
-            to="/signup"
+          <a
+            href={hashForScreen({ kind: 'signup' })}
             className={cn(
               buttonVariants({ variant: 'link', size: 'sm' }),
               'h-auto p-0 text-sm',
             )}
           >
             Sign up
-          </Link>
+          </a>
         </p>
       </div>
     </main>

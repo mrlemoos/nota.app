@@ -21,9 +21,9 @@ import {
   type Node,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { useMatches, useNavigate } from 'react-router';
 import type { Note } from '~/types/database.types';
-import { notesFromMatches } from '../lib/notes-from-matches';
+import { useNotesData } from '../context/notes-data-context';
+import { navigateFromLegacyPath } from '../lib/app-navigation';
 import { buildNoteLinkGraph } from '../lib/note-link-graph';
 import { cn } from '@/lib/utils';
 
@@ -90,9 +90,7 @@ function buildFlowModel(notes: Note[]): { nodes: Node[]; edges: Edge[] } {
 }
 
 function NotesGraphFlowInner(): JSX.Element {
-  const matches = useMatches();
-  const navigate = useNavigate();
-  const notes = notesFromMatches(matches);
+  const { notes } = useNotesData();
 
   const { nodes: derivedNodes, edges: derivedEdges } = useMemo(
     () => buildFlowModel(notes),
@@ -115,12 +113,9 @@ function NotesGraphFlowInner(): JSX.Element {
     return () => cancelAnimationFrame(id);
   }, [derivedNodes, derivedEdges, fitView]);
 
-  const onNodeClick = useCallback(
-    (_event: MouseEvent, node: Node) => {
-      navigate(`/notes/${node.id}`);
-    },
-    [navigate],
-  );
+  const onNodeClick = useCallback((_event: MouseEvent, node: Node) => {
+    navigateFromLegacyPath(`/notes/${node.id}`);
+  }, []);
 
   if (notes.length === 0) {
     return (

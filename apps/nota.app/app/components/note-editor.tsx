@@ -11,7 +11,7 @@ import { ClientOnly } from './client-only';
 import { useStickyDocTitle } from '../context/sticky-doc-title';
 import { persistedDisplayTitle } from '../lib/note-title';
 import { getBrowserClient } from '../lib/supabase/browser';
-import { useRootLoaderData } from '../root';
+import { useRootLoaderData } from '../context/spa-session-context';
 import { mergeUpdatedNoteLocalContent } from '../lib/note-updated-content-merge';
 import {
   drainNotesOutbox,

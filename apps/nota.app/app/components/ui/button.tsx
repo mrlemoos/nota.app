@@ -60,6 +60,10 @@ function mergeButtonRefs<T extends HTMLElement>(
   };
 }
 
+type ButtonPointerArg = Parameters<
+  NonNullable<ButtonPrimitive.Props['onPointerDown']>
+>[0];
+
 const Button = React.forwardRef(function Button(
   {
     className,
@@ -92,7 +96,7 @@ const Button = React.forwardRef(function Button(
 
   const handlePointerDown = React.useCallback(
     (e: React.PointerEvent<HTMLElement>) => {
-      onPointerDown?.(e);
+      onPointerDown?.(e as unknown as ButtonPointerArg);
       if (e.defaultPrevented || prefersReducedMotion || disabled) {
         return;
       }
@@ -115,7 +119,7 @@ const Button = React.forwardRef(function Button(
 
   const handlePointerUp = React.useCallback(
     (e: React.PointerEvent<HTMLElement>) => {
-      onPointerUp?.(e);
+      onPointerUp?.(e as unknown as ButtonPointerArg);
       releasePress();
     },
     [onPointerUp, releasePress],
@@ -123,7 +127,7 @@ const Button = React.forwardRef(function Button(
 
   const handlePointerLeave = React.useCallback(
     (e: React.PointerEvent<HTMLElement>) => {
-      onPointerLeave?.(e);
+      onPointerLeave?.(e as unknown as ButtonPointerArg);
       releasePress();
     },
     [onPointerLeave, releasePress],
@@ -131,7 +135,7 @@ const Button = React.forwardRef(function Button(
 
   const handlePointerCancel = React.useCallback(
     (e: React.PointerEvent<HTMLElement>) => {
-      onPointerCancel?.(e);
+      onPointerCancel?.(e as unknown as ButtonPointerArg);
       releasePress();
     },
     [onPointerCancel, releasePress],

@@ -8,13 +8,6 @@ import {
   type ComponentProps,
   type JSX,
 } from 'react';
-import {
-  useFetcher,
-  useMatches,
-  useNavigate,
-  useParams,
-  useRevalidator,
-} from 'react-router';
 import { Dialog } from '@base-ui/react/dialog';
 import type { DialogRoot } from '@base-ui/react/dialog';
 import { Command } from 'cmdk';
@@ -33,9 +26,14 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { cn } from '@/lib/utils';
 import { notaKbdFooterClass, notaKbdHintClass } from '@/lib/nota-kbd-styles';
 import { useNoteEditorCommands } from '../context/note-editor-commands';
-import { useRootLoaderData } from '../root';
+import { useRootLoaderData } from '../context/spa-session-context';
+import { useNotesData } from '../context/notes-data-context';
+import { useAppNavigationScreen } from '../hooks/use-app-navigation-screen';
 import { openTodaysNoteClient } from '../lib/open-todays-note';
-import { notesFromMatches } from '../lib/notes-from-matches';
+import { navigateFromLegacyPath, setAppHash } from '../lib/app-navigation';
+import { spaCreateNote } from '../lib/spa-create-note';
+import { spaDeleteNoteById } from '../lib/spa-delete-note';
+import { getBrowserClient } from '../lib/supabase/browser';
 import { useNotaPreferencesStore } from '../stores/nota-preferences';
 import { useTheme } from './theme-provider';
 import {
@@ -47,9 +45,6 @@ import {
   useGSAP,
   usePrefersReducedMotion,
 } from '@/lib/nota-motion';
-
-const NOTES_ACTION = '/notes';
-const LOGOUT_ACTION = '/logout';
 
 const groupHeadingClassName =
   'px-1 py-1 text-muted-foreground text-xs [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5';
@@ -83,19 +78,25 @@ export function CommandPalette(): JSX.Element {
   const dialogActionsRef = useRef<DialogRoot.Actions | null>(null);
   const backdropRef = useRef<HTMLDivElement | null>(null);
   const popupMotionRef = useRef<HTMLDivElement | null>(null);
-  const { noteId } = useParams();
-  const navigate = useNavigate();
-  const { revalidate } = useRevalidator();
-  const matches = useMatches();
-  const notes = notesFromMatches(matches);
-  const { user } = useRootLoaderData() ?? { user: null };
+  const screen = useAppNavigationScreen();
+  const activeNoteId =
+    screen.kind === 'notes' && screen.panel === 'note'
+      ? screen.noteId
+      : null;
+  const {
+    notes,
+    refreshNotesList,
+    insertNoteAtFront,
+    removeNoteFromList,
+  } = useNotesData();
+  const { user } = useRootLoaderData();
   const openTodaysNoteShortcut = useNotaPreferencesStore(
     (s) => s.openTodaysNoteShortcut,
   );
-  const deleteNoteAction = noteId ? `/notes/${noteId}` : null;
-  const fetcher = useFetcher();
-  const busy = fetcher.state === 'submitting' || fetcher.state === 'loading';
-  const pendingAction = fetcher.formAction ?? '';
+  const [busyAction, setBusyAction] = useState<
+    'create' | 'delete' | 'logout' | null
+  >(null);
+  const busy = busyAction !== null;
   const { theme, setTheme } = useTheme();
   const {
     insertMermaidAtCursor,
@@ -230,11 +231,15 @@ export function CommandPalette(): JSX.Element {
     if (mod && (e.key === 'n' || e.key === 'N') && !e.shiftKey && !e.altKey) {
       e.preventDefault();
       if (!busy) {
-        fetcher.submit(null, {
-          method: 'post',
-          action: NOTES_ACTION,
-        });
-        closePalette();
+        setBusyAction('create');
+        void (async () => {
+          try {
+            await spaCreateNote({ insertNoteAtFront, refreshNotesList });
+            closePalette();
+          } finally {
+            setBusyAction(null);
+          }
+        })();
       }
       return;
     }
@@ -306,11 +311,18 @@ export function CommandPalette(): JSX.Element {
                     disabled={busy}
                     keywords={['new', 'add']}
                     onSelect={() => {
-                      fetcher.submit(null, {
-                        method: 'post',
-                        action: NOTES_ACTION,
-                      });
-                      closePalette();
+                      setBusyAction('create');
+                      void (async () => {
+                        try {
+                          await spaCreateNote({
+                            insertNoteAtFront,
+                            refreshNotesList,
+                          });
+                          closePalette();
+                        } finally {
+                          setBusyAction(null);
+                        }
+                      })();
                     }}
                     className={cn(
                       commandItemRowClass,
@@ -324,7 +336,7 @@ export function CommandPalette(): JSX.Element {
                       className="text-muted-foreground group-aria-selected:text-accent-foreground"
                     />
                     <span className="min-w-0 flex-1">
-                      {busy && pendingAction === NOTES_ACTION
+                      {busy && busyAction === 'create'
                         ? 'Creating note...'
                         : 'Create new note'}
                     </span>
@@ -344,8 +356,10 @@ export function CommandPalette(): JSX.Element {
                             await openTodaysNoteClient({
                               notes,
                               userId: user.id,
-                              navigate,
-                              revalidate,
+                              navigate: navigateFromLegacyPath,
+                              revalidate: () => {
+                                void refreshNotesList();
+                              },
                             });
                             closePalette();
                           } finally {
@@ -385,7 +399,7 @@ export function CommandPalette(): JSX.Element {
                       'network',
                     ]}
                     onSelect={() => {
-                      navigate('/notes/graph');
+                      navigateFromLegacyPath('/notes/graph');
                       closePalette();
                     }}
                     className={cn(
@@ -423,7 +437,7 @@ export function CommandPalette(): JSX.Element {
                           note.id.slice(0, 8),
                         ]}
                         onSelect={() => {
-                          navigate(`/notes/${note.id}`);
+                          navigateFromLegacyPath(`/notes/${note.id}`);
                           closePalette();
                         }}
                         className={cn(
@@ -443,7 +457,7 @@ export function CommandPalette(): JSX.Element {
                     ))}
                   </Command.Group>
                 ) : null}
-                {deleteNoteAction ? (
+                {activeNoteId ? (
                   <Command.Group
                     heading="This note"
                     className={groupHeadingClassName}
@@ -511,11 +525,18 @@ export function CommandPalette(): JSX.Element {
                         ) {
                           return;
                         }
-                        fetcher.submit(null, {
-                          method: 'post',
-                          action: deleteNoteAction,
-                        });
-                        closePalette();
+                        setBusyAction('delete');
+                        void (async () => {
+                          try {
+                            await spaDeleteNoteById(activeNoteId, {
+                              removeNoteFromList,
+                              refreshNotesList,
+                            });
+                            closePalette();
+                          } finally {
+                            setBusyAction(null);
+                          }
+                        })();
                       }}
                       className={cn(
                         commandItemRowClass,
@@ -529,7 +550,7 @@ export function CommandPalette(): JSX.Element {
                         className="text-destructive group-aria-selected:text-destructive"
                       />
                       <span className="min-w-0 flex-1">
-                        {busy && pendingAction === deleteNoteAction
+                        {busy && busyAction === 'delete'
                           ? 'Deleting...'
                           : 'Delete this note'}
                       </span>
@@ -643,11 +664,16 @@ export function CommandPalette(): JSX.Element {
                     disabled={busy}
                     keywords={['logout', 'log out', 'exit']}
                     onSelect={() => {
-                      fetcher.submit(null, {
-                        method: 'post',
-                        action: LOGOUT_ACTION,
-                      });
-                      closePalette();
+                      setBusyAction('logout');
+                      void (async () => {
+                        try {
+                          await getBrowserClient().auth.signOut();
+                          setAppHash({ kind: 'landing' });
+                          closePalette();
+                        } finally {
+                          setBusyAction(null);
+                        }
+                      })();
                     }}
                     className={cn(
                       commandItemRowClass,
@@ -661,7 +687,7 @@ export function CommandPalette(): JSX.Element {
                       className="text-destructive group-aria-selected:text-destructive"
                     />
                     <span className="min-w-0 flex-1">
-                      {busy && pendingAction === LOGOUT_ACTION
+                      {busy && busyAction === 'logout'
                         ? 'Signing out...'
                         : 'Sign out'}
                     </span>

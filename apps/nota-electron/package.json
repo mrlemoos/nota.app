@@ -5,20 +5,15 @@
   "type": "module",
   "main": "./dist/main.js",
   "scripts": {
-    "build": "tsc",
-    "dev": "npm run build && electron .",
-    "dist": "npm run build && electron-builder"
-  },
-  "devDependencies": {
-    "@types/node": "^20.0.0",
-    "@types/wait-on": "^5.3.4",
-    "electron": "35.7.5",
-    "electron-builder": "^25.0.0",
-    "typescript": "~5.9.2"
+    "build": "tsc"
   },
   "dependencies": {
     "electron-updater": "^6.8.3",
     "wait-on": "^8.0.0"
+  },
+  "devDependencies": {
+    "@types/wait-on": "^5.3.4",
+    "electron": "35.7.5"
   },
   "nx": {
     "sourceRoot": "apps/nota-electron/src",
@@ -32,11 +27,11 @@
           ]
         }
       },
-      "electron:dev": {
+      "dev": {
         "executor": "nx:run-commands",
         "options": {
           "commands": [
-            "echo 'Make sure nota.app dev server is running on port 4200 (nx dev nota.app)'",
+            "echo 'Loads http://localhost:4200 — run `nx run-many -t dev` to start Vite and Electron together.'",
             "cd apps/nota-electron && npm run build && npx electron ."
           ]
         }

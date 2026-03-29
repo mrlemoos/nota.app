@@ -8,8 +8,8 @@ import {
   type ReactNode,
 } from 'react';
 import type { CustomerInfo } from '@revenuecat/purchases-js';
-import { useRevalidator } from 'react-router';
-import { useRootLoaderData } from '../root';
+import { useRootLoaderData } from './spa-session-context';
+import { useOptionalNotesData } from './notes-data-context';
 import {
   getCustomerInfoSafe,
   getRevenueCatApiKey,
@@ -74,9 +74,8 @@ export function RevenueCatSubscriptionProvider({
 }: {
   children: ReactNode;
 }) {
-  const { revalidate } = useRevalidator();
-  const root = useRootLoaderData();
-  const user = root?.user ?? null;
+  const notesData = useOptionalNotesData();
+  const { user } = useRootLoaderData();
   const userId = user?.id ?? null;
 
   const available = Boolean(getRevenueCatApiKey());
@@ -174,18 +173,15 @@ export function RevenueCatSubscriptionProvider({
           customerEmail: user?.email ?? undefined,
         });
         setCustomerSlice(customerInfoToState(result.customerInfo));
-        const fd = new FormData();
-        fd.set('intent', 'invalidateNotaProCache');
         try {
-          await fetch('/notes', {
+          await fetch('/api/nota-pro-invalidate', {
             method: 'POST',
-            body: fd,
             credentials: 'same-origin',
           });
         } catch {
           /* ignore */
         }
-        revalidate();
+        void notesData?.refreshNotesList();
       } catch (e) {
         const { PurchasesError, ErrorCode } = await import(
           '@revenuecat/purchases-js'
@@ -203,7 +199,7 @@ export function RevenueCatSubscriptionProvider({
         setIsPaywallBusy(false);
       }
     },
-    [available, ready, revalidate, user?.email, userId],
+    [available, ready, notesData, user?.email, userId],
   );
 
   const value = useMemo<RevenueCatSubscriptionContextValue>(

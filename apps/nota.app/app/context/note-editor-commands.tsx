@@ -9,6 +9,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import type { JSONContent } from '@tiptap/core';
 import { MERMAID_CODE_BLOCK_INSERT } from '@/lib/tiptap-mermaid-insert';
 
 type NoteEditorCommandsContextValue = {
@@ -109,7 +110,13 @@ export function useRegisterNoteEditorMermaidInserter(
       return;
     }
     const run = () => {
-      editor.chain().focus().insertContent(MERMAID_CODE_BLOCK_INSERT).run();
+      editor
+        .chain()
+        .focus()
+        .insertContent(
+          structuredClone(MERMAID_CODE_BLOCK_INSERT) as unknown as JSONContent,
+        )
+        .run();
     };
     ctx.registerMermaidInserter(run);
     return () => {

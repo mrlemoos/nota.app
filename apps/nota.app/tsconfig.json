@@ -4,16 +4,13 @@
   "references": [
     {
       "path": "./tsconfig.app.json"
-    },
-    {
-      "path": "./tsconfig.spec.json"
     }
   ],
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "jsx": "react-jsx",
     "moduleResolution": "bundler",
-    "types": ["@react-router/node", "node"],
+    "types": ["node"],
     "baseUrl": ".",
     "paths": {
       "@/*": [

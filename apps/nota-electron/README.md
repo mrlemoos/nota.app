@@ -11,7 +11,12 @@ Desktop wrapper for nota.app using Electron.
 
 2. Run Electron, from the monorepo root:
    ```bash
-   npx nx run @nota.app/nota-electron:electron:dev
+   npx nx dev @nota.app/nota-electron
+   ```
+
+   Or start **Vite and Electron together** (both expose a `dev` target):
+   ```bash
+   npx nx run-many -t dev
    ```
 
 ## Production build (local)
@@ -23,7 +28,7 @@ npx nx build @nota.app/nota.app
 cd apps/nota-electron && npm run build && npx electron-builder
 ```
 
-Output is under `apps/nota-electron/release/` (DMG and ZIP per architecture).
+`electron-builder` copies `../nota.app/dist` into the app bundle. Output is under `apps/nota-electron/release/` (DMG and ZIP per architecture).
 
 ## GitHub Releases and auto-updates
 
@@ -45,7 +50,5 @@ With `APPLE_CERTIFICATE_BASE64` unset, CI still produces **unsigned** artefacts.
 
 ## Architecture
 
-- **Dev mode**: Loads from `http://localhost:4200` (Vite dev server)
-- **Prod mode**: Spawns `react-router-serve` with the built server bundle on `http://127.0.0.1:4378`
-
-This approach preserves SSR and cookie-based authentication that the web app relies on.
+- **Dev mode**: Loads from `http://localhost:4200` (Vite dev server).
+- **Prod mode**: Serves the embedded **`nota.app/dist`** static build from inside the app bundle via a small Node **`http`** server on **`http://127.0.0.1:4378`** (SPA fallback). `/api/*` is not implemented in the desktop bundle.

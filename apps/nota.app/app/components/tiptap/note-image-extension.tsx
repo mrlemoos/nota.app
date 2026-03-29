@@ -54,6 +54,7 @@ function NoteImageNodeView(props: NodeViewProps) {
       return;
     }
 
+    const signedStoragePath = storagePath;
     let cancelled = false;
 
     const scheduleNextRefresh = () => {
@@ -71,7 +72,10 @@ function NoteImageNodeView(props: NodeViewProps) {
       const client = getBrowserClient();
       const { data, error } = await client.storage
         .from(NOTE_PDFS_BUCKET)
-        .createSignedUrl(storagePath, ATTACHMENT_SIGNED_URL_TTL_SEC);
+        .createSignedUrl(
+          signedStoragePath,
+          ATTACHMENT_SIGNED_URL_TTL_SEC,
+        );
 
       if (cancelled) return;
 

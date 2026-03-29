@@ -1,62 +1,60 @@
-import {
-  Form,
-  Link,
-  redirect,
-  useActionData,
-  type ActionFunctionArgs,
-} from 'react-router';
+import { useState, type FormEvent, type JSX } from 'react';
 import { AuthCardEpigraph } from '@/components/auth-card-epigraph';
 import { CartoonLandscape } from '@/components/cartoon-landscape';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { createSupabaseServerClient } from '../lib/supabase/server';
-import { useIsElectron } from '../lib/use-is-electron';
 import { signupSchema } from '../lib/validation/auth';
-
-export async function action({ request }: ActionFunctionArgs) {
-  const formData = await request.formData();
-
-  const result = signupSchema.safeParse({
-    email: formData.get('email'),
-    password: formData.get('password'),
-    confirmPassword: formData.get('confirmPassword'),
-  });
-
-  if (!result.success) {
-    const firstError = result.error.errors[0];
-    return { error: firstError.message };
-  }
-
-  const { email, password } = result.data;
-  const { supabase, headers } = createSupabaseServerClient(request);
-
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-  });
-
-  if (error) {
-    return { error: error.message };
-  }
-
-  if (data.session) {
-    throw redirect('/notes', { headers });
-  }
-
-  return {
-    success: true as const,
-    email: data.user?.email ?? email,
-  };
-}
+import { getBrowserClient } from '../lib/supabase/browser';
+import { hashForScreen } from '../lib/app-navigation';
 
 function headingStyle() {
   return { fontFamily: '"Instrument Serif", serif' } as const;
 }
 
-export default function Signup() {
-  const actionData = useActionData<typeof action>();
-  const confirmed =
-    actionData && 'success' in actionData && actionData.success === true;
+export default function Signup(): JSX.Element {
+  const [error, setError] = useState<string | null>(null);
+  const [confirmed, setConfirmed] = useState<{
+    success: true;
+    email: string;
+  } | null>(null);
+
+  const onSubmit = (e: FormEvent<HTMLFormElement>): void => {
+    e.preventDefault();
+    setError(null);
+    const fd = new FormData(e.currentTarget);
+    const result = signupSchema.safeParse({
+      email: fd.get('email'),
+      password: fd.get('password'),
+      confirmPassword: fd.get('confirmPassword'),
+    });
+    if (!result.success) {
+      setError(result.error.errors[0]?.message ?? 'Invalid input');
+      return;
+    }
+    const { email, password } = result.data;
+    void (async () => {
+      const { data, error: signErr } = await getBrowserClient().auth.signUp({
+        email,
+        password,
+      });
+      if (signErr) {
+        setError(signErr.message);
+        return;
+      }
+      if (data.session) {
+        window.location.hash = hashForScreen({
+          kind: 'notes',
+          panel: 'list',
+          noteId: null,
+        }).slice(1);
+        return;
+      }
+      setConfirmed({
+        success: true,
+        email: data.user?.email ?? email,
+      });
+    })();
+  };
 
   return (
     <main
@@ -85,20 +83,20 @@ export default function Signup() {
             <p className="mb-6 text-pretty text-center text-sm text-muted-foreground">
               We sent a confirmation link to{' '}
               <span className="font-medium text-foreground">
-                {actionData.email}
+                {confirmed.email}
               </span>
               . Open the email and follow the link to finish setting up your
               account, then you can sign in.
             </p>
-            <Link
-              to="/login"
+            <a
+              href={hashForScreen({ kind: 'login' })}
               className={cn(
                 buttonVariants({ variant: 'default', size: 'lg' }),
                 'flex h-10 w-full items-center justify-center',
               )}
             >
               Back to sign in
-            </Link>
+            </a>
           </>
         ) : (
           <>
@@ -110,13 +108,13 @@ export default function Signup() {
               Create Account
             </h1>
 
-            {actionData && 'error' in actionData && actionData.error && (
+            {error && (
               <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-                {actionData.error}
+                {error}
               </div>
             )}
 
-            <Form method="post" className="space-y-4">
+            <form onSubmit={onSubmit} className="space-y-4">
               <div>
                 <label
                   htmlFor="email"
@@ -177,19 +175,19 @@ export default function Signup() {
               >
                 Create Account
               </button>
-            </Form>
+            </form>
 
             <p className="mt-4 text-center text-sm text-muted-foreground">
               Already have an account?{' '}
-              <Link
-                to="/login"
+              <a
+                href={hashForScreen({ kind: 'login' })}
                 className={cn(
                   buttonVariants({ variant: 'link', size: 'sm' }),
                   'h-auto p-0 text-sm',
                 )}
               >
                 Sign in
-              </Link>
+              </a>
             </p>
           </>
         )}

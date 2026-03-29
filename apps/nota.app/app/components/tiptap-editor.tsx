@@ -1,6 +1,6 @@
 import type { Editor } from '@tiptap/core';
-import { Node } from '@tiptap/pm/model';
-import { TextSelection, type EditorState } from '@tiptap/pm/state';
+import { Node as PMNode } from '@tiptap/pm/model';
+import { TextSelection } from '@tiptap/pm/state';
 import type { EditorView } from '@tiptap/pm/view';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -23,7 +23,6 @@ import {
   type MutableRefObject,
   type SetStateAction,
 } from 'react';
-import { useMatches, useNavigate, useRevalidator } from 'react-router';
 import { LinkPreview } from './tiptap/link-preview-extension';
 import { NotaLink } from './tiptap/nota-link';
 import { convertLinkOnlyParagraphs } from './tiptap/link-preview-scan';
@@ -45,7 +44,11 @@ import { TableEditorMenu } from './tiptap/table-editor-menu';
 import { NoteDueDateBubbleMenu } from './note-due-date-bubble-menu';
 import { NotaDueDateInteraction } from './tiptap/nota-due-date-interaction';
 import { hrefForNote, parseNoteLinkPath } from '../lib/internal-note-link';
-import { notesFromMatches } from '../lib/notes-from-matches';
+import { useNotesData } from '../context/notes-data-context';
+import {
+  absoluteUrlForNote,
+  navigateFromLegacyPath,
+} from '../lib/app-navigation';
 import { persistedDisplayTitle } from '../lib/note-title';
 import { findNoteMentionTrigger } from '../lib/tiptap-note-mention';
 import { NoteLinkMentionMenu } from './tiptap/note-link-mention-menu';
@@ -177,7 +180,10 @@ function isDocContentEqual(editor: Editor, content: unknown): boolean {
     return false;
   }
   try {
-    const parsed = Node.fromJSON(editor.schema, content as Record<string, unknown>);
+    const parsed = PMNode.fromJSON(
+      editor.schema,
+      content as Record<string, unknown>,
+    );
     return editor.state.doc.eq(parsed);
   } catch {
     return false;
@@ -215,7 +221,7 @@ export function TipTapEditor({
   >(async () => {});
 
   const [isMounted, setIsMounted] = useState(false);
-  const { revalidate } = useRevalidator();
+  const { refreshNotesList, notes: sidebarNotes } = useNotesData();
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [pendingAttachments, setPendingAttachments] = useState<
@@ -223,11 +229,8 @@ export function TipTapEditor({
   >([]);
   const [isFileDragOver, setIsFileDragOver] = useState(false);
   const prevNoteIdRef = useRef<string | undefined>(undefined);
-  const navigate = useNavigate();
-  const navigateRef = useRef(navigate);
-  navigateRef.current = navigate;
-  const matches = useMatches();
-  const sidebarNotes = useMemo(() => notesFromMatches(matches), [matches]);
+  const navigateRef = useRef(navigateFromLegacyPath);
+  navigateRef.current = navigateFromLegacyPath;
 
   const filterNoteCandidates = useCallback(
     (query: string) => {
@@ -424,7 +427,7 @@ export function TipTapEditor({
         click: (_view, event) => {
           if (event.button !== 0) return false;
           const el = event.target as HTMLElement | null;
-          const anchor = el?.closest?.('a.tiptap-link');
+          const anchor = el?.closest?.('a.tiptap-link') as HTMLAnchorElement | null;
           if (!anchor) return false;
           const raw = anchor.getAttribute('href');
           if (!raw) return false;
@@ -442,7 +445,7 @@ export function TipTapEditor({
             event.stopPropagation();
             if (event.metaKey || event.ctrlKey) {
               window.open(
-                `${window.location.origin}${hrefForNote(linkedNoteId)}`,
+                absoluteUrlForNote(linkedNoteId),
                 '_blank',
                 'noopener,noreferrer',
               );
@@ -457,10 +460,12 @@ export function TipTapEditor({
           return true;
         },
         dragover: (_view, event) => {
+          const dt = event.dataTransfer;
           if (
             !canInsertAttachmentsRef.current ||
             uploadingRef.current ||
-            !event.dataTransfer.types.includes('Files')
+            !dt ||
+            !dt.types.includes('Files')
           ) {
             return false;
           }
@@ -469,8 +474,11 @@ export function TipTapEditor({
           return false;
         },
         dragleave: (_view, event) => {
-          const related = event.relatedTarget as Node | null;
-          if (related && _view.dom.contains(related)) {
+          const related = event.relatedTarget;
+          if (
+            related instanceof globalThis.Node &&
+            _view.dom.contains(related)
+          ) {
             return false;
           }
           setIsFileDragOver(false);
@@ -478,14 +486,16 @@ export function TipTapEditor({
         },
         drop: (_view, event) => {
           setIsFileDragOver(false);
+          const dt = event.dataTransfer;
           if (
             !canInsertAttachmentsRef.current ||
             uploadingRef.current ||
-            !event.dataTransfer.types.includes('Files')
+            !dt ||
+            !dt.types.includes('Files')
           ) {
             return false;
           }
-          const { files } = event.dataTransfer;
+          const { files } = dt;
           if (!files?.length) {
             return false;
           }
@@ -622,7 +632,7 @@ export function TipTapEditor({
             );
             setPendingAttachments((prev) => [...prev, record]);
             insertAttachmentNode(record);
-            revalidate();
+            void refreshNotesList();
           } catch (err) {
             setUploadError(
               err instanceof Error ? err.message : 'Upload failed',
@@ -633,7 +643,7 @@ export function TipTapEditor({
         setUploading(false);
       }
     },
-    [editor, insertAttachmentNode, noteId, revalidate, userId],
+    [editor, insertAttachmentNode, noteId, refreshNotesList, userId],
   );
 
   processFilesRef.current = processFiles;
@@ -681,7 +691,9 @@ export function TipTapEditor({
         noteId,
         userId,
         attachmentsById,
-        revalidate,
+        revalidate: () => {
+          void refreshNotesList();
+        },
       }}
     >
       <div className="tiptap-editor">

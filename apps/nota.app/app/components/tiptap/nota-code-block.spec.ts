@@ -1,11 +1,9 @@
-import { Editor } from '@tiptap/core';
+import { Editor, type JSONContent } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import { describe, expect, it } from 'vitest';
 import { NotaCodeBlock } from './nota-code-block';
 
-function createEditorWithNotaCodeBlock(
-  content: NonNullable<ConstructorParameters<typeof Editor>[0]['content']>,
-) {
+function createEditorWithNotaCodeBlock(content: JSONContent) {
   return new Editor({
     extensions: [
       StarterKit.configure({

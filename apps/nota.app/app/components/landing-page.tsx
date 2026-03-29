@@ -1,4 +1,4 @@
-import { Link, redirect, type LoaderFunctionArgs } from 'react-router';
+import type { JSX } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowRight01Icon } from '@hugeicons/core-free-icons';
 import { cn } from '@/lib/utils';
@@ -12,24 +12,11 @@ import {
 } from '@/components/ui/card';
 import { CartoonLandscape } from '@/components/cartoon-landscape';
 import { NotaLogo } from '@/components/nota-logo';
-import { createSupabaseServerClient } from './lib/supabase/server';
-import { useIsElectron } from './lib/use-is-electron';
+import { hashForScreen } from '../lib/app-navigation';
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  const { supabase, headers } = createSupabaseServerClient(request);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (user) {
-    throw redirect('/notes', { headers });
-  }
-
-  return null;
-}
-
-export function App() {
-  const isElectron = useIsElectron();
+export function LandingPage(): JSX.Element {
+  const loginHref = hashForScreen({ kind: 'login' });
+  const signupHref = hashForScreen({ kind: 'signup' });
 
   return (
     <main
@@ -63,8 +50,8 @@ export function App() {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            <Link
-              to="/login"
+            <a
+              href={loginHref}
               className={cn(
                 buttonVariants({ variant: 'default', size: 'lg' }),
                 'h-10 w-full touch-manipulation justify-center text-center',
@@ -74,20 +61,20 @@ export function App() {
               <span data-icon="inline-end" aria-hidden className="inline-flex">
                 <HugeiconsIcon icon={ArrowRight01Icon} size={16} />
               </span>
-            </Link>
+            </a>
           </CardContent>
           <CardFooter className="justify-center border-t border-border/40 pt-4">
             <p className="text-center text-muted-foreground text-xs/relaxed">
               New here?{' '}
-              <Link
-                to="/signup"
+              <a
+                href={signupHref}
                 className={cn(
                   buttonVariants({ variant: 'link', size: 'sm' }),
                   'h-auto p-0 text-xs underline-offset-4',
                 )}
               >
                 Create an account
-              </Link>
+              </a>
             </p>
           </CardFooter>
         </Card>
@@ -95,5 +82,3 @@ export function App() {
     </main>
   );
 }
-
-export default App;
