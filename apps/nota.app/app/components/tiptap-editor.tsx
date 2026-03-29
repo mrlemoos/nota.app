@@ -200,6 +200,8 @@ interface TipTapEditorProps {
   dueAt?: string | null;
   isDeadline?: boolean;
   onSaveDueDate?: (dueAt: string | null, isDeadline: boolean) => Promise<void>;
+  /** Set by parent so title Enter can focus the document body. */
+  bodyEditorRef?: MutableRefObject<Editor | null>;
 }
 
 export function TipTapEditor({
@@ -212,6 +214,7 @@ export function TipTapEditor({
   dueAt = null,
   isDeadline = false,
   onSaveDueDate,
+  bodyEditorRef,
 }: TipTapEditorProps): JSX.Element {
   const canInsertAttachments = Boolean(userId && noteId);
   const canInsertAttachmentsRef = useRef(false);
@@ -508,6 +511,9 @@ export function TipTapEditor({
   }, [extensions]);
 
   editorRef.current = editor ?? null;
+  if (bodyEditorRef) {
+    bodyEditorRef.current = editor ?? null;
+  }
 
   useLayoutEffect(() => {
     if (mention) {

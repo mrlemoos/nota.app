@@ -5,6 +5,7 @@ import {
   useEffect,
   useLayoutEffect,
   type ChangeEvent,
+  type KeyboardEvent,
 } from 'react';
 import { TipTapEditor } from './tiptap-editor';
 import { ClientOnly } from './client-only';
@@ -28,6 +29,7 @@ import {
 } from '../lib/note-editor-settings';
 import { NoteLayoutMenu } from './note-layout-menu';
 import { cn } from '@/lib/utils';
+import type { Editor } from '@tiptap/core';
 
 interface NoteEditorProps {
   note: Note;
@@ -56,6 +58,7 @@ export function NoteEditor({
 
   const titleRowRef = useRef<HTMLDivElement>(null);
   const titleTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const bodyEditorRef = useRef<Editor | null>(null);
   const contentDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const titleDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSavedContent = useRef(note.content);
@@ -199,6 +202,20 @@ export function NoteEditor({
     },
     [scheduleTitleSave],
   );
+
+  const handleTitleKeyDown = useCallback((e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (
+      (e.key === 'Enter' || e.key === 'NumpadEnter') &&
+      !e.shiftKey &&
+      !e.nativeEvent.isComposing
+    ) {
+      e.preventDefault();
+      const ed = bodyEditorRef.current;
+      if (ed && !ed.isDestroyed) {
+        ed.chain().focus('start').run();
+      }
+    }
+  }, []);
 
   const scheduleContentSave = useCallback(() => {
     if (contentDebounceRef.current) {
@@ -417,6 +434,7 @@ export function NoteEditor({
           name="note-title"
           value={title}
           onChange={handleTitleChange}
+          onKeyDown={handleTitleKeyDown}
           placeholder="Untitled"
           autoComplete="off"
           aria-label="Note title"
@@ -471,6 +489,7 @@ export function NoteEditor({
             dueAt={note.due_at}
             isDeadline={note.is_deadline}
             onSaveDueDate={persistDueDate}
+            bodyEditorRef={bodyEditorRef}
           />
         </div>
       </ClientOnly>
