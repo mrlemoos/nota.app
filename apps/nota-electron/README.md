@@ -63,6 +63,24 @@ If you omit `--version`, the version already in `apps/nota-electron/package.json
 - **`main.ts`** calls **`checkForUpdatesAndNotify()`** only when **`app.isPackaged`**. Updates use the **ZIP** assets attached to each release (DMG is for first install).
 - **CI**: `.github/workflows/release-electron.yml` runs on **`v*`** tags and on **`workflow_dispatch`** (semver input). It syncs `apps/nota-electron/package.json` version, then runs **`npx nx run @nota.app/nota-electron:electron:release`** (build + **`electron-builder --publish always`** via [`tools/electron-github-release.mjs`](../../tools/electron-github-release.mjs)). Actions sets **`GH_TOKEN`** from **`GITHUB_TOKEN`** to upload assets and `latest-mac.yml`.
 
+### Required repository secrets (embedded SPA)
+
+The release job injects these into the **`nota.app`** Vite build. Add them under **GitHub → Settings → Secrets and variables → Actions** (mirror Vercel / [`apps/nota.app/.env.example`](../nota.app/.env.example)). If a secret is missing, the build still runs but the desktop app may ship with empty client config.
+
+| Secret | Purpose |
+|--------|---------|
+| `VITE_SUPABASE_URL` | Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Supabase anon (public) key |
+| `VITE_REVENUECAT_API_KEY` | RevenueCat Web Billing public SDK key |
+| `VITE_NOTA_SERVER_API_URL` | nota-server HTTPS origin, no trailing slash (production Railway example: `https://notaappnota-server-production.up.railway.app`) |
+
+### Triggering CI release
+
+- **Tag:** `git tag v1.2.3 && git push origin v1.2.3`
+- **Manual:** **Actions → Release Electron (macOS) → Run workflow**, enter semver (e.g. `1.2.3`).
+
+Confirm the new **Release** lists DMG and ZIP assets per architecture plus **`latest-mac.yml`** (used by auto-update).
+
 ### Optional repository secrets (macOS signing / notarisation)
 
 | Secret | Purpose |

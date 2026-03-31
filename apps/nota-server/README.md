@@ -31,7 +31,7 @@ bun run dev
 
 `npm run start` expects `dist/index.js` from a prior `npm run build`.
 
-Set `NOTA_SERVER_CORS_ORIGINS` to include your production web origin and `http://127.0.0.1:4378` (packaged Electron) / `http://localhost:4200` (Vite dev) if the defaults are not enough.
+If **`NOTA_SERVER_CORS_ORIGINS` is unset**, the server allows `http://127.0.0.1:4378` (packaged Electron), `http://localhost:4200`, and `http://localhost:4300`. **If you set `NOTA_SERVER_CORS_ORIGINS` at all** (e.g. on Railway), that list **replaces** those defaults — include your production web origin **and** `http://127.0.0.1:4378` (and dev origins if needed), comma-separated.
 
 ## Auth
 
