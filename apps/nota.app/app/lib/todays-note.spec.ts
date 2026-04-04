@@ -1,5 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { localDateKey, resolveTodaysNoteId } from './todays-note';
+import {
+  dailyNoteDisplayTitle,
+  localDateKey,
+  resolveTodaysNoteId,
+} from './todays-note';
+
+describe('dailyNoteDisplayTitle', () => {
+  it('formats as day, full month, year (en-GB)', () => {
+    expect(dailyNoteDisplayTitle(new Date(2026, 2, 4))).toBe('4 March 2026');
+  });
+
+  it('uses no leading zero on the day', () => {
+    expect(dailyNoteDisplayTitle(new Date(2026, 0, 1))).toBe('1 January 2026');
+  });
+});
 
 describe('localDateKey', () => {
   it('pads month and day and uses local calendar fields', () => {

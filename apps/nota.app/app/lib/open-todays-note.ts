@@ -2,7 +2,11 @@ import type { Note } from '~/types/database.types';
 import { createNote } from '../models/notes';
 import { getBrowserClient } from './supabase/browser';
 import { createLocalOnlyNote, isLikelyOnline } from './notes-offline';
-import { localDateKey, resolveTodaysNoteId } from './todays-note';
+import {
+  dailyNoteDisplayTitle,
+  localDateKey,
+  resolveTodaysNoteId,
+} from './todays-note';
 import { useNotaPreferencesStore } from '../stores/nota-preferences';
 
 export async function openTodaysNoteClient(options: {
@@ -13,7 +17,9 @@ export async function openTodaysNoteClient(options: {
   notaProEntitled: boolean;
 }): Promise<void> {
   const { notes, userId, navigate, revalidate, notaProEntitled } = options;
-  const dateKey = localDateKey(new Date());
+  const at = new Date();
+  const dateKey = localDateKey(at);
+  const title = dailyNoteDisplayTitle(at);
   const {
     dailyNoteIdByLocalDate,
     clearDailyNoteForLocalDate,
@@ -42,13 +48,13 @@ export async function openTodaysNoteClient(options: {
       if (!session?.user) {
         return;
       }
-      const row = await createNote(client, session.user.id);
+      const row = await createNote(client, session.user.id, title);
       createdId = row.id;
     } catch {
-      createdId = await createLocalOnlyNote(userId);
+      createdId = await createLocalOnlyNote(userId, title);
     }
   } else {
-    createdId = await createLocalOnlyNote(userId);
+    createdId = await createLocalOnlyNote(userId, title);
   }
 
   setDailyNoteForLocalDate(dateKey, createdId);

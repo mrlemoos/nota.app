@@ -1,5 +1,14 @@
 import type { Note } from '~/types/database.types';
 
+/** Title for a daily note: local calendar date, e.g. "4 March 2026". */
+export function dailyNoteDisplayTitle(at: Date): string {
+  return at.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
 /** Local calendar date as `YYYY-MM-DD` (not UTC `toISOString().slice(0, 10)`). */
 export function localDateKey(d: Date): string {
   const y = d.getFullYear();
