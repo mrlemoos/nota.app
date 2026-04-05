@@ -1,6 +1,6 @@
 import { NOTA_SERVER_NOTES_ENTITLED_SESSION_KEY } from './constants';
 
-/** Mirrors last successful `/notes` layout loader entitlement for offline client-loader behaviour. */
+/** Mirrors last successful server entitlement check for offline notes (subscribed users only). */
 export function syncNotaServerEntitledSession(entitled: boolean): void {
   if (typeof sessionStorage === 'undefined') {
     return;

@@ -46,7 +46,7 @@ export default function NotesSettings(): JSX.Element {
             Settings
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Appearance, shortcuts, Nota Pro, and your account.
+            Appearance, shortcuts, subscription, and your account.
           </p>
         </div>
 

@@ -17,6 +17,9 @@ export async function openTodaysNoteClient(options: {
   notaProEntitled: boolean;
 }): Promise<void> {
   const { notes, userId, navigate, revalidate, notaProEntitled } = options;
+  if (!notaProEntitled) {
+    return;
+  }
   const at = new Date();
   const dateKey = localDateKey(at);
   const title = dailyNoteDisplayTitle(at);
@@ -39,7 +42,7 @@ export async function openTodaysNoteClient(options: {
   clearDailyNoteForLocalDate(dateKey);
 
   let createdId: string;
-  if (isLikelyOnline() && notaProEntitled) {
+  if (isLikelyOnline()) {
     try {
       const client = getBrowserClient();
       const {

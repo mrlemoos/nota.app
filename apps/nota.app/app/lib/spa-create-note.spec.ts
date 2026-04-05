@@ -48,7 +48,7 @@ describe('spaCreateNote', () => {
     });
   });
 
-  it('creates a local-only note when online but not Nota Pro', async () => {
+  it('does nothing when not entitled', async () => {
     vi.mocked(isLikelyOnline).mockReturnValue(true);
 
     await spaCreateNote({
@@ -58,8 +58,8 @@ describe('spaCreateNote', () => {
     });
 
     expect(createNote).not.toHaveBeenCalled();
-    expect(createLocalOnlyNote).toHaveBeenCalledWith('u1');
-    expect(refreshNotesList).toHaveBeenCalled();
+    expect(createLocalOnlyNote).not.toHaveBeenCalled();
+    expect(refreshNotesList).not.toHaveBeenCalled();
   });
 
   it('creates on the server when online and Nota Pro', async () => {
@@ -76,7 +76,7 @@ describe('spaCreateNote', () => {
     expect(insertNoteAtFront).toHaveBeenCalled();
   });
 
-  it('creates a local-only note when offline regardless of Pro', async () => {
+  it('creates a local-only note when offline and entitled', async () => {
     vi.mocked(isLikelyOnline).mockReturnValue(false);
 
     await spaCreateNote({
@@ -87,5 +87,18 @@ describe('spaCreateNote', () => {
 
     expect(createNote).not.toHaveBeenCalled();
     expect(createLocalOnlyNote).toHaveBeenCalledWith('u1');
+  });
+
+  it('does nothing when offline and not entitled', async () => {
+    vi.mocked(isLikelyOnline).mockReturnValue(false);
+
+    await spaCreateNote({
+      insertNoteAtFront,
+      refreshNotesList,
+      notaProEntitled: false,
+    });
+
+    expect(createNote).not.toHaveBeenCalled();
+    expect(createLocalOnlyNote).not.toHaveBeenCalled();
   });
 });

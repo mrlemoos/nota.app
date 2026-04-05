@@ -45,7 +45,7 @@ describe('spaDeleteNoteById', () => {
     });
   });
 
-  it('deletes locally when online but not Nota Pro', async () => {
+  it('does nothing when not entitled', async () => {
     vi.mocked(isLikelyOnline).mockReturnValue(true);
 
     await spaDeleteNoteById('n1', {
@@ -55,8 +55,21 @@ describe('spaDeleteNoteById', () => {
     });
 
     expect(deleteNote).not.toHaveBeenCalled();
+    expect(markPendingDelete).not.toHaveBeenCalled();
+    expect(removeNoteFromList).not.toHaveBeenCalled();
+  });
+
+  it('deletes locally when offline and entitled', async () => {
+    vi.mocked(isLikelyOnline).mockReturnValue(false);
+
+    await spaDeleteNoteById('n1', {
+      removeNoteFromList,
+      refreshNotesList,
+      notaProEntitled: true,
+    });
+
+    expect(deleteNote).not.toHaveBeenCalled();
     expect(markPendingDelete).toHaveBeenCalled();
-    expect(drainNotesOutbox).not.toHaveBeenCalled();
     expect(removeNoteFromList).toHaveBeenCalledWith('n1');
   });
 

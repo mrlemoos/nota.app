@@ -28,7 +28,7 @@ import { runWelcomeNoteSeedIfNeeded } from '../lib/welcome-note-seed';
 import { useSpaSession } from './spa-session-context';
 
 export type NotesDataContextValue = {
-  /** Server-confirmed Nota Pro: cloud read/write, outbox drain, prefs sync. */
+  /** Server-confirmed active subscription (Nota Pro entitlement): vault, cloud, sync. */
   notaProEntitled: boolean;
   notes: Note[];
   userPreferences: UserPreferences | null;
@@ -83,30 +83,44 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
       setUserPreferences(null);
     };
 
+    const recoverAfterEntitlementFetchFailure = async (): Promise<void> => {
+      const online = isLikelyOnline();
+      const sessionSaysEntitled = readNotaServerEntitledSession();
+      if (!online) {
+        setLoadError(undefined);
+        setNotaProEntitled(sessionSaysEntitled);
+        if (sessionSaysEntitled) {
+          await bootstrapVaultFromIdb();
+        } else {
+          setNotes([]);
+          setUserPreferences(null);
+        }
+        return;
+      }
+      if (sessionSaysEntitled) {
+        setNotaProEntitled(true);
+        await bootstrapVaultFromIdb();
+        setLoadError('Failed to load notes');
+      } else {
+        setNotaProEntitled(false);
+        setNotes([]);
+        setUserPreferences(null);
+        setLoadError('Failed to load notes');
+      }
+    };
+
     try {
       let entRes: Response;
       try {
         entRes = await fetchNotaProEntitled();
       } catch {
-        await bootstrapVaultFromIdb();
-        if (isLikelyOnline()) {
-          setLoadError('Failed to load notes');
-          setNotaProEntitled(false);
-        } else {
-          setNotaProEntitled(readNotaServerEntitledSession());
-        }
+        await recoverAfterEntitlementFetchFailure();
         setLoading(false);
         return;
       }
 
       if (!entRes.ok) {
-        await bootstrapVaultFromIdb();
-        if (isLikelyOnline()) {
-          setLoadError('Failed to load notes');
-          setNotaProEntitled(false);
-        } else {
-          setNotaProEntitled(readNotaServerEntitledSession());
-        }
+        await recoverAfterEntitlementFetchFailure();
         setLoading(false);
         return;
       }
@@ -117,7 +131,8 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
 
       if (!entitled) {
         setNotaProEntitled(false);
-        await bootstrapVaultFromIdb();
+        setNotes([]);
+        setUserPreferences(null);
         setLoading(false);
         return;
       }
@@ -149,13 +164,7 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
       setNotes(mergeNoteLists(serverNotes, stored));
     } catch (e) {
       console.error(e);
-      await bootstrapVaultFromIdb();
-      if (isLikelyOnline()) {
-        setLoadError('Failed to load notes');
-        setNotaProEntitled(false);
-      } else {
-        setNotaProEntitled(readNotaServerEntitledSession());
-      }
+      await recoverAfterEntitlementFetchFailure();
     } finally {
       setLoading(false);
     }
@@ -182,7 +191,7 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
   }, [userId, refreshNotesList]);
 
   useEffect(() => {
-    if (!userId || !user || loading) {
+    if (!userId || !user || loading || !notaProEntitled) {
       return;
     }
     let cancelled = false;
@@ -213,6 +222,7 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
     userId,
     user,
     loading,
+    notaProEntitled,
     notes.length,
     refreshNotesList,
     welcomeSeeded,

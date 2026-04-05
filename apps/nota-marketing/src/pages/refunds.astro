@@ -11,7 +11,7 @@ const refundsUrl = new URL('/refunds', site).href;
 
 const pageTitle = 'Refund policy — Nota';
 const pageDescription =
-  'How refunds work for Nota Pro (web billing) and the free tier. UK statutory rights are not limited by this policy.';
+  'How refunds work for Nota (web-billed subscriptions). UK statutory rights are not limited by this policy.';
 
 const structuredData = {
   '@context': 'https://schema.org',
@@ -62,24 +62,25 @@ const structuredData = {
 
       <div class="space-y-10 text-sm leading-relaxed text-muted-foreground">
         <section>
-          <h2 class="mb-3 font-serif text-xl text-foreground">Nota (free)</h2>
+          <h2 class="mb-3 font-serif text-xl text-foreground">Download only</h2>
           <p>
-            The app is free to download and use with a full local vault. There is nothing to refund for the free
-            tier. You can stop using Nota at any time by uninstalling the app from your Mac.
+            You may download the Nota app for macOS without charge. If you have not completed a paid subscription or
+            one-time purchase, there is no payment to refund—uninstall the app from your Mac if you no longer want
+            it.
           </p>
         </section>
 
         <section>
-          <h2 class="mb-3 font-serif text-xl text-foreground">Nota Pro (web billing)</h2>
+          <h2 class="mb-3 font-serif text-xl text-foreground">Web billing (subscriptions)</h2>
           <p class="mb-3">
-            If you subscribed to <span class="text-foreground/90">Nota Pro</span> through web billing (checkout
-            powered by Stripe via our subscription provider), you may request a refund by contacting us from
-            <span class="text-foreground/90">Settings</span> in the Nota app after you sign in, or by replying to
-            your purchase receipt if one was emailed to you. We aim to respond within a few business days.
+            If you subscribed to <span class="text-foreground/90">Nota</span> through web billing (checkout powered
+            by Stripe via our subscription provider), you may request a refund by contacting us from{' '}
+            <span class="text-foreground/90">Settings</span> in the Nota app after you sign in, or by replying to your
+            purchase receipt if one was emailed to you. We aim to respond within a few business days.
           </p>
           <p class="mb-3">
             Approved refunds are processed back to your original payment method where possible. When a subscription
-            payment is refunded or you cancel, cloud sync and other Pro features may end when the billing period or
+            payment is refunded or you cancel, cloud sync and other paid features may end when the billing period or
             grace period described at checkout no longer applies.
           </p>
           <p>
@@ -91,7 +92,7 @@ const structuredData = {
         <section>
           <h2 class="mb-3 font-serif text-xl text-foreground">App Store and other storefronts</h2>
           <p>
-            If you buy or renew Nota Pro through the Mac App Store or another platform, refunds and billing support
+            If you buy or renew Nota through the Mac App Store or another platform, refunds and billing support
             are handled by that store under its own rules. Use Apple’s support flows (or the relevant store’s
             process) for those purchases; this page applies to web-billed subscriptions only.
           </p>

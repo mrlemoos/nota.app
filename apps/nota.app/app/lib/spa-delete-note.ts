@@ -23,19 +23,20 @@ export async function spaDeleteNoteById(
   if (!session?.user) {
     return;
   }
+  if (!options.notaProEntitled) {
+    return;
+  }
   const uid = session.user.id;
 
   const runLocalDelete = async (): Promise<void> => {
     const stored = await getStoredNote(uid, noteId);
     await markPendingDelete(uid, noteId, !stored?.pending_create);
-    if (options.notaProEntitled) {
-      void drainNotesOutbox(uid);
-    }
+    void drainNotesOutbox(uid);
     options.removeNoteFromList(noteId);
     setAppHash({ kind: 'notes', panel: 'list', noteId: null });
   };
 
-  if (!isLikelyOnline() || !options.notaProEntitled) {
+  if (!isLikelyOnline()) {
     await runLocalDelete();
     return;
   }

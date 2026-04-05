@@ -16,6 +16,10 @@ export default defineConfig({
     resolve: {
       alias: {
         '@': path.resolve(__dirname, 'src'),
+        '@nota/note-doc-plain-text': path.resolve(
+          __dirname,
+          '../nota.app/app/lib/note-doc-plain-text.ts',
+        ),
       },
     },
   },

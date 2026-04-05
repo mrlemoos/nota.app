@@ -74,7 +74,7 @@ export function NotaProSettingsSection(): JSX.Element {
 
   return (
     <section className="space-y-3">
-      <h2 className="text-sm font-medium text-foreground">Nota Pro</h2>
+      <h2 className="text-sm font-medium text-foreground">Subscription</h2>
       <div
         className="space-y-5 rounded-xl border border-border/60 bg-linear-to-b from-muted/25 to-muted/10 px-5 py-5 shadow-sm"
       >
@@ -103,7 +103,7 @@ export function NotaProSettingsSection(): JSX.Element {
         ) : revenueCat.isPro && !entitlement ? (
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              You have an active Nota Pro entitlement on this account.
+              You have an active Nota subscription on this account.
             </p>
             <div className="flex flex-wrap gap-2">
               <Button
@@ -140,7 +140,7 @@ export function NotaProSettingsSection(): JSX.Element {
                 Current plan
               </p>
               <p className="mt-2 font-serif text-lg font-semibold tracking-normal text-foreground">
-                {offeringsPrice?.title ?? 'Nota Pro'}
+                {offeringsPrice?.title ?? 'Nota'}
               </p>
               {offeringsLoading ? (
                 <div
@@ -237,7 +237,8 @@ export function NotaProSettingsSection(): JSX.Element {
                 Not subscribed
               </p>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                Unlock Nota Pro with a monthly, yearly, or lifetime plan.
+                Nota requires an active subscription. Choose monthly, yearly, or
+                lifetime billing in the checkout.
               </p>
             </div>
             {revenueCat.paywallError ? (
@@ -255,7 +256,7 @@ export function NotaProSettingsSection(): JSX.Element {
               }
               onClick={() => void revenueCat.openPaywall()}
             >
-              {revenueCat.isPaywallBusy ? 'Opening…' : 'Upgrade'}
+              {revenueCat.isPaywallBusy ? 'Opening…' : 'Subscribe'}
             </Button>
           </div>
         )}

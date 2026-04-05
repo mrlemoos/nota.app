@@ -17,11 +17,15 @@ export async function spaCreateNote(options: {
     return;
   }
 
+  if (!options.notaProEntitled) {
+    return;
+  }
+
   function goToNote(id: string): void {
     setAppHash({ kind: 'notes', panel: 'note', noteId: id });
   }
 
-  if (!isLikelyOnline() || !options.notaProEntitled) {
+  if (!isLikelyOnline()) {
     const id = await createLocalOnlyNote(session.user.id);
     goToNote(id);
     await options.refreshNotesList();

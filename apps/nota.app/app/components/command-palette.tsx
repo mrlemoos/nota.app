@@ -19,6 +19,7 @@ import {
   NoteAddIcon,
   NoteIcon,
   NoteRemoveIcon,
+  SparklesIcon,
   Sun01Icon,
   TableIcon,
 } from '@hugeicons/core-free-icons';
@@ -231,6 +232,9 @@ export function CommandPalette(): JSX.Element {
 
     if (mod && (e.key === 'n' || e.key === 'N') && !e.shiftKey && !e.altKey) {
       e.preventDefault();
+      if (!notaProEntitled) {
+        return;
+      }
       if (!busy) {
         setBusyAction('create');
         void (async () => {
@@ -307,70 +311,27 @@ export function CommandPalette(): JSX.Element {
                 )}
               />
               <Command.List className={commandListClassName}>
-                <Command.Group
-                  heading="Notes"
-                  className={groupHeadingClassName}
-                >
-                  <Command.Item
-                    value="create-note"
-                    disabled={busy}
-                    keywords={['new', 'add']}
-                    onSelect={() => {
-                      setBusyAction('create');
-                      void (async () => {
-                        try {
-                          await spaCreateNote({
-                            insertNoteAtFront,
-                            refreshNotesList,
-                            notaProEntitled,
-                          });
-                          closePalette();
-                        } finally {
-                          setBusyAction(null);
-                        }
-                      })();
-                    }}
-                    className={cn(
-                      commandItemRowClass,
-                      'group text-foreground',
-                      'aria-selected:bg-accent aria-selected:text-accent-foreground',
-                      'aria-disabled:pointer-events-none aria-disabled:opacity-50',
-                    )}
+                {notaProEntitled ? (
+                  <Command.Group
+                    heading="Notes"
+                    className={groupHeadingClassName}
                   >
-                    <PaletteItemIcon
-                      icon={NoteAddIcon}
-                      className="text-muted-foreground group-aria-selected:text-accent-foreground"
-                    />
-                    <span className="min-w-0 flex-1">
-                      {busy && busyAction === 'create'
-                        ? 'Creating note...'
-                        : 'Create new note'}
-                    </span>
-                    <span className={notaKbdHintClass}>
-                      {newNoteHotkeyLabel}
-                    </span>
-                  </Command.Item>
-                  {openTodaysNoteShortcut && user?.id ? (
                     <Command.Item
-                      value="open-todays-note"
-                      disabled={openingTodaysNote}
-                      keywords={['today', 'daily', 'journal', 'date', 'day']}
+                      value="create-note"
+                      disabled={busy}
+                      keywords={['new', 'add']}
                       onSelect={() => {
+                        setBusyAction('create');
                         void (async () => {
-                          setOpeningTodaysNote(true);
                           try {
-                            await openTodaysNoteClient({
-                              notes,
-                              userId: user.id,
-                              navigate: navigateFromLegacyPath,
-                              revalidate: () => {
-                                void refreshNotesList();
-                              },
+                            await spaCreateNote({
+                              insertNoteAtFront,
+                              refreshNotesList,
                               notaProEntitled,
                             });
                             closePalette();
                           } finally {
-                            setOpeningTodaysNote(false);
+                            setBusyAction(null);
                           }
                         })();
                       }}
@@ -382,47 +343,125 @@ export function CommandPalette(): JSX.Element {
                       )}
                     >
                       <PaletteItemIcon
-                        icon={NoteIcon}
+                        icon={NoteAddIcon}
                         className="text-muted-foreground group-aria-selected:text-accent-foreground"
                       />
                       <span className="min-w-0 flex-1">
-                        {openingTodaysNote
-                          ? 'Opening today’s note…'
-                          : 'Open today’s note'}
+                        {busy && busyAction === 'create'
+                          ? 'Creating note...'
+                          : 'Create new note'}
                       </span>
                       <span className={notaKbdHintClass}>
-                        {todaysNoteHotkeyLabel}
+                        {newNoteHotkeyLabel}
                       </span>
                     </Command.Item>
-                  ) : null}
-                  <Command.Item
-                    value="open-note-graph"
-                    keywords={[
-                      'graph',
-                      'map',
-                      'visual',
-                      'links',
-                      'connections',
-                      'network',
-                    ]}
-                    onSelect={() => {
-                      navigateFromLegacyPath('/notes/graph');
-                      closePalette();
-                    }}
-                    className={cn(
-                      commandItemRowClass,
-                      'group text-foreground',
-                      'aria-selected:bg-accent aria-selected:text-accent-foreground',
-                    )}
+                    {openTodaysNoteShortcut && user?.id ? (
+                      <Command.Item
+                        value="open-todays-note"
+                        disabled={openingTodaysNote}
+                        keywords={[
+                          'today',
+                          'daily',
+                          'journal',
+                          'date',
+                          'day',
+                        ]}
+                        onSelect={() => {
+                          void (async () => {
+                            setOpeningTodaysNote(true);
+                            try {
+                              await openTodaysNoteClient({
+                                notes,
+                                userId: user.id,
+                                navigate: navigateFromLegacyPath,
+                                revalidate: () => {
+                                  void refreshNotesList();
+                                },
+                                notaProEntitled,
+                              });
+                              closePalette();
+                            } finally {
+                              setOpeningTodaysNote(false);
+                            }
+                          })();
+                        }}
+                        className={cn(
+                          commandItemRowClass,
+                          'group text-foreground',
+                          'aria-selected:bg-accent aria-selected:text-accent-foreground',
+                          'aria-disabled:pointer-events-none aria-disabled:opacity-50',
+                        )}
+                      >
+                        <PaletteItemIcon
+                          icon={NoteIcon}
+                          className="text-muted-foreground group-aria-selected:text-accent-foreground"
+                        />
+                        <span className="min-w-0 flex-1">
+                          {openingTodaysNote
+                            ? 'Opening today’s note…'
+                            : 'Open today’s note'}
+                        </span>
+                        <span className={notaKbdHintClass}>
+                          {todaysNoteHotkeyLabel}
+                        </span>
+                      </Command.Item>
+                    ) : null}
+                    <Command.Item
+                      value="open-note-graph"
+                      keywords={[
+                        'graph',
+                        'map',
+                        'visual',
+                        'links',
+                        'connections',
+                        'network',
+                      ]}
+                      onSelect={() => {
+                        navigateFromLegacyPath('/notes/graph');
+                        closePalette();
+                      }}
+                      className={cn(
+                        commandItemRowClass,
+                        'group text-foreground',
+                        'aria-selected:bg-accent aria-selected:text-accent-foreground',
+                      )}
+                    >
+                      <PaletteItemIcon
+                        icon={Flowchart01Icon}
+                        className="text-muted-foreground group-aria-selected:text-accent-foreground"
+                      />
+                      <span className="min-w-0 flex-1">Open note graph</span>
+                    </Command.Item>
+                  </Command.Group>
+                ) : (
+                  <Command.Group
+                    heading="Subscription"
+                    className={groupHeadingClassName}
                   >
-                    <PaletteItemIcon
-                      icon={Flowchart01Icon}
-                      className="text-muted-foreground group-aria-selected:text-accent-foreground"
-                    />
-                    <span className="min-w-0 flex-1">Open note graph</span>
-                  </Command.Item>
-                </Command.Group>
-                {notes.length > 0 ? (
+                    <Command.Item
+                      value="open-settings-subscribe"
+                      keywords={['upgrade', 'pay', 'billing', 'plan']}
+                      onSelect={() => {
+                        navigateFromLegacyPath('/notes/settings');
+                        closePalette();
+                      }}
+                      className={cn(
+                        commandItemRowClass,
+                        'group text-foreground',
+                        'aria-selected:bg-accent aria-selected:text-accent-foreground',
+                      )}
+                    >
+                      <PaletteItemIcon
+                        icon={SparklesIcon}
+                        className="text-muted-foreground group-aria-selected:text-accent-foreground"
+                      />
+                      <span className="min-w-0 flex-1">
+                        Open Settings to subscribe
+                      </span>
+                    </Command.Item>
+                  </Command.Group>
+                )}
+                {notaProEntitled && notes.length > 0 ? (
                   <Command.Group
                     heading={
                       <span className="flex w-full items-center gap-2 pr-1 font-normal">
@@ -464,7 +503,7 @@ export function CommandPalette(): JSX.Element {
                     ))}
                   </Command.Group>
                 ) : null}
-                {activeNoteId ? (
+                {notaProEntitled && activeNoteId ? (
                   <Command.Group
                     heading="This note"
                     className={groupHeadingClassName}

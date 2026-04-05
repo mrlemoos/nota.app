@@ -1,4 +1,11 @@
-import { useEffect, useRef, lazy, Suspense, type JSX } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  lazy,
+  Suspense,
+  type JSX,
+} from 'react';
 import {
   Flowchart01Icon,
   Settings01Icon,
@@ -29,7 +36,11 @@ import { useNotesSidebarStore } from '../stores/notes-sidebar';
 import { useRootLoaderData } from '../context/spa-session-context';
 import { useNotesData } from '../context/notes-data-context';
 import { useAppNavigationScreen } from '../hooks/use-app-navigation-screen';
-import { hashForScreen, type NotesShellPanel } from '../lib/app-navigation';
+import {
+  hashForScreen,
+  replaceAppHash,
+  type NotesShellPanel,
+} from '../lib/app-navigation';
 import { noteHashHref, NoteDetailPanel } from './note-detail-panel';
 import { spaCreateNote } from '../lib/spa-create-note';
 import { spaDeleteNoteById } from '../lib/spa-delete-note';
@@ -170,6 +181,7 @@ export function NotesSpaShell(): JSX.Element {
   const sidebarMotionReadyRef = useRef(false);
   const { user } = useRootLoaderData();
   const shellReady = !loading;
+  const paywalled = Boolean(user && shellReady && !notaProEntitled);
   const { registerScrollRoot, resetSticky, sticky } = useStickyDocTitle();
   const isElectron = useIsElectron();
   const openTodaysNoteShortcut = useNotaPreferencesStore(
@@ -193,6 +205,16 @@ export function NotesSpaShell(): JSX.Element {
   );
 
   useNotesOfflineSync(user?.id, notaProEntitled && shellReady);
+
+  useLayoutEffect(() => {
+    if (!paywalled) {
+      return;
+    }
+    if (panel === 'settings') {
+      return;
+    }
+    replaceAppHash({ kind: 'notes', panel: 'settings', noteId: null });
+  }, [paywalled, panel]);
 
   useEffect(() => {
     return () => {
@@ -279,7 +301,7 @@ export function NotesSpaShell(): JSX.Element {
           'nota-notes-root flex h-dvh min-h-0 bg-linear-to-b from-muted/25 to-background',
         )}
       >
-        {!open ? (
+        {!paywalled && !open ? (
           <div
             className={cn(
               'fixed z-40 flex items-center',
@@ -296,15 +318,16 @@ export function NotesSpaShell(): JSX.Element {
             />
           </div>
         ) : null}
-        <aside
-          ref={asideRef}
-          className={cn(
-            'flex h-full min-h-0 min-w-0 shrink-0 flex-col overflow-hidden',
-            notesChrome,
-            !open && 'pointer-events-none',
-          )}
-          aria-hidden={!open}
-        >
+        {!paywalled ? (
+          <aside
+            ref={asideRef}
+            className={cn(
+              'flex h-full min-h-0 min-w-0 shrink-0 flex-col overflow-hidden',
+              notesChrome,
+              !open && 'pointer-events-none',
+            )}
+            aria-hidden={!open}
+          >
           <TooltipProvider>
             <div
               className={cn(
@@ -499,6 +522,7 @@ export function NotesSpaShell(): JSX.Element {
             ) : null}
           </TooltipProvider>
         </aside>
+        ) : null}
 
         <main
           ref={registerScrollRoot}
@@ -506,11 +530,28 @@ export function NotesSpaShell(): JSX.Element {
             'min-h-0 flex-1 overflow-auto',
             '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
             notesChrome,
-            isElectron
-              ? 'pt-[max(3.5rem,calc(env(safe-area-inset-top)+2.75rem))]'
-              : 'pt-16',
+            paywalled
+              ? isElectron
+                ? 'pt-[max(1rem,env(safe-area-inset-top))]'
+                : 'pt-8'
+              : isElectron
+                ? 'pt-[max(3.5rem,calc(env(safe-area-inset-top)+2.75rem))]'
+                : 'pt-16',
           )}
         >
+          {paywalled ? (
+            <div
+              className="border-b border-border/60 bg-muted/20 px-4 py-4 text-center"
+              role="status"
+            >
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                An active Nota subscription is required to write and sync notes.
+                Choose a plan in{' '}
+                <span className="font-medium text-foreground">Settings</span>{' '}
+                below.
+              </p>
+            </div>
+          ) : null}
           <ShellPanel active={panel === 'list'} panelId="nota-panel-list">
             <NotesIndexPanel onCreate={onCreateNote} />
           </ShellPanel>

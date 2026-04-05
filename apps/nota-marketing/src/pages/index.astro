@@ -18,36 +18,36 @@ const siteRoot = new URL('/', site).href;
 const screenshotUrl = new URL('/og/home.png', site).href;
 const downloadUrl = NOTA_GITHUB_LATEST;
 
-const homeTitle = 'Nota — Mac Note-Taking App for Focused Writing';
+const homeTitle = 'Nota — Calm Mac Notes, Subscription Included';
 const homeDescription =
-  'Nota is a native Mac app for writing and linking notes — calm, minimal, offline-first. No feeds, no nudges. Just your thoughts.';
+  'Nota is a native Mac app for focused writing and linked notes. Subscribe after sign-in for cloud sync and backup—no separate web checkout, no hollowed-out free tier.';
 
 const faqEntities = [
   {
     '@type': 'Question',
-    name: 'Is Nota free?',
+    name: 'Is there a free tier or trial?',
     acceptedAnswer: {
       '@type': 'Answer',
       text:
-        'Yes. Download Nota for macOS and use a full local vault for free. Nota Pro is optional: it adds cloud sync, backup, and cross-device access when you are signed in.',
+        'No. Download the Mac app from GitHub Releases, create an account, then subscribe in Settings to use Nota. Pricing is shown on the site and in the in-app checkout.',
     },
   },
   {
     '@type': 'Question',
-    name: 'What does Nota Pro include?',
+    name: 'What does a subscription include?',
     acceptedAnswer: {
       '@type': 'Answer',
       text:
-        'Cloud sync and secure backup for your vault, plus access on the devices where you use Nota while signed in. The free tier is deliberately complete for local writing—you upgrade when you want sync, not because the app is hollowed out.',
+        'Full access to writing, the note graph, attachments, and cloud sync with secure backup across devices where you use Nota while signed in.',
     },
   },
   {
     '@type': 'Question',
-    name: 'Where do I buy Nota Pro?',
+    name: 'Where do I subscribe?',
     acceptedAnswer: {
       '@type': 'Answer',
       text:
-        'Install Nota from GitHub Releases, open the app, and upgrade from Settings. There is no separate checkout on this site—the free tier is the trial.',
+        'Install Nota from GitHub Releases, sign in, and complete checkout from Settings inside the app. There is no separate purchase page on this marketing site.',
     },
   },
 ];
@@ -67,7 +67,7 @@ const structuredData = {
       '@id': `${siteRoot}#website`,
       url: siteRoot,
       name: 'Nota',
-      description: 'Mac note-taking app for focused writing',
+      description: 'Paid Mac note-taking app with cloud sync — subscribe in-app after install.',
       publisher: { '@id': `${siteRoot}#organization` },
     },
     {
@@ -77,7 +77,7 @@ const structuredData = {
       operatingSystem: 'macOS',
       applicationCategory: 'ProductivityApplication',
       description:
-        'A native Mac app for writing and linking notes. Calm, minimal, offline-first.',
+        'Paid Mac app for writing and linking notes. Subscribe in-app for sync and backup.',
       url: siteRoot,
       downloadUrl,
       screenshot: screenshotUrl,
@@ -90,28 +90,21 @@ const structuredData = {
       offers: [
         {
           '@type': 'Offer',
-          name: 'Nota',
-          price: '0',
-          priceCurrency: 'GBP',
-          description: 'Full local vault on your Mac — free download.',
-          availability: 'https://schema.org/InStock',
-          url: downloadUrl,
-        },
-        {
-          '@type': 'Offer',
-          name: 'Nota Pro — monthly',
+          name: 'Nota — monthly',
           price: '2.49',
           priceCurrency: 'GBP',
-          description: 'Cloud sync and backup. Billed monthly; upgrade from inside the macOS app.',
+          description:
+            'Full app access with cloud sync and backup. Billed monthly; subscribe from inside the macOS app after install.',
           availability: 'https://schema.org/OnlineOnly',
           url: `${siteRoot}pricing`,
         },
         {
           '@type': 'Offer',
-          name: 'Nota Pro — annual',
+          name: 'Nota — annual',
           price: '19.99',
           priceCurrency: 'GBP',
-          description: 'Cloud sync and backup. Billed annually; upgrade from inside the macOS app.',
+          description:
+            'Full app access with cloud sync and backup. Billed annually; subscribe from inside the macOS app after install.',
           availability: 'https://schema.org/OnlineOnly',
           url: `${siteRoot}pricing`,
         },
@@ -138,14 +131,14 @@ const structuredData = {
             <h1
               class="font-serif text-4xl font-normal leading-tight text-balance text-foreground md:text-5xl lg:text-[2.75rem] lg:leading-[1.12]"
             >
-              A Mac note-taking app for focused writing
+              Think without the feed.
             </h1>
             <p class="font-serif text-2xl font-normal leading-snug text-muted-foreground md:text-3xl">
               Stillness is a practice.
             </p>
             <p class="text-base leading-relaxed text-muted-foreground md:text-lg">
-              A quiet corner for your thoughts. Away from feeds, noise, and instant answers. Nota is a native Mac
-              app for writing and linking notes—nothing performing for your attention while you think.
+              A native Mac notes app for writing and linking ideas—calm, minimal, offline-first when you need it.
+              Subscribe after sign-in for sync and backup; the download is free, full use requires an active plan.
             </p>
           </div>
           <div class="flex w-full max-w-xl flex-col items-center gap-4 sm:max-w-none lg:items-start" id="download">
@@ -170,9 +163,11 @@ const structuredData = {
             </p>
             <p class="mkt-hero-animate mkt-hero-animate-delay-3 max-w-md text-sm leading-relaxed text-muted-foreground">
               <a href="/pricing" class="mkt-focus font-medium text-foreground underline decoration-border underline-offset-4">
-                Nota Pro pricing
+                Pricing
               </a>
-              <span class="text-muted-foreground"> — subscription is offered inside the app after you install.</span>
+              <span class="text-muted-foreground">
+                {' '}— subscribe from Settings inside the app after you install (no web checkout here).
+              </span>
             </p>
           </div>
         </div>
@@ -267,25 +262,26 @@ const structuredData = {
         </h2>
         <dl class="space-y-8">
           <div>
-            <dt class="font-medium text-foreground">Is Nota free?</dt>
+            <dt class="font-medium text-foreground">Is there a free tier or trial?</dt>
             <dd class="mt-2 text-muted-foreground">
-              Yes. Download Nota for macOS and use a full local vault for free. Nota Pro is optional: it adds cloud
-              sync, backup, and cross-device access when you are signed in.
+              No. You can download the app for macOS from GitHub Releases, then sign in and subscribe in Settings to
+              write and sync. See <a href="/pricing" class="mkt-focus underline decoration-border underline-offset-4"
+                >pricing</a
+              > for current UK guide prices.
             </dd>
           </div>
           <div>
-            <dt class="font-medium text-foreground">What does Nota Pro include?</dt>
+            <dt class="font-medium text-foreground">What does a subscription include?</dt>
             <dd class="mt-2 text-muted-foreground">
-              Cloud sync and secure backup for your vault, plus access on the devices where you use Nota while
-              signed in. The free tier is deliberately complete for local writing—you upgrade when you want sync,
-              not because the app is hollowed out.
+              The full notes experience: writing, note graph, attachments, cloud sync, and backup across your devices
+              while signed in.
             </dd>
           </div>
           <div>
-            <dt class="font-medium text-foreground">Where do I buy Nota Pro?</dt>
+            <dt class="font-medium text-foreground">Where do I subscribe?</dt>
             <dd class="mt-2 text-muted-foreground">
-              Install Nota from GitHub Releases, open the app, and upgrade from Settings. There is no separate
-              checkout on this site—the free tier is the trial.
+              Install Nota, open Settings after sign-in, and complete checkout there. Monthly, annual, and lifetime
+              options are offered when configured in the app.
             </dd>
           </div>
         </dl>
@@ -294,7 +290,9 @@ const structuredData = {
 
     <section class="border-t border-border bg-background px-6 py-14 text-center md:px-10 md:py-16">
       <h2 class="mb-3 font-serif text-2xl text-foreground">Ready when you are</h2>
-      <p class="mb-8 text-muted-foreground">No web app—download Nota for Mac, then choose whether Nota Pro fits your workflow.</p>
+      <p class="mb-8 text-muted-foreground">
+        No web app—download Nota for Mac, sign in, and subscribe in the app when you are ready.
+      </p>
       <div class="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
         <a
           href={NOTA_GITHUB_LATEST}
@@ -324,6 +322,11 @@ const structuredData = {
         ·
         <a href="/refunds" class="mkt-focus underline decoration-border underline-offset-4 hover:text-foreground"
           >Refunds</a
+        >
+        ·
+        <a
+          href="/tools/note-text-preview"
+          class="mkt-focus underline decoration-border underline-offset-4 hover:text-foreground">Tools</a
         >
       </p>
     </footer>

@@ -10,9 +10,9 @@ if (!site) {
 const siteRoot = new URL('/', site).href;
 const pricingUrl = new URL('/pricing', site).href;
 
-const pricingTitle = 'Nota Pricing — Free, Nota Pro £19.99/year';
+const pricingTitle = 'Nota Pricing — From £2.49/month';
 const pricingDescription =
-  'Nota is free to download with a full local vault. Nota Pro is £19.99/year or £2.49/month for cloud sync and backup — upgrade from inside the macOS app.';
+  'Nota is a paid Mac notes app: subscribe in-app for cloud sync and backup. Guide prices £19.99/year or £2.49/month; lifetime offered when available in checkout.';
 
 const structuredData = {
   '@context': 'https://schema.org',
@@ -40,33 +40,24 @@ const structuredData = {
       operatingSystem: 'macOS',
       applicationCategory: 'ProductivityApplication',
       description:
-        'Native Mac notes app with optional Nota Pro subscription for cloud sync and backup. Purchase flows run inside the app after installation.',
+        'Native Mac notes app. Subscribe inside the app after install for full access, cloud sync, and backup.',
       url: siteRoot,
       offers: [
         {
           '@type': 'Offer',
-          name: 'Nota',
-          price: '0',
-          priceCurrency: 'GBP',
-          description: 'Full local vault on your Mac.',
-          availability: 'https://schema.org/InStock',
-          url: NOTA_GITHUB_LATEST,
-        },
-        {
-          '@type': 'Offer',
-          name: 'Nota Pro — annual',
+          name: 'Nota — annual',
           price: '19.99',
           priceCurrency: 'GBP',
-          description: 'Cloud sync and backup; billed annually. Upgrade from Settings in the macOS app.',
+          description: 'Full app access; billed annually. Subscribe from Settings in the macOS app.',
           availability: 'https://schema.org/OnlineOnly',
           url: pricingUrl,
         },
         {
           '@type': 'Offer',
-          name: 'Nota Pro — monthly',
+          name: 'Nota — monthly',
           price: '2.49',
           priceCurrency: 'GBP',
-          description: 'Cloud sync and backup; billed monthly. Upgrade from Settings in the macOS app.',
+          description: 'Full app access; billed monthly. Subscribe from Settings in the macOS app.',
           availability: 'https://schema.org/OnlineOnly',
           url: pricingUrl,
         },
@@ -80,59 +71,72 @@ const structuredData = {
   <script type="application/ld+json" slot="head-extras" is:inline set:html={JSON.stringify(structuredData)} />
   <main id="main-content">
     <SiteHeader />
-    <div class="mx-auto max-w-4xl px-6 py-16 md:px-10 md:py-24">
+    <div class="mx-auto max-w-5xl px-6 py-16 md:px-10 md:py-24">
       <h1 class="mb-4 font-serif text-4xl font-normal text-foreground md:text-5xl">Pricing</h1>
       <p class="mb-14 max-w-2xl text-lg text-muted-foreground">
-        Nota is a downloadable Mac app. The free tier is the trial: you get a full local vault. Nota Pro unlocks
-        cloud sync, backup, and the offline-first workflow across your devices when you are signed in. Prices
-        below are a guide in GBP; Apple or future billing may show your local currency at checkout inside the app.
+        Nota is <span class="text-foreground/90">not</span> free to use: download the Mac app, sign in, then subscribe
+        in Settings. The app binary is a free download from GitHub Releases; writing, sync, and backup require an
+        active plan. Figures below are a UK guide in GBP—your storefront may show local currency at checkout.
       </p>
 
-      <div class="grid gap-8 md:grid-cols-2">
-        <article class="rounded-[var(--radius)] border border-border bg-card p-8 shadow-sm">
-          <h2 class="mb-2 font-serif text-2xl text-card-foreground">Nota</h2>
-          <p class="mb-6 text-3xl font-medium tracking-tight text-card-foreground">Free</p>
+      <div class="grid gap-8 md:grid-cols-3">
+        <article class="rounded-[var(--radius)] border border-primary/25 bg-sidebar p-8 shadow-sm ring-1 ring-primary/15 md:min-h-[22rem]">
+          <h2 class="mb-2 font-serif text-2xl text-sidebar-foreground">Annual</h2>
+          <p class="text-3xl font-semibold tracking-tight text-sidebar-foreground">£19.99 / year</p>
+          <p class="mb-6 text-sm font-medium text-primary">Save about 33% vs monthly</p>
           <ul class="space-y-3 text-sm text-muted-foreground">
-            <li>Local writing and organising on your Mac</li>
-            <li>Rich text, code blocks, tables, and internal links</li>
-            <li>Note graph and backlinks</li>
+            <li>Full app access</li>
+            <li>Cloud sync and secure backup</li>
+            <li>Use on the devices where you sign in</li>
           </ul>
-          <a
-            href={NOTA_GITHUB_LATEST}
-            class="mkt-focus mt-8 inline-flex w-full min-h-11 items-center justify-center rounded-[var(--radius)] border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted"
-          >
-            Download
-          </a>
         </article>
 
-        <article class="rounded-[var(--radius)] border border-primary/25 bg-sidebar p-8 shadow-sm ring-1 ring-primary/15">
-          <h2 class="mb-2 font-serif text-2xl text-sidebar-foreground">Nota Pro</h2>
-          <p class="text-3xl font-semibold tracking-tight text-sidebar-foreground">£19.99 / year</p>
-          <p class="mb-1 text-sm font-medium text-primary">Save about 33% vs monthly</p>
-          <p class="mb-6 text-base text-muted-foreground">or <span class="font-medium text-sidebar-foreground">£2.49 / month</span> billed monthly</p>
+        <article class="rounded-[var(--radius)] border border-border bg-card p-8 shadow-sm md:min-h-[22rem]">
+          <h2 class="mb-2 font-serif text-2xl text-card-foreground">Monthly</h2>
+          <p class="mb-6 text-3xl font-medium tracking-tight text-card-foreground">£2.49 / month</p>
           <p class="mb-6 text-xs leading-relaxed text-muted-foreground">
-            Indicative equivalents: about <span class="text-sidebar-foreground/90">$3.49 CAD</span> / month or{' '}
-            <span class="text-sidebar-foreground/90">$24.99 CAD</span> / year — actual charge depends on storefront
+            Indicative: about <span class="text-card-foreground/90">$3.49 CAD</span> / month — actual charge depends on
             region.
           </p>
           <ul class="space-y-3 text-sm text-muted-foreground">
-            <li>Cloud sync and secure backup for your vault</li>
-            <li>Access across the devices where you use Nota while signed in</li>
-            <li>Supports ongoing development without ads or attention tricks</li>
+            <li>Same features as annual</li>
+            <li>Cancel through your billing provider</li>
           </ul>
-          <p class="mt-8 text-sm text-muted-foreground">
-            Install Nota from GitHub Releases, open the app, and upgrade to Pro from Settings when you are ready.
-            No separate checkout on this site — the free tier is your trial.
-          </p>
-          <p class="mt-4 text-sm text-muted-foreground">
-            <a
-              href="/refunds"
-              class="mkt-focus font-medium text-foreground underline decoration-border underline-offset-4 hover:text-foreground"
-              >Refund policy</a
-            >
-            for web-billed Nota Pro.
-          </p>
         </article>
+
+        <article class="rounded-[var(--radius)] border border-border bg-card p-8 shadow-sm md:min-h-[22rem]">
+          <h2 class="mb-2 font-serif text-2xl text-card-foreground">Lifetime</h2>
+          <p class="mb-6 text-3xl font-medium tracking-tight text-card-foreground">In-app</p>
+          <p class="mb-6 text-sm leading-relaxed text-muted-foreground">
+            When offered in your build of Nota, lifetime is a one-time purchase alongside monthly and yearly. Open
+            Settings after sign-in to see current packages and prices.
+          </p>
+          <ul class="space-y-3 text-sm text-muted-foreground">
+            <li>One-time billing where available</li>
+            <li>Same entitlement as subscription while supported</li>
+          </ul>
+        </article>
+      </div>
+
+      <div class="mt-10 rounded-[var(--radius)] border border-border bg-muted/20 p-6 text-sm text-muted-foreground">
+        <a
+          href={NOTA_GITHUB_LATEST}
+          class="mkt-focus inline-flex min-h-11 items-center justify-center rounded-[var(--radius)] bg-primary px-5 py-2.5 font-medium text-primary-foreground transition hover:opacity-90"
+        >
+          Download for macOS
+        </a>
+        <p class="mt-4 leading-relaxed">
+          Complete checkout from <span class="font-medium text-foreground">Settings</span> in the app. No separate
+          purchase page on this site.
+        </p>
+        <p class="mt-3">
+          <a
+            href="/refunds"
+            class="mkt-focus font-medium text-foreground underline decoration-border underline-offset-4 hover:text-foreground"
+            >Refund policy</a
+          >
+          for web-billed subscriptions.
+        </p>
       </div>
 
       <p class="mt-14 text-center text-sm text-muted-foreground">
