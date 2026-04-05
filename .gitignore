@@ -51,3 +51,7 @@ supabase/.temp/
 
 # Astro generated types (marketing site)
 apps/nota-marketing/.astro/
+
+# Marketing site local env (see apps/nota-marketing/.env.example)
+apps/nota-marketing/.env
+apps/nota-marketing/.env.local
