@@ -11,6 +11,7 @@ export default defineConfig({
   site: 'https://nota.mrlemoos.dev',
   integrations: [sitemap()],
   vite: {
+    envPrefix: ['VITE_', 'PUBLIC_'],
     plugins: [tailwindcss()],
     resolve: {
       alias: {

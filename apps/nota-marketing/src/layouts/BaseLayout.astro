@@ -67,6 +67,14 @@ const socialDescription = ogDescription ?? description;
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <Analytics />
+    <script>
+      import Clarity from '@microsoft/clarity';
+
+      const projectId = import.meta.env.VITE_CLARITY_PROJECT_ID;
+      if (typeof projectId === 'string' && projectId.length > 0) {
+        Clarity.init(projectId);
+      }
+    </script>
     <slot name="head-extras" />
     <title>{title}</title>
   </head>
