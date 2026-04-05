@@ -16,6 +16,7 @@
     "@revenuecat/purchases-js": "^1.29.1",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.48.1",
+    "@vercel/functions": "^3.0.0",
     "@tiptap/extension-code-block": "^2.11.5",
     "@tiptap/extension-code-block-lowlight": "2.11.5",
     "@tiptap/extension-emoji": "^2.27.2",

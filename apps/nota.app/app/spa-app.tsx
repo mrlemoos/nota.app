@@ -7,6 +7,7 @@ import { useSpaSession } from './context/spa-session-context';
 import { NotesDataProvider } from './context/notes-data-context';
 import { SignedInCommandPalette } from './signed-in-command-palette';
 import { useAppNavigationScreen } from './hooks/use-app-navigation-screen';
+import { SpaNotFound } from './components/spa-not-found';
 import { replaceAppHash } from './lib/app-navigation';
 import { cn } from './lib/utils';
 
@@ -34,9 +35,17 @@ function SpaAuthPanel({
 function redirectAuthShell(
   user: { id: string } | null,
   loading: boolean,
-  kind: 'landing' | 'login' | 'signup' | 'notes',
+  kind:
+    | 'landing'
+    | 'notFound'
+    | 'login'
+    | 'signup'
+    | 'notes',
 ): void {
   if (loading) {
+    return;
+  }
+  if (kind === 'notFound') {
     return;
   }
   if (user && kind === 'landing') {
@@ -70,12 +79,16 @@ export function SpaApp(): JSX.Element {
   }
 
   const landingActive = kind === 'landing';
+  const notFoundActive = kind === 'notFound';
   const loginActive = kind === 'login';
   const signupActive = kind === 'signup';
   const notesActive = kind === 'notes';
 
   return (
     <>
+      <SpaAuthPanel active={notFoundActive} panelId="spa-screen-not-found">
+        <SpaNotFound signedIn={Boolean(user)} />
+      </SpaAuthPanel>
       <SpaAuthPanel active={landingActive} panelId="spa-screen-landing">
         {user ? (
           <div className="min-h-dvh bg-background" aria-hidden />

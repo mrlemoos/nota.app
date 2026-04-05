@@ -1,6 +1,6 @@
 /**
  * Hash-based SPA navigation: single source of truth for notes shell view + active note id.
- * Grammar: #/ | #/login | #/signup | #/notes | #/notes/note/:uuid | #/notes/graph | #/notes/settings | #/notes/shortcuts
+ * Grammar: #/ | #/login | #/signup | #/notes | #/notes/note/:uuid | #/notes/graph | #/notes/settings | #/notes/shortcuts | legacy #/notes/:uuid | #/404 (canonical not-found) — anything else resolves to `notFound`.
  */
 
 export type NotesShellPanel =
@@ -12,6 +12,7 @@ export type NotesShellPanel =
 
 export type AppNavScreen =
   | { kind: 'landing' }
+  | { kind: 'notFound' }
   | { kind: 'login' }
   | { kind: 'signup' }
   | {
@@ -35,6 +36,9 @@ export function parseAppNavFromLocation(): AppNavScreen {
 
   if (path === '/' || path === '') {
     return { kind: 'landing' };
+  }
+  if (path === '/404' || path === '/404/') {
+    return { kind: 'notFound' };
   }
   if (path === '/login') {
     return { kind: 'login' };
@@ -69,13 +73,15 @@ export function parseAppNavFromLocation(): AppNavScreen {
     return { kind: 'notes', panel: 'note', noteId: legacy[1] };
   }
 
-  return { kind: 'landing' };
+  return { kind: 'notFound' };
 }
 
 export function hashForScreen(screen: AppNavScreen): string {
   switch (screen.kind) {
     case 'landing':
       return '#/';
+    case 'notFound':
+      return '#/404';
     case 'login':
       return '#/login';
     case 'signup':

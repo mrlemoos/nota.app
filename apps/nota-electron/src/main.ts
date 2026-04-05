@@ -93,6 +93,30 @@ function webHeadersFromNode(headers: IncomingHttpHeaders): Headers {
 const isDev = !app.isPackaged;
 const isDarwin = process.platform === 'darwin';
 
+/** Match `isSpaShellPathnameAllowed` in `apps/nota.app/app/lib/spa-pathname-policy.ts` for SPA fallback. */
+function shouldSpaFallbackForMissingPath(pathname: string): boolean {
+  const p =
+    pathname.length > 1 && pathname.endsWith('/')
+      ? pathname.slice(0, -1)
+      : pathname;
+  if (p === '/' || p === '') {
+    return true;
+  }
+  if (p === '/index.html') {
+    return true;
+  }
+  if (p === '/favicon.svg') {
+    return true;
+  }
+  if (p.startsWith('/assets/')) {
+    return true;
+  }
+  if (p === '/notes' || p.startsWith('/notes/')) {
+    return true;
+  }
+  return false;
+}
+
 function probeTcpPort(host: string, port: number, connectTimeoutMs: number): Promise<boolean> {
   return new Promise((resolve) => {
     const socket = createConnection({ host, port });
@@ -343,6 +367,14 @@ async function startServer(): Promise<void> {
     try {
       await sendStaticFile(req, res, resolved);
     } catch {
+      if (!shouldSpaFallbackForMissingPath(urlPath)) {
+        if (!res.headersSent) {
+          res.statusCode = 404;
+          res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+          res.end('Not Found');
+        }
+        return;
+      }
       const indexPath = path.join(staticRoot, 'index.html');
       try {
         await sendStaticFile(req, res, indexPath);

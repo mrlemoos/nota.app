@@ -17,12 +17,14 @@ import {
 } from '../lib/notes-offline';
 import { getNote } from '../models/notes';
 import { listNoteAttachments } from '../models/note-attachments';
-import { hashForScreen } from '../lib/app-navigation';
+import { hashForScreen, replaceAppHash } from '../lib/app-navigation';
 import { useNotesData } from '../context/notes-data-context';
 export function NoteDetailPanel({ noteId }: { noteId: string }): React.ReactNode {
   const { notes, notaProEntitled, patchNoteInList } = useNotesData();
   const [note, setNote] = useState<Note | null>(null);
   const [attachments, setAttachments] = useState<NoteAttachment[]>([]);
+  const [fetchSettled, setFetchSettled] = useState(false);
+  const [hadAuthenticatedUser, setHadAuthenticatedUser] = useState(false);
   const notesRef = useRef(notes);
   notesRef.current = notes;
 
@@ -34,75 +36,92 @@ export function NoteDetailPanel({ noteId }: { noteId: string }): React.ReactNode
   useEffect(() => {
     let cancelled = false;
     setAttachments([]);
+    setFetchSettled(false);
+    setHadAuthenticatedUser(false);
 
     async function load(): Promise<void> {
-      const client = getBrowserClient();
-      const {
-        data: { session },
-      } = await client.auth.getSession();
-      const uid = session?.user?.id;
-      if (!uid) {
-        return;
-      }
-
-      const finishFromLocal = async (): Promise<void> => {
-        const local = await getStoredNote(uid, noteId);
-        const rowFromList =
-          notesRef.current.find((n) => n.id === noteId) ?? null;
-        if (local && !local.pending_delete) {
-          const merged = rowFromList
-            ? mergeNoteWithLocal(rowFromList, local)
-            : storedNoteToListRow(local);
-          if (!cancelled) {
-            setNote(merged);
-            setAttachments([]);
-          }
-          return;
-        }
-        if (rowFromList) {
-          if (!cancelled) {
-            setNote(rowFromList);
-            setAttachments([]);
-          }
-          return;
-        }
-        if (!cancelled) {
-          setNote(null);
-          setAttachments([]);
-        }
-      };
-
-      if (!notaProEntitled) {
-        await finishFromLocal();
-        return;
-      }
-
+      let authedThisFetch = false;
       try {
-        const row = await getNote(client, noteId);
-        if (row) {
-          await putServerNoteIfNotDirty(uid, row);
-          const local = await getStoredNote(uid, noteId);
-          const merged = mergeNoteWithLocal(row, local);
-          const atts = await listNoteAttachments(client, noteId);
+        const client = getBrowserClient();
+        const {
+          data: { session },
+        } = await client.auth.getSession();
+        const uid = session?.user?.id;
+        if (!uid) {
           if (!cancelled) {
-            setNote(merged);
-            setAttachments(atts);
+            setNote(null);
+            setAttachments([]);
           }
           return;
         }
-      } catch (e) {
-        if (isLikelyOnline()) {
-          console.error(e);
+        authedThisFetch = true;
+
+        const finishFromLocal = async (): Promise<void> => {
+          const local = await getStoredNote(uid, noteId);
+          const rowFromList =
+            notesRef.current.find((n) => n.id === noteId) ?? null;
+          if (local && !local.pending_delete) {
+            const merged = rowFromList
+              ? mergeNoteWithLocal(rowFromList, local)
+              : storedNoteToListRow(local);
+            if (!cancelled) {
+              setNote(merged);
+              setAttachments([]);
+            }
+            return;
+          }
+          if (rowFromList) {
+            if (!cancelled) {
+              setNote(rowFromList);
+              setAttachments([]);
+            }
+            return;
+          }
+          if (!cancelled) {
+            setNote(null);
+            setAttachments([]);
+          }
+        };
+
+        if (!notaProEntitled) {
+          await finishFromLocal();
+          return;
+        }
+
+        try {
+          const row = await getNote(client, noteId);
+          if (row) {
+            await putServerNoteIfNotDirty(uid, row);
+            const local = await getStoredNote(uid, noteId);
+            const merged = mergeNoteWithLocal(row, local);
+            const atts = await listNoteAttachments(client, noteId);
+            if (!cancelled) {
+              setNote(merged);
+              setAttachments(atts);
+            }
+            return;
+          }
+        } catch (e) {
+          if (isLikelyOnline()) {
+            console.error(e);
+          }
+        }
+
+        await finishFromLocal();
+      } finally {
+        if (!cancelled) {
+          setHadAuthenticatedUser(authedThisFetch);
+          setFetchSettled(true);
         }
       }
-
-      await finishFromLocal();
     }
 
     void load().catch(() => {
       if (!cancelled) {
         setNote(null);
         setAttachments([]);
+        setHadAuthenticatedUser(false);
+        setFetchSettled(true);
       }
     });
 
@@ -110,6 +129,13 @@ export function NoteDetailPanel({ noteId }: { noteId: string }): React.ReactNode
       cancelled = true;
     };
   }, [noteId, notaProEntitled]);
+
+  useEffect(() => {
+    if (!fetchSettled || !hadAuthenticatedUser || displayNote) {
+      return;
+    }
+    replaceAppHash({ kind: 'notFound' });
+  }, [fetchSettled, hadAuthenticatedUser, displayNote]);
 
   const handleNoteUpdated = useCallback(
     (updatedNote: Note) => {
