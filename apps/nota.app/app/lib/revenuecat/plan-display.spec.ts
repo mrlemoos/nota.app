@@ -60,7 +60,7 @@ describe('getSubscriptionForProduct', () => {
   it('returns subscription row for product id', () => {
     // Arrange
     const sub = {
-      productIdentifier: 'nota_monthly',
+      productIdentifier: 'nota_pro_monthly',
       purchaseDate: new Date(),
       originalPurchaseDate: null,
       expiresDate: new Date('2030-06-01'),
@@ -79,12 +79,12 @@ describe('getSubscriptionForProduct', () => {
     };
     const customerInfo = {
       subscriptionsByProductIdentifier: {
-        nota_monthly: sub,
+        nota_pro_monthly: sub,
       },
     } as unknown as CustomerInfo;
 
     // Act
-    const result = getSubscriptionForProduct(customerInfo, 'nota_monthly');
+    const result = getSubscriptionForProduct(customerInfo, 'nota_pro_monthly');
 
     // Assert
     expect(result).toBe(sub);
@@ -110,7 +110,7 @@ describe('getActiveNotaProEntitlement', () => {
       latestPurchaseDate: new Date(),
       originalPurchaseDate: new Date(),
       expirationDate: new Date('2030-01-01'),
-      productIdentifier: 'nota_monthly',
+      productIdentifier: 'nota_pro_monthly',
       productPlanIdentifier: null,
       unsubscribeDetectedAt: null,
       billingIssueDetectedAt: null,

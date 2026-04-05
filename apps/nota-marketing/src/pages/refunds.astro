@@ -1,0 +1,121 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import SiteHeader from '@/components/SiteHeader.astro';
+
+const site = Astro.site;
+if (!site) {
+  throw new Error('Marketing site requires `site` in astro.config.');
+}
+const siteRoot = new URL('/', site).href;
+const refundsUrl = new URL('/refunds', site).href;
+
+const pageTitle = 'Refund policy — Nota';
+const pageDescription =
+  'How refunds work for Nota Pro (web billing) and the free tier. UK statutory rights are not limited by this policy.';
+
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        {
+          '@type': 'ListItem',
+          position: 1,
+          name: 'Home',
+          item: siteRoot,
+        },
+        {
+          '@type': 'ListItem',
+          position: 2,
+          name: 'Refund policy',
+          item: refundsUrl,
+        },
+      ],
+    },
+    {
+      '@type': 'WebPage',
+      name: pageTitle,
+      description: pageDescription,
+      url: refundsUrl,
+      isPartOf: { '@type': 'WebSite', name: 'Nota', url: siteRoot },
+    },
+  ],
+};
+---
+
+<BaseLayout
+  title={pageTitle}
+  description={pageDescription}
+  canonicalPath="/refunds"
+  image="/og-default.png"
+>
+  <script type="application/ld+json" slot="head-extras" is:inline set:html={JSON.stringify(structuredData)} />
+  <main id="main-content">
+    <SiteHeader />
+    <div class="mx-auto max-w-4xl px-6 py-16 md:px-10 md:py-24">
+      <h1 class="mb-4 font-serif text-4xl font-normal text-foreground md:text-5xl">Refund policy</h1>
+      <p class="mb-10 max-w-2xl text-lg text-muted-foreground">
+        This policy describes how we handle refunds for Nota. It is written in plain language; it does not replace
+        your statutory rights as a UK consumer where those apply.
+      </p>
+
+      <div class="space-y-10 text-sm leading-relaxed text-muted-foreground">
+        <section>
+          <h2 class="mb-3 font-serif text-xl text-foreground">Nota (free)</h2>
+          <p>
+            The app is free to download and use with a full local vault. There is nothing to refund for the free
+            tier. You can stop using Nota at any time by uninstalling the app from your Mac.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="mb-3 font-serif text-xl text-foreground">Nota Pro (web billing)</h2>
+          <p class="mb-3">
+            If you subscribed to <span class="text-foreground/90">Nota Pro</span> through web billing (checkout
+            powered by Stripe via our subscription provider), you may request a refund by contacting us from
+            <span class="text-foreground/90">Settings</span> in the Nota app after you sign in, or by replying to
+            your purchase receipt if one was emailed to you. We aim to respond within a few business days.
+          </p>
+          <p class="mb-3">
+            Approved refunds are processed back to your original payment method where possible. When a subscription
+            payment is refunded or you cancel, cloud sync and other Pro features may end when the billing period or
+            grace period described at checkout no longer applies.
+          </p>
+          <p>
+            If you believe a charge is incorrect or unauthorised, contact us promptly so we can review it with you
+            and, if needed, your card issuer.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="mb-3 font-serif text-xl text-foreground">App Store and other storefronts</h2>
+          <p>
+            If you buy or renew Nota Pro through the Mac App Store or another platform, refunds and billing support
+            are handled by that store under its own rules. Use Apple’s support flows (or the relevant store’s
+            process) for those purchases; this page applies to web-billed subscriptions only.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="mb-3 font-serif text-xl text-foreground">UK statutory rights</h2>
+          <p>
+            If you are in the UK, you may have statutory rights (for example under consumer protection law) in
+            addition to this policy. Nothing here is intended to limit those rights. For legal certainty about your
+            situation, consider independent advice.
+          </p>
+        </section>
+      </div>
+
+      <p class="mt-14 text-center text-sm text-muted-foreground">
+        <a href="/pricing" class="mkt-focus underline decoration-border underline-offset-4 hover:text-foreground"
+          >Pricing</a
+        >
+        ·
+        <a href="/" class="mkt-focus underline decoration-border underline-offset-4 hover:text-foreground"
+          >← Home</a
+        >
+      </p>
+    </div>
+  </main>
+</BaseLayout>
