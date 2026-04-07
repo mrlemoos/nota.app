@@ -1,4 +1,4 @@
-import { getBrowserClient } from './supabase/browser';
+import { getClerkAccessToken } from './clerk-token-ref';
 
 function notaServerBase(): string | undefined {
   const b = import.meta.env.VITE_NOTA_SERVER_API_URL;
@@ -29,8 +29,7 @@ function unauthorizedInvalidateResponse(): Response {
 export async function fetchNotaProEntitled(): Promise<Response> {
   const base = notaServerBase();
   if (base) {
-    const { data } = await getBrowserClient().auth.getSession();
-    const token = data.session?.access_token;
+    const token = await getClerkAccessToken();
     if (!token) {
       return unauthorizedEntitledResponse();
     }
@@ -38,15 +37,14 @@ export async function fetchNotaProEntitled(): Promise<Response> {
       headers: { Authorization: `Bearer ${token}` },
     });
   }
-  return fetch('/api/nota-pro-entitled', { credentials: 'same-origin' });
+  return fetch('/api/nota-pro-entitled', { credentials: 'include' });
 }
 
 /** Same contract as `POST /api/nota-pro-invalidate` on Vercel. */
 export async function postNotaProInvalidate(): Promise<Response> {
   const base = notaServerBase();
   if (base) {
-    const { data } = await getBrowserClient().auth.getSession();
-    const token = data.session?.access_token;
+    const token = await getClerkAccessToken();
     if (!token) {
       return unauthorizedInvalidateResponse();
     }
@@ -57,6 +55,6 @@ export async function postNotaProInvalidate(): Promise<Response> {
   }
   return fetch('/api/nota-pro-invalidate', {
     method: 'POST',
-    credentials: 'same-origin',
+    credentials: 'include',
   });
 }

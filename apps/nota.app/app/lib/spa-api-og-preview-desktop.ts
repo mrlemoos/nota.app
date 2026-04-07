@@ -1,12 +1,12 @@
-import { getAuthUser } from './supabase/auth';
+import { getClerkUserIdFromRequest } from './clerk-request-auth';
 import { fetchOgPreview } from './og-preview.server';
 
-/** Electron / local static server: no RevenueCat secret; requires signed-in Supabase user only. */
+/** Electron / local static server: no Clerk Billing secret required; still requires a signed-in Clerk user (cookies or Bearer). */
 export async function spaApiOgPreviewDesktop(
   request: Request,
 ): Promise<Response> {
-  const user = await getAuthUser(request);
-  if (!user) {
+  const userId = await getClerkUserIdFromRequest(request);
+  if (!userId) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

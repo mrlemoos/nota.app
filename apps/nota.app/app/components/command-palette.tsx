@@ -32,9 +32,9 @@ import { useNotesData } from '../context/notes-data-context';
 import { useAppNavigationScreen } from '../hooks/use-app-navigation-screen';
 import { openTodaysNoteClient } from '../lib/open-todays-note';
 import { navigateFromLegacyPath, setAppHash } from '../lib/app-navigation';
+import { useClerk } from '@clerk/clerk-react';
 import { spaCreateNote } from '../lib/spa-create-note';
 import { spaDeleteNoteById } from '../lib/spa-delete-note';
-import { getBrowserClient } from '../lib/supabase/browser';
 import { useNotaPreferencesStore } from '../stores/nota-preferences';
 import { useTheme } from './theme-provider';
 import {
@@ -92,6 +92,7 @@ export function CommandPalette(): JSX.Element {
     removeNoteFromList,
   } = useNotesData();
   const { user } = useRootLoaderData();
+  const { signOut } = useClerk();
   const openTodaysNoteShortcut = useNotaPreferencesStore(
     (s) => s.openTodaysNoteShortcut,
   );
@@ -240,6 +241,7 @@ export function CommandPalette(): JSX.Element {
         void (async () => {
           try {
             await spaCreateNote({
+              userId: user?.id ?? '',
               insertNoteAtFront,
               refreshNotesList,
               notaProEntitled,
@@ -325,6 +327,7 @@ export function CommandPalette(): JSX.Element {
                         void (async () => {
                           try {
                             await spaCreateNote({
+                              userId: user?.id ?? '',
                               insertNoteAtFront,
                               refreshNotesList,
                               notaProEntitled,
@@ -375,7 +378,7 @@ export function CommandPalette(): JSX.Element {
                                 userId: user.id,
                                 navigate: navigateFromLegacyPath,
                                 revalidate: () => {
-                                  void refreshNotesList();
+                                  void refreshNotesList({ silent: true });
                                 },
                                 notaProEntitled,
                               });
@@ -575,6 +578,7 @@ export function CommandPalette(): JSX.Element {
                         void (async () => {
                           try {
                             await spaDeleteNoteById(activeNoteId, {
+                              userId: user?.id ?? '',
                               removeNoteFromList,
                               refreshNotesList,
                               notaProEntitled,
@@ -714,7 +718,7 @@ export function CommandPalette(): JSX.Element {
                       setBusyAction('logout');
                       void (async () => {
                         try {
-                          await getBrowserClient().auth.signOut();
+                          await signOut();
                           setAppHash({ kind: 'landing' });
                           closePalette();
                         } finally {

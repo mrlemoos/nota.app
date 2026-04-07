@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from 'electron';
+import { app, BrowserWindow, shell, type WebContents } from 'electron';
 import { createReadStream, existsSync } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
 import { createConnection } from 'node:net';
@@ -20,8 +20,147 @@ const PROD_PORT = 4378;
 const DEV_URL = `http://localhost:${DEV_PORT}`;
 const PROD_URL = `http://127.0.0.1:${PROD_PORT}`;
 
+const isDev = !app.isPackaged;
+const isDarwin = process.platform === 'darwin';
+
+/** Keep in sync with `apps/nota.app/app/lib/nota-clerk-oauth-protocol.ts`. */
+const NOTA_OAUTH_PROTOCOL_PREFIX = 'nota://';
+
+let pendingSsoHttpUrl: string | null = null;
+
 let mainWindow: BrowserWindow | null = null;
 let staticServer: Server | null = null;
+
+/**
+ * Clerk Billing / Stripe often uses `window.open` for checkout. Those URLs should open in
+ * the user’s default browser so payments complete reliably.
+ *
+ * OAuth popups: Stripe stays external; other HTTPS popups use a non-sandboxed child window (see
+ * `browserWindowOptionsForOAuthPopup`). **Desktop sign-in** uses `signIn.sso` + `will-navigate` to
+ * open Clerk/IdP in the **system browser** and completes via `nota://oauth-callback` → `/sso-callback`.
+ */
+function shouldOpenStripeHostedPageInSystemBrowser(url: string): boolean {
+  try {
+    const u = new URL(url);
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') {
+      return false;
+    }
+    const { hostname } = u;
+    return (
+      hostname === 'checkout.stripe.com' ||
+      hostname === 'pay.stripe.com' ||
+      hostname === 'buy.stripe.com' ||
+      hostname === 'billing.stripe.com' ||
+      hostname === 'invoice.stripe.com'
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Clerk OAuth opens `window.open` popups (then IdPs like Apple). On macOS, Chromium’s WebAuthn /
+ * FIDO path inside **sandboxed** child windows often never surfaces Touch ID / passkey UI (stuck
+ * spinner on appleid.apple.com). Use a non-sandboxed renderer for those popups only; keep the main
+ * app window sandboxed.
+ *
+ * Nested `window.open` calls must get the same handler — attach via `did-create-window`.
+ */
+function browserWindowOptionsForOAuthPopup(): Electron.BrowserWindowConstructorOptions {
+  return {
+    width: 500,
+    height: 720,
+    minWidth: 400,
+    minHeight: 560,
+    backgroundColor: '#ffffff',
+    autoHideMenuBar: true,
+    titleBarStyle: 'default',
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false,
+    },
+  };
+}
+
+function attachOauthPopupOpenHandler(contents: WebContents): void {
+  contents.setWindowOpenHandler((details) => {
+    if (shouldOpenStripeHostedPageInSystemBrowser(details.url)) {
+      void shell.openExternal(details.url);
+      return { action: 'deny' };
+    }
+    return {
+      action: 'allow',
+      overrideBrowserWindowOptions: browserWindowOptionsForOAuthPopup(),
+    };
+  });
+}
+
+function wireOauthPopupChain(contents: WebContents): void {
+  attachOauthPopupOpenHandler(contents);
+  contents.on('did-create-window', (childWindow: BrowserWindow) => {
+    wireOauthPopupChain(childWindow.webContents);
+  });
+}
+
+function notaProtocolOAuthUrlToSsoHttpUrl(protocolUrl: string): string | null {
+  if (!protocolUrl.startsWith(NOTA_OAUTH_PROTOCOL_PREFIX)) {
+    return null;
+  }
+  try {
+    const u = new URL(protocolUrl);
+    const search = u.search;
+    const base = isDev ? DEV_URL : PROD_URL;
+    return `${base}/sso-callback${search}`;
+  } catch {
+    return null;
+  }
+}
+
+function queueOrDeliverSsoFromNotaProtocol(protocolUrl: string): void {
+  const mapped = notaProtocolOAuthUrlToSsoHttpUrl(protocolUrl);
+  if (!mapped) {
+    return;
+  }
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    void mainWindow.loadURL(mapped);
+    if (mainWindow.isMinimized()) {
+      mainWindow.restore();
+    }
+    mainWindow.focus();
+    return;
+  }
+  pendingSsoHttpUrl = mapped;
+}
+
+/**
+ * Clerk `signIn.sso` assigns `window.location` to the hosted OAuth URL. In Electron, Apple / passkey
+ * flows must run in the **system browser**; intercept main-window navigations to HTTPS IdP/Clerk OAuth.
+ */
+function shouldOpenHttpsNavigationInSystemBrowser(url: string): boolean {
+  if (shouldOpenStripeHostedPageInSystemBrowser(url)) {
+    return true;
+  }
+  try {
+    const u = new URL(url);
+    if (u.protocol !== 'https:') {
+      return false;
+    }
+    const h = u.hostname;
+    return (
+      h === 'appleid.apple.com' ||
+      h === 'id.apple.com' ||
+      h === 'accounts.google.com' ||
+      h === 'github.com' ||
+      h.endsWith('.clerk.accounts.dev') ||
+      h.endsWith('.clerk.accounts.com') ||
+      (h.includes('clerk') &&
+        (h.includes('accounts') || u.pathname.includes('oauth')))
+    );
+  } catch {
+    return false;
+  }
+}
 
 type OgPreviewHandler = (request: Request) => Promise<Response>;
 let ogPreviewHandler: OgPreviewHandler | null = null;
@@ -33,7 +172,8 @@ async function ensureDesktopSupabaseEnv(staticRoot: string): Promise<void> {
   }
   if (
     process.env.VITE_SUPABASE_URL &&
-    process.env.VITE_SUPABASE_ANON_KEY
+    process.env.VITE_SUPABASE_ANON_KEY &&
+    process.env.VITE_CLERK_PUBLISHABLE_KEY
   ) {
     desktopSupabaseEnvLoaded = true;
     return;
@@ -46,12 +186,16 @@ async function ensureDesktopSupabaseEnv(staticRoot: string): Promise<void> {
     const j = JSON.parse(raw) as {
       VITE_SUPABASE_URL?: string;
       VITE_SUPABASE_ANON_KEY?: string;
+      VITE_CLERK_PUBLISHABLE_KEY?: string;
     };
     if (j.VITE_SUPABASE_URL) {
       process.env.VITE_SUPABASE_URL = j.VITE_SUPABASE_URL;
     }
     if (j.VITE_SUPABASE_ANON_KEY) {
       process.env.VITE_SUPABASE_ANON_KEY = j.VITE_SUPABASE_ANON_KEY;
+    }
+    if (j.VITE_CLERK_PUBLISHABLE_KEY) {
+      process.env.VITE_CLERK_PUBLISHABLE_KEY = j.VITE_CLERK_PUBLISHABLE_KEY;
     }
   } catch {
     /* OG handler will fail until env is present */
@@ -90,9 +234,6 @@ function webHeadersFromNode(headers: IncomingHttpHeaders): Headers {
   return h;
 }
 
-const isDev = !app.isPackaged;
-const isDarwin = process.platform === 'darwin';
-
 /** Match `isSpaShellPathnameAllowed` in `apps/nota.app/app/lib/spa-pathname-policy.ts` for SPA fallback. */
 function shouldSpaFallbackForMissingPath(pathname: string): boolean {
   const p =
@@ -112,6 +253,9 @@ function shouldSpaFallbackForMissingPath(pathname: string): boolean {
     return true;
   }
   if (p === '/notes' || p.startsWith('/notes/')) {
+    return true;
+  }
+  if (p === '/sso-callback' || p.startsWith('/sso-callback/')) {
     return true;
   }
   return false;
@@ -189,26 +333,25 @@ function createWindow(): void {
 
   const win = mainWindow;
 
-  // RevenueCat Web Billing opens Stripe checkout via window.open; without this, Electron
-  // often blocks or mishandles the popup so the user sees no checkout.
-  win.webContents.setWindowOpenHandler((details) => {
-    try {
-      const parsed = new URL(details.url);
-      if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
-        void shell.openExternal(details.url);
-        return { action: 'deny' };
-      }
-    } catch {
-      /* ignore */
+  wireOauthPopupChain(win.webContents);
+
+  win.webContents.on('will-navigate', (event, url) => {
+    if (!shouldOpenHttpsNavigationInSystemBrowser(url)) {
+      return;
     }
-    return { action: 'allow' };
+    event.preventDefault();
+    void shell.openExternal(url);
   });
 
-  // Load the app
-  if (isDev) {
-    win.loadURL(DEV_URL);
+  // Load the app (or resume Clerk OAuth handshake from a `nota://` deep link).
+  if (pendingSsoHttpUrl) {
+    const resume = pendingSsoHttpUrl;
+    pendingSsoHttpUrl = null;
+    void win.loadURL(resume);
+  } else if (isDev) {
+    void win.loadURL(DEV_URL);
   } else {
-    win.loadURL(PROD_URL);
+    void win.loadURL(PROD_URL);
   }
 
   win.on('closed', () => {
@@ -440,7 +583,13 @@ const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
   app.quit();
 } else {
-  app.on('second-instance', () => {
+  app.on('second-instance', (_event, argv) => {
+    const protocolUrl = argv.find(
+      (a): a is string => typeof a === 'string' && a.startsWith(NOTA_OAUTH_PROTOCOL_PREFIX),
+    );
+    if (protocolUrl) {
+      queueOrDeliverSsoFromNotaProtocol(protocolUrl);
+    }
     // Someone tried to run a second instance, focus our window instead
     if (mainWindow) {
       if (mainWindow.isMinimized()) {
@@ -452,6 +601,25 @@ if (!gotTheLock) {
 
   app.whenReady().then(async () => {
     try {
+      if (process.defaultApp) {
+        if (process.argv.length >= 2) {
+          app.setAsDefaultProtocolClient('nota', process.execPath, [
+            path.resolve(process.argv[1] ?? ''),
+          ]);
+        }
+      } else {
+        app.setAsDefaultProtocolClient('nota');
+      }
+
+      if (isDarwin) {
+        app.on('open-url', (event, url) => {
+          event.preventDefault();
+          if (url.startsWith(NOTA_OAUTH_PROTOCOL_PREFIX)) {
+            queueOrDeliverSsoFromNotaProtocol(url);
+          }
+        });
+      }
+
       await startServer();
       createWindow();
       await registerAutoUpdater();

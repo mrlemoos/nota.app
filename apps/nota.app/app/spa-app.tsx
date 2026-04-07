@@ -1,4 +1,4 @@
-import { useLayoutEffect, type JSX, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, type JSX, type ReactNode } from 'react';
 import { LandingPage } from './components/landing-page';
 import { NotesSpaShell } from './components/notes-spa-shell';
 import Login from './routes/login';
@@ -8,7 +8,7 @@ import { NotesDataProvider } from './context/notes-data-context';
 import { SignedInCommandPalette } from './signed-in-command-palette';
 import { useAppNavigationScreen } from './hooks/use-app-navigation-screen';
 import { SpaNotFound } from './components/spa-not-found';
-import { replaceAppHash } from './lib/app-navigation';
+import { replaceAppHash, syncAppNavigation } from './lib/app-navigation';
 import { cn } from './lib/utils';
 
 function SpaAuthPanel({
@@ -70,28 +70,69 @@ export function SpaApp(): JSX.Element {
     redirectAuthShell(user, loading, kind);
   }, [user, loading, kind]);
 
-  if (loading) {
-    return (
-      <div className="flex min-h-dvh items-center justify-center bg-background text-muted-foreground text-sm">
-        Loading...
-      </div>
-    );
-  }
-
   const landingActive = kind === 'landing';
   const notFoundActive = kind === 'notFound';
   const loginActive = kind === 'login';
   const signupActive = kind === 'signup';
   const notesActive = kind === 'notes';
+  const anyShellActive =
+    notFoundActive ||
+    landingActive ||
+    loginActive ||
+    signupActive ||
+    notesActive;
+
+  useEffect(() => {
+    if (loading || anyShellActive) {
+      return;
+    }
+    syncAppNavigation();
+  }, [loading, anyShellActive]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-background text-muted-foreground text-sm">
+        Loading…
+      </div>
+    );
+  }
 
   return (
-    <>
+    <div className="min-h-dvh bg-background text-foreground">
+      {!anyShellActive ? (
+        <div
+          className="flex min-h-dvh flex-col items-center justify-center gap-3 px-6 text-center text-sm text-muted-foreground"
+          role="status"
+        >
+          <p>Reconnecting to this screen…</p>
+          <button
+            type="button"
+            className="rounded-md border border-border bg-muted/40 px-3 py-1.5 text-foreground text-xs hover:bg-muted/60"
+            onClick={() => {
+              syncAppNavigation();
+              if (user) {
+                replaceAppHash({
+                  kind: 'notes',
+                  panel: 'list',
+                  noteId: null,
+                });
+              } else {
+                replaceAppHash({ kind: 'landing' });
+              }
+            }}
+          >
+            Open Nota
+          </button>
+        </div>
+      ) : null}
       <SpaAuthPanel active={notFoundActive} panelId="spa-screen-not-found">
         <SpaNotFound signedIn={Boolean(user)} />
       </SpaAuthPanel>
       <SpaAuthPanel active={landingActive} panelId="spa-screen-landing">
         {user ? (
-          <div className="min-h-dvh bg-background" aria-hidden />
+          <div className="flex min-h-dvh items-center justify-center bg-background text-muted-foreground text-sm">
+            Loading…
+          </div>
         ) : (
           <LandingPage />
         )}
@@ -108,6 +149,6 @@ export function SpaApp(): JSX.Element {
           <NotesSpaShell />
         </NotesDataProvider>
       </SpaAuthPanel>
-    </>
+    </div>
   );
 }

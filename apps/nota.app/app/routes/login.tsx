@@ -1,43 +1,14 @@
-import { useState, type FormEvent, type JSX } from 'react';
+import { useAuth } from '@clerk/clerk-react';
+import type { JSX } from 'react';
 import { AuthCardEpigraph } from '@/components/auth-card-epigraph';
+import { ClerkElementsSignIn } from '@/components/clerk-elements-sign-in';
 import { CartoonLandscape } from '@/components/cartoon-landscape';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { loginSchema } from '../lib/validation/auth';
-import { getBrowserClient } from '../lib/supabase/browser';
 import { hashForScreen } from '../lib/app-navigation';
 
 export default function Login(): JSX.Element {
-  const [error, setError] = useState<string | null>(null);
-
-  const onSubmit = (e: FormEvent<HTMLFormElement>): void => {
-    e.preventDefault();
-    setError(null);
-    const fd = new FormData(e.currentTarget);
-    const result = loginSchema.safeParse({
-      email: fd.get('email'),
-      password: fd.get('password'),
-    });
-    if (!result.success) {
-      setError(result.error.errors[0]?.message ?? 'Invalid input');
-      return;
-    }
-    const { email, password } = result.data;
-    void (async () => {
-      const { error: signErr } = await getBrowserClient().auth.signInWithPassword(
-        { email, password },
-      );
-      if (signErr) {
-        setError(signErr.message);
-        return;
-      }
-      window.location.hash = hashForScreen({
-        kind: 'notes',
-        panel: 'list',
-        noteId: null,
-      }).slice(1);
-    })();
-  };
+  const { isLoaded, userId } = useAuth();
 
   return (
     <main
@@ -56,77 +27,31 @@ export default function Login(): JSX.Element {
         )}
       >
         <AuthCardEpigraph />
-        <h1
-          className="mb-6 text-balance text-center text-2xl font-normal leading-tight text-foreground"
-          style={{ fontFamily: '"Instrument Serif", serif' }}
-        >
-          Sign In
-        </h1>
-
-        {error && (
-          <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-            {error}
-          </div>
+        {!isLoaded ? (
+          <p className="py-10 text-center text-sm text-muted-foreground">
+            Loading…
+          </p>
+        ) : userId ? (
+          <p className="py-10 text-center text-sm text-muted-foreground">
+            Opening Nota…
+          </p>
+        ) : (
+          <>
+            <ClerkElementsSignIn />
+            <p className="mt-4 text-center text-sm text-muted-foreground">
+              Don&apos;t have an account?{' '}
+              <a
+                href={hashForScreen({ kind: 'signup' })}
+                className={cn(
+                  buttonVariants({ variant: 'link', size: 'sm' }),
+                  'h-auto p-0 text-sm',
+                )}
+              >
+                Sign up
+              </a>
+            </p>
+          </>
         )}
-
-        <form onSubmit={onSubmit} className="space-y-4">
-          <div>
-            <label
-              htmlFor="email"
-              className="mb-1 block text-sm font-medium text-muted-foreground"
-            >
-              Email
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              required
-              className="w-full rounded-md border border-border bg-background/80 px-3 py-2 text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30"
-              placeholder="you@example.com"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="password"
-              className="mb-1 block text-sm font-medium text-muted-foreground"
-            >
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              required
-              className="w-full rounded-md border border-border bg-background/80 px-3 py-2 text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30"
-              placeholder="••••••••"
-            />
-          </div>
-
-          <button
-            type="submit"
-            className={cn(
-              buttonVariants({ variant: 'default', size: 'lg' }),
-              'h-10 w-full',
-            )}
-          >
-            Sign In
-          </button>
-        </form>
-
-        <p className="mt-4 text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{' '}
-          <a
-            href={hashForScreen({ kind: 'signup' })}
-            className={cn(
-              buttonVariants({ variant: 'link', size: 'sm' }),
-              'h-auto p-0 text-sm',
-            )}
-          >
-            Sign up
-          </a>
-        </p>
       </div>
     </main>
   );

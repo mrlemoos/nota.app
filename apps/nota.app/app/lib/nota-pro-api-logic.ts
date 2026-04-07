@@ -1,7 +1,7 @@
 import {
   getServerNotaProEntitled,
   invalidateServerNotaProCache,
-} from './revenuecat/subscriber.server';
+} from './clerk-billing.server';
 
 export async function jsonResponseNotaProEntitledForUser(
   userId: string,

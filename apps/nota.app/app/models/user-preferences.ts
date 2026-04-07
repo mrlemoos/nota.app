@@ -22,6 +22,7 @@ export async function getUserPreferences(
   return {
     user_id: userId,
     open_todays_note_shortcut: false,
+    welcome_seeded: false,
     updated_at: new Date(0).toISOString(),
   };
 }
@@ -29,17 +30,27 @@ export async function getUserPreferences(
 export async function upsertUserPreferences(
   client: TypedSupabaseClient,
   userId: string,
-  patch: { open_todays_note_shortcut: boolean },
+  patch: {
+    open_todays_note_shortcut?: boolean;
+    welcome_seeded?: boolean;
+  },
 ): Promise<UserPreferences> {
+  const current = await getUserPreferences(client, userId);
+  const row = {
+    user_id: userId,
+    open_todays_note_shortcut:
+      patch.open_todays_note_shortcut !== undefined
+        ? patch.open_todays_note_shortcut
+        : current.open_todays_note_shortcut,
+    welcome_seeded:
+      patch.welcome_seeded !== undefined
+        ? patch.welcome_seeded
+        : current.welcome_seeded,
+  };
+
   const { data, error } = await client
     .from('user_preferences')
-    .upsert(
-      {
-        user_id: userId,
-        open_todays_note_shortcut: patch.open_todays_note_shortcut,
-      },
-      { onConflict: 'user_id' },
-    )
+    .upsert(row, { onConflict: 'user_id' })
     .select()
     .single();
 

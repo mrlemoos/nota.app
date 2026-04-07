@@ -43,14 +43,7 @@ export interface Database {
           is_deadline?: boolean;
           editor_settings?: Json;
         };
-        Relationships: [
-          {
-            foreignKeyName: 'notes_user_id_fkey';
-            columns: ['user_id'];
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
+        Relationships: [];
       };
       note_attachments: {
         Row: {
@@ -90,38 +83,43 @@ export interface Database {
             referencedRelation: 'notes';
             referencedColumns: ['id'];
           },
-          {
-            foreignKeyName: 'note_attachments_user_id_fkey';
-            columns: ['user_id'];
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
         ];
+      };
+      supabase_clerk_account_link: {
+        Row: {
+          legacy_supabase_user_id: string;
+          clerk_user_id: string;
+        };
+        Insert: {
+          legacy_supabase_user_id: string;
+          clerk_user_id: string;
+        };
+        Update: {
+          legacy_supabase_user_id?: string;
+          clerk_user_id?: string;
+        };
+        Relationships: [];
       };
       user_preferences: {
         Row: {
           user_id: string;
           open_todays_note_shortcut: boolean;
           updated_at: string;
+          welcome_seeded: boolean;
         };
         Insert: {
           user_id: string;
           open_todays_note_shortcut?: boolean;
           updated_at?: string;
+          welcome_seeded?: boolean;
         };
         Update: {
           user_id?: string;
           open_todays_note_shortcut?: boolean;
           updated_at?: string;
+          welcome_seeded?: boolean;
         };
-        Relationships: [
-          {
-            foreignKeyName: 'user_preferences_user_id_fkey';
-            columns: ['user_id'];
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
+        Relationships: [];
       };
     };
     Views: {

@@ -1,5 +1,5 @@
-import { useLayoutEffect, useState, type JSX } from 'react';
-import { Button } from '@/components/ui/button';
+import { UserButton } from '@clerk/clerk-react';
+import { useLayoutEffect, useMemo, useState, type JSX } from 'react';
 import { cn } from '@/lib/utils';
 import { ThemeMenu } from '../components/theme-menu';
 import { useRootLoaderData } from '../context/spa-session-context';
@@ -7,8 +7,7 @@ import { useNotesData } from '../context/notes-data-context';
 import { submitUserPreferencesToggle } from '../lib/use-sync-user-preferences';
 import { useNotaPreferencesStore } from '../stores/nota-preferences';
 import { NotaProSettingsSection } from '../components/nota-pro-settings-section';
-import { getBrowserClient } from '../lib/supabase/browser';
-import { hashForScreen, setAppHash } from '../lib/app-navigation';
+import { hashForScreen } from '../lib/app-navigation';
 
 export default function NotesSettings(): JSX.Element {
   const { user } = useRootLoaderData();
@@ -36,6 +35,13 @@ export default function NotesSettings(): JSX.Element {
     setModDLabel(isApple ? '⌘D' : 'Ctrl+D');
     setHistoryBackLabel(isApple ? '⌘[' : 'Ctrl+[');
     setHistoryForwardLabel(isApple ? '⌘]' : 'Ctrl+]');
+  }, []);
+
+  const afterSignOutUrl = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return '';
+    }
+    return `${window.location.origin}${window.location.pathname}${hashForScreen({ kind: 'landing' })}`;
   }, []);
 
   return (
@@ -112,27 +118,30 @@ export default function NotesSettings(): JSX.Element {
         {user ? (
           <section className="space-y-3">
             <h2 className="text-sm font-medium text-foreground">Account</h2>
-            <div className="rounded-lg border border-border/60 bg-muted/20 px-4 py-3">
-              <p
-                className="truncate text-sm text-muted-foreground"
-                title={user.email ?? undefined}
-              >
-                {user.email}
-              </p>
-              <div className="mt-4">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => {
-                    void (async () => {
-                      await getBrowserClient().auth.signOut();
-                      setAppHash({ kind: 'landing' });
-                    })();
-                  }}
+            <div className="flex flex-col gap-4 rounded-lg border border-border/60 bg-muted/20 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-muted-foreground">Signed in as</p>
+                <p
+                  className="mt-0.5 truncate text-sm font-medium text-foreground"
+                  title={user.email ?? undefined}
                 >
-                  Sign out
-                </Button>
+                  {user.email}
+                </p>
+              </div>
+              <div className="flex shrink-0 justify-start sm:justify-end">
+                <UserButton
+                  afterSignOutUrl={afterSignOutUrl || undefined}
+                  appearance={{
+                    elements: {
+                      avatarBox: 'size-9 ring-1 ring-border/40',
+                      userButtonPopoverCard:
+                        'border border-border/60 bg-background shadow-lg',
+                      userButtonPopoverActionButton:
+                        'text-foreground hover:bg-muted',
+                      userButtonPopoverActionButtonText: 'text-foreground',
+                    },
+                  }}
+                />
               </div>
             </div>
           </section>

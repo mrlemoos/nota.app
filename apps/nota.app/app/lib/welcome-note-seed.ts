@@ -1,12 +1,12 @@
-import type { User } from '@supabase/supabase-js';
 import { createLocalOnlyNote } from './notes-offline';
 import { getBrowserClient } from './supabase/browser';
 import { WELCOME_NOTE_CONTENT, WELCOME_NOTE_TITLE } from './welcome-note-doc';
+import { getUserPreferences, upsertUserPreferences } from '../models/user-preferences';
 
 /**
  * One promise per user for the welcome seed. Kept after settle so Strict Mode
  * (unmount/remount) cannot start a second `createLocalOnlyNote` while React
- * still shows `notesCount === 0` and stale `user_metadata`.
+ * still shows `notesCount === 0` and stale preferences.
  */
 const welcomeSeedByUserId = new Map<string, Promise<string | null>>();
 
@@ -16,31 +16,29 @@ export function clearWelcomeSeedCacheForTests(): void {
 }
 
 export type WelcomeNoteSeedArgs = {
-  user: User;
+  userId: string;
+  welcomeSeeded: boolean;
   notesCount: number;
 };
 
 /**
  * Ensures a one-time welcome note exists for accounts with an empty vault.
  *
- * Idempotent via `user.user_metadata.welcome_seeded` (synced with Supabase).
- * Legacy accounts with zero notes will also receive this note once — acceptable
- * unless a stricter gate (e.g. `created_at` cutoff) is added later.
+ * Idempotent via `user_preferences.welcome_seeded`.
  */
 export async function runWelcomeNoteSeedIfNeeded(
   args: WelcomeNoteSeedArgs,
 ): Promise<string | null> {
-  const { user, notesCount } = args;
+  const { userId, welcomeSeeded, notesCount } = args;
 
-  if (user.user_metadata?.welcome_seeded === true) {
+  if (welcomeSeeded) {
     return null;
   }
   if (notesCount > 0) {
     return null;
   }
 
-  const key = user.id;
-  const existing = welcomeSeedByUserId.get(key);
+  const existing = welcomeSeedByUserId.get(userId);
   if (existing) {
     return existing;
   }
@@ -48,24 +46,28 @@ export async function runWelcomeNoteSeedIfNeeded(
   const promise = (async (): Promise<string | null> => {
     try {
       const id = await createLocalOnlyNote(
-        user.id,
+        userId,
         WELCOME_NOTE_TITLE,
         WELCOME_NOTE_CONTENT,
       );
-      const { error } = await getBrowserClient().auth.updateUser({
-        data: { welcome_seeded: true },
-      });
-      if (error) {
-        console.error('Welcome note: failed to set user metadata', error);
+      const client = getBrowserClient();
+      const prefs = await getUserPreferences(client, userId);
+      try {
+        await upsertUserPreferences(client, userId, {
+          open_todays_note_shortcut: prefs.open_todays_note_shortcut,
+          welcome_seeded: true,
+        });
+      } catch (e) {
+        console.error('Welcome note: failed to set welcome_seeded preference', e);
       }
       return id;
     } catch (e) {
       console.error('Welcome note seed failed', e);
-      welcomeSeedByUserId.delete(key);
+      welcomeSeedByUserId.delete(userId);
       return null;
     }
   })();
 
-  welcomeSeedByUserId.set(key, promise);
+  welcomeSeedByUserId.set(userId, promise);
   return promise;
 }

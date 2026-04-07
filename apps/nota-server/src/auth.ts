@@ -1,8 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
+import { verifyToken } from '@clerk/backend';
 
 /**
- * Resolves the Supabase user id from `Authorization: Bearer <access_token>`.
- * Uses the Supabase secret key server-side only (never exposed to clients).
+ * Resolves the Clerk user id from `Authorization: Bearer <session_jwt>`.
  */
 export async function getUserIdFromBearer(
   request: Request,
@@ -16,27 +15,16 @@ export async function getUserIdFromBearer(
     return null;
   }
 
-  const url =
-    process.env.SUPABASE_URL?.trim() ||
-    process.env.VITE_SUPABASE_URL?.trim();
-  const secretKey =
-    process.env.SUPABASE_SECRET_KEY?.trim() ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-
-  if (!url || !secretKey) {
-    throw new Error(
-      'nota-server: set SUPABASE_URL (or VITE_SUPABASE_URL) and SUPABASE_SECRET_KEY',
-    );
+  const secretKey = process.env.CLERK_SECRET_KEY?.trim();
+  if (!secretKey) {
+    throw new Error('nota-server: set CLERK_SECRET_KEY');
   }
 
-  const supabase = createClient(url, secretKey);
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser(token);
-
-  if (error || !user) {
+  try {
+    const payload = await verifyToken(token, { secretKey });
+    const sub = payload.sub;
+    return typeof sub === 'string' && sub.length > 0 ? sub : null;
+  } catch {
     return null;
   }
-  return user.id;
 }

@@ -1,16 +1,20 @@
 import { useLayoutEffect, useState } from 'react';
 
+/** Synchronous check for OAuth / shell behaviour (avoids a one-frame web-only flash in Electron). */
+export function isElectronShellSync(): boolean {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+  const hasShellBridge = typeof window.nota !== 'undefined';
+  const uaSaysElectron = navigator.userAgent.toLowerCase().includes('electron');
+  return hasShellBridge || uaSaysElectron;
+}
+
 export function useIsElectron() {
   const [isElectron, setIsElectron] = useState(false);
 
   useLayoutEffect(() => {
-    if (typeof window === 'undefined') return;
-    // Prefer the Nota preload bridge; recent Electron builds often omit "Electron" from the UA.
-    const hasShellBridge = typeof window.nota !== 'undefined';
-    const uaSaysElectron = navigator.userAgent
-      .toLowerCase()
-      .includes('electron');
-    setIsElectron(hasShellBridge || uaSaysElectron);
+    setIsElectron(isElectronShellSync());
   }, []);
 
   return isElectron;

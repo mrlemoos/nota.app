@@ -10,6 +10,11 @@ publish:
 directories:
   output: release
   buildResources: buildResources
+protocols:
+  # Clerk OAuth completes in the system browser; `nota://oauth-callback` returns the user to Nota.
+  - name: Nota Clerk OAuth
+    schemes:
+      - nota
 files:
   - dist/**/*
   - from: ../nota.app/dist

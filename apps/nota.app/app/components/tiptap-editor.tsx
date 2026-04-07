@@ -649,7 +649,7 @@ export function TipTapEditor({
             );
             setPendingAttachments((prev) => [...prev, record]);
             insertAttachmentNode(record);
-            void refreshNotesList();
+            void refreshNotesList({ silent: true });
           } catch (err) {
             setUploadError(
               err instanceof Error ? err.message : 'Upload failed',
@@ -709,7 +709,7 @@ export function TipTapEditor({
         userId,
         attachmentsById,
         revalidate: () => {
-          void refreshNotesList();
+          void refreshNotesList({ silent: true });
         },
       }}
     >

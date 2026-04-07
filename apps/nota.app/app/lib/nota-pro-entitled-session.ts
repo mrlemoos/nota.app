@@ -1,4 +1,4 @@
-import { NOTA_SERVER_NOTES_ENTITLED_SESSION_KEY } from './constants';
+const NOTA_SERVER_NOTES_ENTITLED_SESSION_KEY = 'nota-server-notes-entitled';
 
 /** Mirrors last successful server entitlement check for offline notes (subscribed users only). */
 export function syncNotaServerEntitledSession(entitled: boolean): void {

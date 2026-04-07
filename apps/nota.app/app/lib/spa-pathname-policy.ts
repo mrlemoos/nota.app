@@ -22,5 +22,8 @@ export function isSpaShellPathnameAllowed(pathname: string): boolean {
   if (p === '/notes' || p.startsWith('/notes/')) {
     return true;
   }
+  if (p === '/sso-callback' || p.startsWith('/sso-callback/')) {
+    return true;
+  }
   return false;
 }

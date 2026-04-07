@@ -1,5 +1,6 @@
 /// <reference types='vitest' />
-import fs from 'node:fs/promises';
+import fs from 'node:fs';
+import fsPromises from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { IncomingMessage, ServerResponse } from 'node:http';
@@ -14,6 +15,20 @@ import {
 import { spaApiOgPreview } from './app/lib/spa-api-og-preview';
 
 const appDir = path.join(fileURLToPath(new URL('.', import.meta.url)), 'app');
+const monorepoRoot = path.resolve(fileURLToPath(new URL('.', import.meta.url)), '../..');
+/** `@clerk/clerk-react` pins `@clerk/shared@3.x`; the repo also hoists `@clerk/shared@4.x` for `@clerk/backend`. Always bundle the React-line copy so Clerk hooks match `<ClerkProvider>`. */
+const clerkSharedRoot = (() => {
+  const nextToReact = path.join(
+    monorepoRoot,
+    'node_modules/@clerk/clerk-react/node_modules/@clerk/shared',
+  );
+  if (fs.existsSync(nextToReact)) {
+    return nextToReact;
+  }
+  return path.join(monorepoRoot, 'node_modules/@clerk/shared');
+})();
+const clerkReactRoot = path.join(monorepoRoot, 'node_modules/@clerk/clerk-react');
+const clerkTypesRoot = path.join(monorepoRoot, 'node_modules/@clerk/types');
 
 function webHeaders(req: IncomingMessage): Headers {
   const h = new Headers();
@@ -56,11 +71,13 @@ function notaDesktopArtifactsPlugin(appRoot: string): Plugin {
         typeof options.dir === 'string'
           ? options.dir
           : path.join(appRoot, 'dist');
-      await fs.writeFile(
+      await fsPromises.writeFile(
         path.join(outDir, 'nota-public-env.json'),
         JSON.stringify({
           VITE_SUPABASE_URL: process.env.VITE_SUPABASE_URL ?? '',
           VITE_SUPABASE_ANON_KEY: process.env.VITE_SUPABASE_ANON_KEY ?? '',
+          VITE_CLERK_PUBLISHABLE_KEY:
+            process.env.VITE_CLERK_PUBLISHABLE_KEY ?? '',
         }),
         'utf8',
       );
@@ -76,6 +93,13 @@ function notaDesktopArtifactsPlugin(appRoot: string): Plugin {
         alias: {
           '~': path.join(appRoot, 'app'),
           '@': path.join(appRoot, 'app'),
+        },
+        // Packaged Electron runs this bundle in the main process; verifyToken needs a secret.
+        // CI should set CLERK_SECRET_KEY when building the client that ships inside the DMG/ZIP.
+        define: {
+          'process.env.CLERK_SECRET_KEY': JSON.stringify(
+            process.env.CLERK_SECRET_KEY ?? '',
+          ),
         },
         logLevel: 'warning',
       });
@@ -98,10 +122,27 @@ export default defineConfig(({ mode }) => {
     root: import.meta.dirname,
     publicDir: 'public',
     resolve: {
-      alias: {
-        '~': appDir,
-        '@': appDir,
-      },
+      alias: [
+        // Force a single Clerk runtime: `@clerk/elements` may install nested `@clerk/*` copies
+        // that break React context (`useClerk` vs `<ClerkProvider>`). Always resolve to the
+        // workspace-hoisted packages (same as `main.tsx` imports).
+        { find: /^@clerk\/shared$/, replacement: clerkSharedRoot },
+        { find: /^@clerk\/shared\//, replacement: `${clerkSharedRoot}/` },
+        { find: /^@clerk\/clerk-react$/, replacement: clerkReactRoot },
+        { find: /^@clerk\/clerk-react\//, replacement: `${clerkReactRoot}/` },
+        { find: /^@clerk\/types$/, replacement: clerkTypesRoot },
+        { find: /^@clerk\/types\//, replacement: `${clerkTypesRoot}/` },
+        { find: '~', replacement: appDir },
+        { find: '@', replacement: appDir },
+        {
+          find: 'next/navigation',
+          replacement: path.join(appDir, 'shims/next/navigation.ts'),
+        },
+        {
+          find: 'next/compat/router',
+          replacement: path.join(appDir, 'shims/next/compat-router.ts'),
+        },
+      ],
     },
     cacheDir: '../../node_modules/.vite/apps/nota.app',
     server: {

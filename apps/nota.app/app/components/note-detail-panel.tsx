@@ -19,8 +19,12 @@ import { getNote } from '../models/notes';
 import { listNoteAttachments } from '../models/note-attachments';
 import { hashForScreen, replaceAppHash } from '../lib/app-navigation';
 import { useNotesData } from '../context/notes-data-context';
+import { useSpaSession } from '../context/spa-session-context';
+
 export function NoteDetailPanel({ noteId }: { noteId: string }): React.ReactNode {
-  const { notes, notaProEntitled, patchNoteInList } = useNotesData();
+  const { notes, notaProEntitled, patchNoteInList, loading: vaultLoading } =
+    useNotesData();
+  const { user } = useSpaSession();
   const [note, setNote] = useState<Note | null>(null);
   const [attachments, setAttachments] = useState<NoteAttachment[]>([]);
   const [fetchSettled, setFetchSettled] = useState(false);
@@ -33,6 +37,13 @@ export function NoteDetailPanel({ noteId }: { noteId: string }): React.ReactNode
   const displayNote =
     note?.id === noteId ? note : noteFromList;
 
+  const notFoundGateRef = useRef({
+    userId: user?.id,
+    vaultLoading,
+    displayNote,
+  });
+  notFoundGateRef.current = { userId: user?.id, vaultLoading, displayNote };
+
   useEffect(() => {
     let cancelled = false;
     setAttachments([]);
@@ -43,10 +54,7 @@ export function NoteDetailPanel({ noteId }: { noteId: string }): React.ReactNode
       let authedThisFetch = false;
       try {
         const client = getBrowserClient();
-        const {
-          data: { session },
-        } = await client.auth.getSession();
-        const uid = session?.user?.id;
+        const uid = user?.id;
         if (!uid) {
           if (!cancelled) {
             setNote(null);
@@ -128,14 +136,42 @@ export function NoteDetailPanel({ noteId }: { noteId: string }): React.ReactNode
     return () => {
       cancelled = true;
     };
-  }, [noteId, notaProEntitled]);
+  }, [noteId, notaProEntitled, user?.id]);
 
   useEffect(() => {
-    if (!fetchSettled || !hadAuthenticatedUser || displayNote) {
+    if (
+      !user?.id ||
+      vaultLoading ||
+      !fetchSettled ||
+      !hadAuthenticatedUser ||
+      displayNote
+    ) {
       return;
     }
-    replaceAppHash({ kind: 'notFound' });
-  }, [fetchSettled, hadAuthenticatedUser, displayNote]);
+    // Defer so we do not read stale fetch flags in the same commit as the load effect
+    // resetting `fetchSettled` / `hadAuthenticatedUser` (avoids notes → 404 → blank loops).
+    let cancelled = false;
+    const t = window.setTimeout(() => {
+      if (cancelled) {
+        return;
+      }
+      const g = notFoundGateRef.current;
+      if (!g.userId || g.vaultLoading || g.displayNote) {
+        return;
+      }
+      replaceAppHash({ kind: 'notFound' });
+    }, 0);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t);
+    };
+  }, [
+    user?.id,
+    vaultLoading,
+    fetchSettled,
+    hadAuthenticatedUser,
+    displayNote,
+  ]);
 
   const handleNoteUpdated = useCallback(
     (updatedNote: Note) => {

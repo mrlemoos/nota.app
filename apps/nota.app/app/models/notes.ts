@@ -8,9 +8,8 @@ import type {
 import { listNoteAttachments, NOTE_PDFS_BUCKET } from './note-attachments';
 
 /**
- * `@supabase/ssr` types `createServerClient` as `SupabaseClient<Database, SchemaName, Schema>` (3 args),
- * while `SupabaseClient` in `supabase-js` also has extra generics. Using `any` for schema slots accepts
- * both server and browser clients without assignability errors.
+ * `SupabaseClient` generics vary by import path; using `any` for schema slots accepts
+ * browser and test mocks without assignability noise.
  */
 export type TypedSupabaseClient = SupabaseClient<Database, any, any>;
 

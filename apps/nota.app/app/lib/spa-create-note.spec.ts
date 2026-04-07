@@ -4,14 +4,11 @@ import { spaCreateNote } from './spa-create-note';
 import { createLocalOnlyNote, isLikelyOnline } from './notes-offline';
 import { createNote } from '../models/notes';
 
-const getSession = vi.fn();
 const insertNoteAtFront = vi.fn();
 const refreshNotesList = vi.fn();
 
 vi.mock('./supabase/browser', () => ({
-  getBrowserClient: () => ({
-    auth: { getSession },
-  }),
+  getBrowserClient: () => ({}),
 }));
 
 vi.mock('./notes-offline', async (importOriginal) => {
@@ -43,15 +40,13 @@ vi.mock('./app-navigation', () => ({
 describe('spaCreateNote', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    getSession.mockResolvedValue({
-      data: { session: { user: { id: 'u1' } } },
-    });
   });
 
   it('does nothing when not entitled', async () => {
     vi.mocked(isLikelyOnline).mockReturnValue(true);
 
     await spaCreateNote({
+      userId: 'u1',
       insertNoteAtFront,
       refreshNotesList,
       notaProEntitled: false,
@@ -66,6 +61,7 @@ describe('spaCreateNote', () => {
     vi.mocked(isLikelyOnline).mockReturnValue(true);
 
     await spaCreateNote({
+      userId: 'u1',
       insertNoteAtFront,
       refreshNotesList,
       notaProEntitled: true,
@@ -80,6 +76,7 @@ describe('spaCreateNote', () => {
     vi.mocked(isLikelyOnline).mockReturnValue(false);
 
     await spaCreateNote({
+      userId: 'u1',
       insertNoteAtFront,
       refreshNotesList,
       notaProEntitled: true,
@@ -93,6 +90,7 @@ describe('spaCreateNote', () => {
     vi.mocked(isLikelyOnline).mockReturnValue(false);
 
     await spaCreateNote({
+      userId: 'u1',
       insertNoteAtFront,
       refreshNotesList,
       notaProEntitled: false,

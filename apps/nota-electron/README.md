@@ -73,7 +73,8 @@ If **Production** has protection rules (required reviewers, wait timers), each r
 |--------|---------|
 | `VITE_SUPABASE_URL` | Supabase project URL |
 | `VITE_SUPABASE_ANON_KEY` | Supabase anon (public) key |
-| `VITE_REVENUECAT_API_KEY` | RevenueCat Web Billing public SDK key |
+| `VITE_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (same instance as the web app) |
+| `CLERK_SECRET_KEY` | Clerk secret key (server-only); bundled into `electron-og-api.mjs` at web build time so packaged link previews can verify the session |
 | `VITE_NOTA_SERVER_API_URL` | nota-server HTTPS origin, no trailing slash (production Railway example: `https://notaappnota-server-production.up.railway.app`) |
 
 ### Triggering CI release
@@ -111,5 +112,5 @@ With `APPLE_CERTIFICATE_BASE64` unset, CI still produces **unsigned** artefacts.
 
 - **Dev mode**: Loads from `http://localhost:4200` (Vite dev server).
 - **Prod mode**: Serves the embedded **`nota.app/dist`** static build from inside the app bundle via a small Node **`http`** server on **`http://127.0.0.1:4378`** (SPA fallback).
-- **Link preview**: **`GET /api/og-preview`** is handled locally via **`electron-og-api.mjs`** and **`nota-public-env.json`** from the nota.app build (Supabase session cookies + OG fetch; no RevenueCat secret in the shell).
+- **Link preview**: **`GET /api/og-preview`** is handled locally via **`electron-og-api.mjs`** and **`nota-public-env.json`** from the nota.app build. The OG bundle inlines **`CLERK_SECRET_KEY`** from the build environment (set **`CLERK_SECRET_KEY`** alongside the `VITE_*` secrets when running **`electron:release`**). The main process also loads **`VITE_CLERK_PUBLISHABLE_KEY`** from `nota-public-env.json` for cookie-based session resolution.
 - **Nota Pro entitlement**: Build **`nota.app`** with **`VITE_NOTA_SERVER_API_URL`** pointing at **[`nota-server`](../nota-server)** so entitlement and invalidate use Bearer auth against that service. Other **`/api/*`** paths still return **502** in the desktop static server.

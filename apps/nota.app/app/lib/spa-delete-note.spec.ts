@@ -8,14 +8,11 @@ import {
 } from './notes-offline';
 import { deleteNote } from '../models/notes';
 
-const getSession = vi.fn();
 const removeNoteFromList = vi.fn();
 const refreshNotesList = vi.fn();
 
 vi.mock('./supabase/browser', () => ({
-  getBrowserClient: () => ({
-    auth: { getSession },
-  }),
+  getBrowserClient: () => ({}),
 }));
 
 vi.mock('./notes-offline', async (importOriginal) => {
@@ -40,15 +37,13 @@ vi.mock('./app-navigation', () => ({
 describe('spaDeleteNoteById', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    getSession.mockResolvedValue({
-      data: { session: { user: { id: 'u1' } } },
-    });
   });
 
   it('does nothing when not entitled', async () => {
     vi.mocked(isLikelyOnline).mockReturnValue(true);
 
     await spaDeleteNoteById('n1', {
+      userId: 'u1',
       removeNoteFromList,
       refreshNotesList,
       notaProEntitled: false,
@@ -63,6 +58,7 @@ describe('spaDeleteNoteById', () => {
     vi.mocked(isLikelyOnline).mockReturnValue(false);
 
     await spaDeleteNoteById('n1', {
+      userId: 'u1',
       removeNoteFromList,
       refreshNotesList,
       notaProEntitled: true,
@@ -77,6 +73,7 @@ describe('spaDeleteNoteById', () => {
     vi.mocked(isLikelyOnline).mockReturnValue(true);
 
     await spaDeleteNoteById('n1', {
+      userId: 'u1',
       removeNoteFromList,
       refreshNotesList,
       notaProEntitled: true,

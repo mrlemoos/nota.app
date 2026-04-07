@@ -1,55 +1,44 @@
+import { useAuth, useUser } from '@clerk/clerk-react';
 import {
   createContext,
   useContext,
-  useEffect,
   useMemo,
-  useState,
   type ReactNode,
 } from 'react';
-import type { User } from '@supabase/supabase-js';
-import { getBrowserClient } from '../lib/supabase/browser';
+
+/** Minimal session shape for components that previously used Supabase `User`. */
+export type SpaUser = {
+  id: string;
+  email: string | null;
+};
 
 export type SpaSessionContextValue = {
-  user: User | null;
+  user: SpaUser | null;
   loading: boolean;
 };
 
 const SpaSessionContext = createContext<SpaSessionContextValue | null>(null);
 
 export function SpaSessionProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { isLoaded, isSignedIn, userId } = useAuth();
+  const { user } = useUser();
 
-  useEffect(() => {
-    let cancelled = false;
-    try {
-      const c = getBrowserClient();
-      void c.auth.getSession().then(({ data }) => {
-        if (!cancelled) {
-          setUser(data.session?.user ?? null);
-          setLoading(false);
-        }
-      });
-      const { data: sub } = c.auth.onAuthStateChange((_event, session) => {
-        setUser(session?.user ?? null);
-      });
-      return () => {
-        cancelled = true;
-        sub.subscription.unsubscribe();
-      };
-    } catch {
-      if (!cancelled) {
-        setUser(null);
-        setLoading(false);
-      }
-      return undefined;
+  const value = useMemo((): SpaSessionContextValue => {
+    if (!isLoaded) {
+      return { user: null, loading: true };
     }
-  }, []);
-
-  const value = useMemo(
-    () => ({ user, loading } satisfies SpaSessionContextValue),
-    [user, loading],
-  );
+    if (!isSignedIn || !userId) {
+      return { user: null, loading: false };
+    }
+    const primary =
+      user?.primaryEmailAddress?.emailAddress ??
+      user?.emailAddresses?.[0]?.emailAddress ??
+      null;
+    return {
+      user: { id: userId, email: primary },
+      loading: false,
+    };
+  }, [isLoaded, isSignedIn, userId, user]);
 
   return (
     <SpaSessionContext.Provider value={value}>
@@ -66,8 +55,7 @@ export function useSpaSession(): SpaSessionContextValue {
   return v;
 }
 
-/** Replaces root loader shape for components that still expect `user` from the shell. */
-export function useRootLoaderData(): { user: User | null } {
+export function useRootLoaderData(): { user: SpaUser | null } {
   const { user } = useSpaSession();
   return { user };
 }

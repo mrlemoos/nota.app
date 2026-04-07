@@ -11,22 +11,21 @@ import { setAppHash } from './app-navigation';
 export async function spaDeleteNoteById(
   noteId: string,
   options: {
+    userId: string;
     removeNoteFromList: (id: string) => void;
-    refreshNotesList: () => Promise<void>;
+    refreshNotesList: (options?: { silent?: boolean }) => Promise<void>;
     notaProEntitled: boolean;
   },
 ): Promise<void> {
-  const client = getBrowserClient();
-  const {
-    data: { session },
-  } = await client.auth.getSession();
-  if (!session?.user) {
+  const { userId } = options;
+  if (!userId) {
     return;
   }
   if (!options.notaProEntitled) {
     return;
   }
-  const uid = session.user.id;
+  const client = getBrowserClient();
+  const uid = userId;
 
   const runLocalDelete = async (): Promise<void> => {
     const stored = await getStoredNote(uid, noteId);
@@ -45,7 +44,7 @@ export async function spaDeleteNoteById(
     await deleteNote(client, noteId);
     options.removeNoteFromList(noteId);
     setAppHash({ kind: 'notes', panel: 'list', noteId: null });
-    await options.refreshNotesList();
+    await options.refreshNotesList({ silent: true });
   } catch {
     await runLocalDelete();
   }

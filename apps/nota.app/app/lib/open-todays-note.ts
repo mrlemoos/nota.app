@@ -45,13 +45,7 @@ export async function openTodaysNoteClient(options: {
   if (isLikelyOnline()) {
     try {
       const client = getBrowserClient();
-      const {
-        data: { session },
-      } = await client.auth.getSession();
-      if (!session?.user) {
-        return;
-      }
-      const row = await createNote(client, session.user.id, title);
+      const row = await createNote(client, userId, title);
       createdId = row.id;
     } catch {
       createdId = await createLocalOnlyNote(userId, title);

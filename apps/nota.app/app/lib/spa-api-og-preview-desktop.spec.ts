@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { spaApiOgPreviewDesktop } from './spa-api-og-preview-desktop';
 
-import { getAuthUser } from './supabase/auth';
+import { getClerkUserIdFromRequest } from './clerk-request-auth';
 
-vi.mock('./supabase/auth', () => ({
-  getAuthUser: vi.fn(),
+vi.mock('./clerk-request-auth', () => ({
+  getClerkUserIdFromRequest: vi.fn(),
 }));
 
 vi.mock('./og-preview.server', () => ({
@@ -18,11 +18,11 @@ vi.mock('./og-preview.server', () => ({
 
 describe('spaApiOgPreviewDesktop', () => {
   beforeEach(() => {
-    vi.mocked(getAuthUser).mockReset();
+    vi.mocked(getClerkUserIdFromRequest).mockReset();
   });
 
   it('returns 401 when there is no signed-in user', async () => {
-    vi.mocked(getAuthUser).mockResolvedValue(null);
+    vi.mocked(getClerkUserIdFromRequest).mockResolvedValue(null);
     const r = await spaApiOgPreviewDesktop(
       new Request(
         'http://localhost/api/og-preview?url=https%3A%2F%2Fexample.com',
@@ -32,7 +32,7 @@ describe('spaApiOgPreviewDesktop', () => {
   });
 
   it('returns 400 when url query is missing', async () => {
-    vi.mocked(getAuthUser).mockResolvedValue({ id: 'u1' } as never);
+    vi.mocked(getClerkUserIdFromRequest).mockResolvedValue('u1');
     const r = await spaApiOgPreviewDesktop(
       new Request('http://localhost/api/og-preview'),
     );
@@ -40,7 +40,7 @@ describe('spaApiOgPreviewDesktop', () => {
   });
 
   it('returns 200 with preview JSON when signed in', async () => {
-    vi.mocked(getAuthUser).mockResolvedValue({ id: 'u1' } as never);
+    vi.mocked(getClerkUserIdFromRequest).mockResolvedValue('u1');
     const r = await spaApiOgPreviewDesktop(
       new Request(
         'http://localhost/api/og-preview?url=https%3A%2F%2Fexample.com',

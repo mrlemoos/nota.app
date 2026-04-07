@@ -49,6 +49,22 @@ const NotesGraphRoute = lazy(async () => import('../routes/notes.graph'));
 const NotesSettingsRoute = lazy(async () => import('../routes/notes.settings'));
 const NotesShortcutsRoute = lazy(async () => import('../routes/notes.shortcuts'));
 
+/** Avoid `fallback={null}`: paywall redirect hits Settings before the chunk loads; Electron notes root is transparent so an empty main reads as a blank screen. */
+function LazyNotesRouteFallback({ label }: { label: string }): JSX.Element {
+  return (
+    <div
+      className={cn(
+        'flex min-h-[40vh] flex-col items-center justify-center px-4',
+        'bg-background/80 text-sm text-muted-foreground',
+      )}
+      role="status"
+      aria-live="polite"
+    >
+      {label}
+    </div>
+  );
+}
+
 function SidebarToggle({ className }: { className?: string }): JSX.Element {
   const { open, toggle } = useNotesSidebarStore();
 
@@ -206,6 +222,12 @@ export function NotesSpaShell(): JSX.Element {
 
   useNotesOfflineSync(user?.id, notaProEntitled && shellReady);
 
+  useEffect(() => {
+    void import('../routes/notes.settings');
+    void import('../routes/notes.shortcuts');
+    void import('../routes/notes.graph');
+  }, []);
+
   useLayoutEffect(() => {
     if (!paywalled) {
       return;
@@ -262,7 +284,11 @@ export function NotesSpaShell(): JSX.Element {
     'bg-background/55 backdrop-blur-xl backdrop-saturate-150 text-foreground';
 
   const onCreateNote = (): void => {
+    if (!user?.id) {
+      return;
+    }
     void spaCreateNote({
+      userId: user.id,
       insertNoteAtFront,
       refreshNotesList,
       notaProEntitled,
@@ -440,6 +466,7 @@ export function NotesSpaShell(): JSX.Element {
                                     return;
                                   }
                                   void spaDeleteNoteById(note.id, {
+                                    userId: user?.id ?? '',
                                     removeNoteFromList,
                                     refreshNotesList,
                                     notaProEntitled,
@@ -561,18 +588,14 @@ export function NotesSpaShell(): JSX.Element {
             ) : null}
           </ShellPanel>
           <ShellPanel active={panel === 'graph'} panelId="nota-panel-graph">
-            <Suspense
-              fallback={
-                <div className="p-8 text-sm text-muted-foreground">
-                  Loading graph…
-                </div>
-              }
-            >
+            <Suspense fallback={<LazyNotesRouteFallback label="Loading graph…" />}>
               <NotesGraphRoute />
             </Suspense>
           </ShellPanel>
           <ShellPanel active={panel === 'settings'} panelId="nota-panel-settings">
-            <Suspense fallback={null}>
+            <Suspense
+              fallback={<LazyNotesRouteFallback label="Loading settings…" />}
+            >
               <NotesSettingsRoute />
             </Suspense>
           </ShellPanel>
@@ -580,7 +603,9 @@ export function NotesSpaShell(): JSX.Element {
             active={panel === 'shortcuts'}
             panelId="nota-panel-shortcuts"
           >
-            <Suspense fallback={null}>
+            <Suspense
+              fallback={<LazyNotesRouteFallback label="Loading shortcuts…" />}
+            >
               <NotesShortcutsRoute />
             </Suspense>
           </ShellPanel>

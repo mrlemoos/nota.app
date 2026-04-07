@@ -5,15 +5,13 @@ import { setAppHash } from './app-navigation';
 import type { Note } from '~/types/database.types';
 
 export async function spaCreateNote(options: {
+  userId: string;
   insertNoteAtFront: (n: Note) => void;
-  refreshNotesList: () => Promise<void>;
+  refreshNotesList: (options?: { silent?: boolean }) => Promise<void>;
   notaProEntitled: boolean;
 }): Promise<void> {
-  const c = getBrowserClient();
-  const {
-    data: { session },
-  } = await c.auth.getSession();
-  if (!session?.user) {
+  const { userId } = options;
+  if (!userId) {
     return;
   }
 
@@ -21,25 +19,27 @@ export async function spaCreateNote(options: {
     return;
   }
 
+  const c = getBrowserClient();
+
   function goToNote(id: string): void {
     setAppHash({ kind: 'notes', panel: 'note', noteId: id });
   }
 
   if (!isLikelyOnline()) {
-    const id = await createLocalOnlyNote(session.user.id);
+    const id = await createLocalOnlyNote(userId);
     goToNote(id);
-    await options.refreshNotesList();
+    await options.refreshNotesList({ silent: true });
     return;
   }
 
   try {
-    const row = await createNote(c, session.user.id);
+    const row = await createNote(c, userId);
     options.insertNoteAtFront(row);
     goToNote(row.id);
-    await options.refreshNotesList();
+    await options.refreshNotesList({ silent: true });
   } catch {
-    const id = await createLocalOnlyNote(session.user.id);
+    const id = await createLocalOnlyNote(userId);
     goToNote(id);
-    await options.refreshNotesList();
+    await options.refreshNotesList({ silent: true });
   }
 }

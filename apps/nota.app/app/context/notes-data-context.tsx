@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -18,14 +19,24 @@ import {
 } from '../lib/notes-offline';
 import { listNotes } from '../models/notes';
 import { getUserPreferences } from '../models/user-preferences';
+import { isClerkAccessTokenGetterRegistered } from '../lib/clerk-token-ref';
 import { fetchNotaProEntitled } from '../lib/nota-server-client';
+import { isSupabaseClerkGetTokenRegistered } from '../lib/supabase/browser';
 import {
   readNotaServerEntitledSession,
   syncNotaServerEntitledSession,
-} from '../lib/revenuecat/nota-notes-entitled-session';
+} from '../lib/nota-pro-entitled-session';
 import { setAppHash } from '../lib/app-navigation';
 import { runWelcomeNoteSeedIfNeeded } from '../lib/welcome-note-seed';
 import { useSpaSession } from './spa-session-context';
+
+export type RefreshNotesListOptions = {
+  /**
+   * When true, refresh list data without toggling global `loading` (avoids shell flash and
+   * effect churn from `useNotesOfflineSync` / follow-up fetches).
+   */
+  silent?: boolean;
+};
 
 export type NotesDataContextValue = {
   /** Server-confirmed active subscription (Nota Pro entitlement): vault, cloud, sync. */
@@ -34,7 +45,7 @@ export type NotesDataContextValue = {
   userPreferences: UserPreferences | null;
   loadError?: string;
   loading: boolean;
-  refreshNotesList: () => Promise<void>;
+  refreshNotesList: (options?: RefreshNotesListOptions) => Promise<void>;
   patchNoteInList: (id: string, patch: Partial<Note>) => void;
   removeNoteFromList: (id: string) => void;
   insertNoteAtFront: (note: Note) => void;
@@ -43,33 +54,64 @@ export type NotesDataContextValue = {
 
 const NotesDataContext = createContext<NotesDataContextValue | null>(null);
 
+async function waitForClerkBridge(maxMs = 600): Promise<void> {
+  const deadline = Date.now() + maxMs;
+  while (Date.now() < deadline) {
+    if (
+      isClerkAccessTokenGetterRegistered() &&
+      isSupabaseClerkGetTokenRegistered()
+    ) {
+      return;
+    }
+    await new Promise((r) => setTimeout(r, 16));
+  }
+}
+
 export function NotesDataProvider({ children }: { children: ReactNode }) {
   const { user } = useSpaSession();
   const userId = user?.id;
-  const welcomeSeeded = user?.user_metadata?.welcome_seeded === true;
 
   const [notaProEntitled, setNotaProEntitled] = useState(false);
   const [notes, setNotes] = useState<Note[]>([]);
   const [userPreferences, setUserPreferences] =
     useState<UserPreferences | null>(null);
+  const welcomeSeeded = userPreferences?.welcome_seeded === true;
   const [loadError, setLoadError] = useState<string | undefined>();
   const [loading, setLoading] = useState(true);
+  const didRetryEmptyVaultAfterWelcomeSeededRef = useRef(false);
+  const refreshChainRef = useRef(Promise.resolve<void>(undefined));
 
-  const refreshNotesList = useCallback(async () => {
-    if (!userId) {
-      setLoading(false);
-      setNotaProEntitled(false);
-      setNotes([]);
-      setUserPreferences(null);
-      return;
-    }
+  useEffect(() => {
+    didRetryEmptyVaultAfterWelcomeSeededRef.current = false;
+    refreshChainRef.current = Promise.resolve(undefined);
+  }, [userId]);
 
-    setLoading(true);
-    setLoadError(undefined);
+  const refreshNotesList = useCallback(
+    async (options?: RefreshNotesListOptions) => {
+      const silent = options?.silent === true;
+
+      const perform = async (): Promise<void> => {
+        if (!userId) {
+          if (!silent) {
+            setLoading(false);
+          }
+          setNotaProEntitled(false);
+          setNotes([]);
+          setUserPreferences(null);
+          return;
+        }
+
+        await waitForClerkBridge();
+
+        if (!silent) {
+          setLoading(true);
+        }
+        setLoadError(undefined);
 
     const defaultPrefs = (): UserPreferences => ({
       user_id: userId,
       open_todays_note_shortcut: false,
+      welcome_seeded: false,
       updated_at: new Date(0).toISOString(),
     });
 
@@ -115,13 +157,17 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
         entRes = await fetchNotaProEntitled();
       } catch {
         await recoverAfterEntitlementFetchFailure();
-        setLoading(false);
+        if (!silent) {
+          setLoading(false);
+        }
         return;
       }
 
       if (!entRes.ok) {
         await recoverAfterEntitlementFetchFailure();
-        setLoading(false);
+        if (!silent) {
+          setLoading(false);
+        }
         return;
       }
 
@@ -133,7 +179,9 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
         setNotaProEntitled(false);
         setNotes([]);
         setUserPreferences(null);
-        setLoading(false);
+        if (!silent) {
+          setLoading(false);
+        }
         return;
       }
 
@@ -166,9 +214,18 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
       console.error(e);
       await recoverAfterEntitlementFetchFailure();
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
-  }, [userId]);
+      };
+
+      const queued = refreshChainRef.current.then(perform);
+      refreshChainRef.current = queued.catch(() => undefined);
+      await queued;
+    },
+    [userId],
+  );
 
   useEffect(() => {
     void refreshNotesList();
@@ -181,7 +238,7 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     const id = window.setTimeout(() => {
       if (!cancelled) {
-        void refreshNotesList();
+        void refreshNotesList({ silent: true });
       }
     }, 300);
     return () => {
@@ -191,28 +248,35 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
   }, [userId, refreshNotesList]);
 
   useEffect(() => {
-    if (!userId || !user || loading || !notaProEntitled) {
+    if (!userId || loading || !notaProEntitled) {
       return;
     }
     let cancelled = false;
     void (async () => {
       const id = await runWelcomeNoteSeedIfNeeded({
-        user,
+        userId,
+        welcomeSeeded,
         notesCount: notes.length,
       });
       if (cancelled) {
         return;
       }
       if (id) {
-        await refreshNotesList();
+        didRetryEmptyVaultAfterWelcomeSeededRef.current = false;
+        await refreshNotesList({ silent: true });
         if (cancelled) {
           return;
         }
         setAppHash({ kind: 'notes', panel: 'note', noteId: id });
         return;
       }
-      if (welcomeSeeded && notes.length === 0) {
-        await refreshNotesList();
+      if (
+        welcomeSeeded &&
+        notes.length === 0 &&
+        !didRetryEmptyVaultAfterWelcomeSeededRef.current
+      ) {
+        didRetryEmptyVaultAfterWelcomeSeededRef.current = true;
+        await refreshNotesList({ silent: true });
       }
     })();
     return () => {
@@ -220,7 +284,6 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
     };
   }, [
     userId,
-    user,
     loading,
     notaProEntitled,
     notes.length,

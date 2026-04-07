@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { drainNotesOutbox } from './notes-offline/sync-notes';
 import { useOptionalNotesData } from '../context/notes-data-context';
 
@@ -10,6 +10,8 @@ export function useNotesOfflineSync(
   enabled = true,
 ): void {
   const notesData = useOptionalNotesData();
+  const refreshRef = useRef(notesData?.refreshNotesList);
+  refreshRef.current = notesData?.refreshNotesList;
 
   useEffect(() => {
     if (!userId || !enabled) {
@@ -20,7 +22,7 @@ export function useNotesOfflineSync(
       void (async () => {
         const progressed = await drainNotesOutbox(userId);
         if (progressed) {
-          void notesData?.refreshNotesList();
+          void refreshRef.current?.({ silent: true });
         }
       })();
     };
@@ -41,5 +43,5 @@ export function useNotesOfflineSync(
       document.removeEventListener('visibilitychange', onVisibility);
       window.clearInterval(intervalId);
     };
-  }, [userId, enabled, notesData]);
+  }, [userId, enabled]);
 }

@@ -1,16 +1,15 @@
+import { PricingTable, useClerk } from '@clerk/clerk-react';
 import type { JSX } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useRevenueCatSubscription } from '../context/revenuecat-subscription';
 import { useIsElectron } from '../lib/use-is-electron';
-import { getBrowserClient } from '../lib/supabase/browser';
 import { setAppHash } from '../lib/app-navigation';
 
 /**
  * Full-screen block when the signed-in user cannot use notes without an active Nota Pro entitlement.
  */
 export function NotaProGate(): JSX.Element {
-  const rc = useRevenueCatSubscription();
+  const { signOut } = useClerk();
   const isElectron = useIsElectron();
 
   return (
@@ -21,62 +20,20 @@ export function NotaProGate(): JSX.Element {
       )}
     >
       <main className="flex flex-1 flex-col items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md space-y-6 text-center">
+        <div className="w-full max-w-lg space-y-6 text-center">
           <div>
             <h1 className="font-serif text-xl font-semibold tracking-normal text-foreground">
               Nota Pro required
             </h1>
             <p className="mt-2 text-pretty text-sm text-muted-foreground">
-              Your notes and workspace are available with an active Nota Pro
+              Your notes and workspace are available with an active Nota
               subscription on this account.
             </p>
           </div>
 
-          {!rc.available ? (
-            <p className="text-sm text-muted-foreground">
-              This build is missing{' '}
-              <span className="font-mono text-xs">VITE_REVENUECAT_API_KEY</span>
-              , so subscriptions cannot be verified.
-            </p>
-          ) : null}
-
-          {rc.available && rc.isLoading ? (
-            <p className="text-sm text-muted-foreground">
-              Checking your subscription…
-            </p>
-          ) : null}
-
-          {rc.available && !rc.isLoading && rc.error ? (
-            <div className="space-y-3">
-              <p className="text-sm text-destructive">{rc.error}</p>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => void rc.refreshCustomerInfo()}
-              >
-                Try again
-              </Button>
-            </div>
-          ) : null}
-
-          {rc.available && !rc.isLoading && !rc.isPro && !rc.error ? (
-            <>
-              {rc.paywallError ? (
-                <p className="text-sm text-destructive">{rc.paywallError}</p>
-              ) : null}
-              <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-                <Button
-                  type="button"
-                  size="default"
-                  disabled={!rc.ready || rc.isPaywallBusy}
-                  onClick={() => void rc.openPaywall()}
-                >
-                  {rc.isPaywallBusy ? 'Opening…' : 'Subscribe with Nota Pro'}
-                </Button>
-              </div>
-            </>
-          ) : null}
+          <div className="nota-clerk-pricing-table text-left [&_.cl-card]:bg-background/80">
+            <PricingTable />
+          </div>
 
           <div className="border-t border-border/40 pt-6">
             <Button
@@ -85,7 +42,7 @@ export function NotaProGate(): JSX.Element {
               size="sm"
               onClick={() => {
                 void (async () => {
-                  await getBrowserClient().auth.signOut();
+                  await signOut();
                   setAppHash({ kind: 'landing' });
                 })();
               }}

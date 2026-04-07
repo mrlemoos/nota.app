@@ -176,7 +176,7 @@ describe('parseAppNavFromLocation', () => {
     expect(result).toEqual({ kind: 'notFound' });
   });
 
-  it('returns notFound when hash is #/login/extra', () => {
+  it('returns login when hash is #/login/extra (Clerk sub-steps)', () => {
     // Arrange
     stubWindowHash('#/login/extra');
 
@@ -184,7 +184,37 @@ describe('parseAppNavFromLocation', () => {
     const result = parseAppNavFromLocation();
 
     // Assert
-    expect(result).toEqual({ kind: 'notFound' });
+    expect(result).toEqual({ kind: 'login' });
+  });
+
+  it('returns login when hash uses Clerk hyphenated #/sign-in', () => {
+    stubWindowHash('#/sign-in');
+
+    expect(parseAppNavFromLocation()).toEqual({ kind: 'login' });
+  });
+
+  it('returns login for #/sign-in/verify-email-code', () => {
+    stubWindowHash('#/sign-in/verify-email-code');
+
+    expect(parseAppNavFromLocation()).toEqual({ kind: 'login' });
+  });
+
+  it('returns signup when hash uses Clerk hyphenated #/sign-up', () => {
+    stubWindowHash('#/sign-up');
+
+    expect(parseAppNavFromLocation()).toEqual({ kind: 'signup' });
+  });
+
+  it('returns signup for #/sign-up/verify-email-address', () => {
+    stubWindowHash('#/sign-up/verify-email-address');
+
+    expect(parseAppNavFromLocation()).toEqual({ kind: 'signup' });
+  });
+
+  it('returns signup when hash has query after #/sign-up', () => {
+    stubWindowHash('#/sign-up?redirect_url=%2F');
+
+    expect(parseAppNavFromLocation()).toEqual({ kind: 'signup' });
   });
 
   it('returns notFound when note path has invalid uuid', () => {

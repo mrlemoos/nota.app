@@ -1,16 +1,16 @@
-import { getAuthUser } from './supabase/auth';
+import { getClerkUserIdFromRequest } from './clerk-request-auth';
+import { getServerNotaProEntitled } from './clerk-billing.server';
 import { fetchOgPreview } from './og-preview.server';
-import { getServerNotaProEntitled } from './revenuecat/subscriber.server';
 
 export { spaApiOgPreviewDesktop } from './spa-api-og-preview-desktop';
 
 export async function spaApiOgPreview(request: Request): Promise<Response> {
-  const user = await getAuthUser(request);
-  if (!user) {
+  const userId = await getClerkUserIdFromRequest(request);
+  if (!userId) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  if (!(await getServerNotaProEntitled(user.id))) {
+  if (!(await getServerNotaProEntitled(userId))) {
     return Response.json({ error: 'Forbidden' }, { status: 403 });
   }
 

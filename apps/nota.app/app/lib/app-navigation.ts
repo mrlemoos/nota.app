@@ -1,6 +1,6 @@
 /**
  * Hash-based SPA navigation: single source of truth for notes shell view + active note id.
- * Grammar: #/ | #/login | #/signup | #/notes | #/notes/note/:uuid | #/notes/graph | #/notes/settings | #/notes/shortcuts | legacy #/notes/:uuid | #/404 (canonical not-found) — anything else resolves to `notFound`.
+ * Grammar: #/ | #/login | #/signup | #/sign-in | #/sign-up (Clerk hyphenated segments and subpaths) | #/notes | … | #/404 — unknown paths resolve to `notFound`.
  */
 
 export type NotesShellPanel =
@@ -31,8 +31,19 @@ function normaliseHashPath(): string {
   return raw.startsWith('/') ? raw : `/${raw}`;
 }
 
+/** Path segment of the hash only (no `?…` query), trailing slash stripped except root. */
+function hashRoutePath(): string {
+  const full = normaliseHashPath();
+  const withoutQuery = full.split('?')[0] ?? '/';
+  const withSlash = withoutQuery.startsWith('/')
+    ? withoutQuery
+    : `/${withoutQuery}`;
+  const trimmed = withSlash.replace(/\/$/, '') || '/';
+  return trimmed;
+}
+
 export function parseAppNavFromLocation(): AppNavScreen {
-  const path = normaliseHashPath();
+  const path = hashRoutePath();
 
   if (path === '/' || path === '') {
     return { kind: 'landing' };
@@ -40,10 +51,16 @@ export function parseAppNavFromLocation(): AppNavScreen {
   if (path === '/404' || path === '/404/') {
     return { kind: 'notFound' };
   }
-  if (path === '/login') {
+  if (path === '/sign-in' || path.startsWith('/sign-in/')) {
     return { kind: 'login' };
   }
-  if (path === '/signup') {
+  if (path === '/sign-up' || path.startsWith('/sign-up/')) {
+    return { kind: 'signup' };
+  }
+  if (path === '/login' || path.startsWith('/login/')) {
+    return { kind: 'login' };
+  }
+  if (path === '/signup' || path.startsWith('/signup/')) {
     return { kind: 'signup' };
   }
 
@@ -161,11 +178,19 @@ export function navigateFromLegacyPath(to: string): void {
     setAppHash({ kind: 'notes', panel: 'shortcuts', noteId: null });
     return;
   }
-  if (t === '/login') {
+  if (t === '/sign-in' || t.startsWith('/sign-in/')) {
     setAppHash({ kind: 'login' });
     return;
   }
-  if (t === '/signup') {
+  if (t === '/sign-up' || t.startsWith('/sign-up/')) {
+    setAppHash({ kind: 'signup' });
+    return;
+  }
+  if (t === '/login' || t.startsWith('/login/')) {
+    setAppHash({ kind: 'login' });
+    return;
+  }
+  if (t === '/signup' || t.startsWith('/signup/')) {
     setAppHash({ kind: 'signup' });
     return;
   }
@@ -193,6 +218,24 @@ function notify(): void {
   }
 }
 
+let navigationSyncQueued = false;
+
+/**
+ * Run `notify` after the current stack — required when `history.pushState` / `replaceState` fire
+ * from inside another library’s render path (e.g. Clerk). Synchronous `setState` there would
+ * violate React’s rules and can blank the whole tree.
+ */
+function scheduleNavigationSync(): void {
+  if (navigationSyncQueued) {
+    return;
+  }
+  navigationSyncQueued = true;
+  queueMicrotask(() => {
+    navigationSyncQueued = false;
+    notify();
+  });
+}
+
 if (typeof window !== 'undefined') {
   window.addEventListener('hashchange', () => {
     notify();
@@ -200,6 +243,40 @@ if (typeof window !== 'undefined') {
   window.addEventListener('popstate', () => {
     notify();
   });
+  window.addEventListener('pageshow', (event) => {
+    if (event.persisted) {
+      scheduleNavigationSync();
+    }
+  });
+
+  /**
+   * `history.pushState` / `replaceState` do not fire `hashchange` and do not fire `popstate`.
+   * Clerk (and other code) updates the URL this way, which left React on a stale `kind` while
+   * every `SpaAuthPanel` was `hidden` — `#root` collapsed to zero height and Electron showed a
+   * blank grey window (transparent shell).
+   */
+  const patchKey = '__notaHistoryNavigationPatched';
+  if (!(patchKey in window) || !(window as unknown as Record<string, boolean>)[patchKey]) {
+    (window as unknown as Record<string, boolean>)[patchKey] = true;
+    const patchHistoryNavigation = (key: 'pushState' | 'replaceState'): void => {
+      const original = history[key].bind(history) as (
+        data: unknown,
+        unused: string,
+        url?: string | URL | null,
+      ) => void;
+      history[key] = function (
+        this: History,
+        data: unknown,
+        unused: string,
+        url?: string | URL | null,
+      ) {
+        original(data, unused, url);
+        scheduleNavigationSync();
+      } as History[typeof key];
+    };
+    patchHistoryNavigation('pushState');
+    patchHistoryNavigation('replaceState');
+  }
 }
 
 export function syncAppNavigation(): void {

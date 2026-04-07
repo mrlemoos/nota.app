@@ -1,4 +1,4 @@
-import { getAuthUser } from './supabase/auth';
+import { getClerkUserIdFromRequest } from './clerk-request-auth';
 import {
   invalidateNotaProCacheForUser,
   jsonResponseNotaProEntitledForUser,
@@ -8,14 +8,14 @@ import {
 export async function spaApiNotaProEntitled(
   request: Request,
 ): Promise<Response> {
-  const user = await getAuthUser(request);
-  if (!user) {
+  const userId = await getClerkUserIdFromRequest(request);
+  if (!userId) {
     return Response.json(
       { error: 'Unauthorized', entitled: false },
       { status: 401 },
     );
   }
-  return jsonResponseNotaProEntitledForUser(user.id);
+  return jsonResponseNotaProEntitledForUser(userId);
 }
 
 export async function spaApiNotaProInvalidate(
@@ -24,10 +24,10 @@ export async function spaApiNotaProInvalidate(
   if (request.method !== 'POST') {
     return new Response('Method Not Allowed', { status: 405 });
   }
-  const user = await getAuthUser(request);
-  if (!user) {
+  const userId = await getClerkUserIdFromRequest(request);
+  if (!userId) {
     return Response.json({ ok: false }, { status: 401 });
   }
-  invalidateNotaProCacheForUser(user.id);
+  invalidateNotaProCacheForUser(userId);
   return jsonResponseNotaProInvalidateOk();
 }

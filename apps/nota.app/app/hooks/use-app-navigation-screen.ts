@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import {
   parseAppNavFromLocation,
   subscribeAppNavigation,
@@ -12,7 +12,7 @@ export function useAppNavigationScreen(): AppNavScreen {
       : parseAppNavFromLocation(),
   );
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setScreen(parseAppNavFromLocation());
     return subscribeAppNavigation(setScreen);
   }, []);

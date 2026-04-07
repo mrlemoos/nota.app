@@ -18,9 +18,9 @@ Nota is a personal notes app built as an [Nx](https://nx.dev) monorepo.
 
 The main client ([apps/nota.app](apps/nota.app)) is a **Vite** single-page app with **React 19**; in-app navigation uses the location **hash** (see `app/lib/app-navigation.ts`). 
 
-Notes and auth use **Supabase** (Postgres and row-level security). The editor is **TipTap** (ProseMirror). 
+Notes use **Supabase** (Postgres, Storage, and row-level security) with **Clerk** for sign-in (third-party JWTs). The editor is **TipTap** (ProseMirror). 
 
-Subscriptions use **RevenueCat** (Web Billing in the SPA; server-side checks on Vercel `api/`* or optional **[nota-server](apps/nota-server)**). 
+Subscriptions use **Clerk Billing** (checkout in the SPA; server-side entitlement checks on Vercel `api/*` or optional **[nota-server](apps/nota-server)**). 
 
 An **Electron** desktop shell wraps the same build—see [apps/nota-electron/README.md](apps/nota-electron/README.md). The public marketing site lives in [apps/nota-marketing](apps/nota-marketing) (Astro).
 
@@ -44,7 +44,7 @@ Copy [apps/nota.app/.env.example](apps/nota.app/.env.example) to `apps/nota.app/
 - `VITE_SUPABASE_URL` — your Supabase project URL
 - `VITE_SUPABASE_ANON_KEY` — your Supabase anon (public) key
 
-For subscription flows and server routes, follow the same file for `VITE_REVENUECAT_API_KEY`, optional `VITE_NOTA_SERVER_API_URL`, and **server-only** secrets (never commit real values). Schema, RLS policies, and migrations are applied in Supabase from the SQL in this repo—environment variables alone do not create the database.
+For Clerk sign-in and subscription flows, follow the same file for `VITE_CLERK_PUBLISHABLE_KEY`, optional `VITE_NOTA_SERVER_API_URL`, and **server-only** secrets (`CLERK_SECRET_KEY`, etc.—never commit real values). Schema, RLS policies, and migrations are applied in Supabase from the SQL in this repo—environment variables alone do not create the database.
 
 ## Database
 

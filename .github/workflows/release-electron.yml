@@ -63,9 +63,10 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
         run: |
-          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
-            echo '::error::VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set for the Production environment (or as repository secrets). Exact names; Variables need vars.* in the workflow — see apps/nota-electron/README.md.'
+          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_ANON_KEY" ] || [ -z "$VITE_CLERK_PUBLISHABLE_KEY" ]; then
+            echo '::error::VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, and VITE_CLERK_PUBLISHABLE_KEY must be set for the Production environment (or as repository secrets). Exact names; Variables need vars.* in the workflow — see apps/nota-electron/README.md.'
             exit 1
           fi
 
@@ -73,7 +74,8 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          VITE_REVENUECAT_API_KEY: ${{ secrets.VITE_REVENUECAT_API_KEY }}
+          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
           VITE_NOTA_SERVER_API_URL: ${{ secrets.VITE_NOTA_SERVER_API_URL }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}

@@ -1,3 +1,4 @@
+import { getClerkAccessToken } from '../clerk-token-ref';
 import { getBrowserClient } from '../supabase/browser';
 import { createNote, deleteNote, updateNote } from '../../models/notes';
 import { listOutbox, removeOutboxEntry, sortOutboxForProcessing } from './outbox';
@@ -36,14 +37,12 @@ async function drainNotesOutboxInner(userId: string): Promise<boolean> {
     return false;
   }
 
-  const client = getBrowserClient();
-  const {
-    data: { session },
-  } = await client.auth.getSession();
-
-  if (!session?.user || session.user.id !== userId) {
+  const token = await getClerkAccessToken();
+  if (!token) {
     return false;
   }
+
+  const client = getBrowserClient();
 
   const entries = sortOutboxForProcessing(await listOutbox(userId));
   let progressed = false;

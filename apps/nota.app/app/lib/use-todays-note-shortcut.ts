@@ -44,7 +44,7 @@ export function useTodaysNoteShortcut(
       userId,
       navigate: navigateFromLegacyPath,
       revalidate: () => {
-        void refreshRef.current?.();
+        void refreshRef.current?.({ silent: true });
       },
       notaProEntitled,
     });
