@@ -8,10 +8,6 @@ import * as esbuild from 'esbuild';
 import type { Plugin } from 'vite';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
-import {
-  spaApiNotaProEntitled,
-  spaApiNotaProInvalidate,
-} from './app/lib/spa-api-handlers';
 import { spaApiOgPreview } from './app/lib/spa-api-og-preview';
 
 const appDir = path.join(fileURLToPath(new URL('.', import.meta.url)), 'app');
@@ -184,10 +180,6 @@ export default defineConfig(({ mode }) => {
                   let response: Response;
                   if (pathname === '/api/og-preview') {
                     response = await spaApiOgPreview(request);
-                  } else if (pathname === '/api/nota-pro-entitled') {
-                    response = await spaApiNotaProEntitled(request);
-                  } else if (pathname === '/api/nota-pro-invalidate') {
-                    response = await spaApiNotaProInvalidate(request);
                   } else {
                     next();
                     return;

@@ -25,36 +25,33 @@ function unauthorizedInvalidateResponse(): Response {
   });
 }
 
-/** Same contract as `GET /api/nota-pro-entitled` on Vercel; uses Bearer auth when `VITE_NOTA_SERVER_API_URL` is set. */
+/** `GET` on nota-server; Bearer Clerk session JWT. Missing `VITE_NOTA_SERVER_API_URL` → 401 without calling the network. */
 export async function fetchNotaProEntitled(): Promise<Response> {
   const base = notaServerBase();
-  if (base) {
-    const token = await getClerkAccessToken();
-    if (!token) {
-      return unauthorizedEntitledResponse();
-    }
-    return fetch(`${base}/api/nota-pro-entitled`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+  if (!base) {
+    return unauthorizedEntitledResponse();
   }
-  return fetch('/api/nota-pro-entitled', { credentials: 'include' });
+  const token = await getClerkAccessToken();
+  if (!token) {
+    return unauthorizedEntitledResponse();
+  }
+  return fetch(`${base}/api/nota-pro-entitled`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
 }
 
-/** Same contract as `POST /api/nota-pro-invalidate` on Vercel. */
+/** `POST` on nota-server; same Bearer auth as `fetchNotaProEntitled`. */
 export async function postNotaProInvalidate(): Promise<Response> {
   const base = notaServerBase();
-  if (base) {
-    const token = await getClerkAccessToken();
-    if (!token) {
-      return unauthorizedInvalidateResponse();
-    }
-    return fetch(`${base}/api/nota-pro-invalidate`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-    });
+  if (!base) {
+    return unauthorizedInvalidateResponse();
   }
-  return fetch('/api/nota-pro-invalidate', {
+  const token = await getClerkAccessToken();
+  if (!token) {
+    return unauthorizedInvalidateResponse();
+  }
+  return fetch(`${base}/api/nota-pro-invalidate`, {
     method: 'POST',
-    credentials: 'include',
+    headers: { Authorization: `Bearer ${token}` },
   });
 }

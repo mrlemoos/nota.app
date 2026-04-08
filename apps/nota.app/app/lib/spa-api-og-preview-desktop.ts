@@ -1,5 +1,5 @@
-import { getClerkUserIdFromRequest } from './clerk-request-auth';
-import { fetchOgPreview } from './og-preview.server';
+import { getClerkUserIdFromRequest } from './clerk-request-auth.js';
+import { fetchOgPreview } from './og-preview.server.js';
 
 /** Electron / local static server: no Clerk Billing secret required; still requires a signed-in Clerk user (cookies or Bearer). */
 export async function spaApiOgPreviewDesktop(

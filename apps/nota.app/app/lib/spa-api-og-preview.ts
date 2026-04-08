@@ -1,8 +1,8 @@
-import { getClerkUserIdFromRequest } from './clerk-request-auth';
-import { getServerNotaProEntitled } from './clerk-billing.server';
-import { fetchOgPreview } from './og-preview.server';
+import { getClerkUserIdFromRequest } from './clerk-request-auth.js';
+import { getServerNotaProEntitled } from './clerk-billing.server.js';
+import { fetchOgPreview } from './og-preview.server.js';
 
-export { spaApiOgPreviewDesktop } from './spa-api-og-preview-desktop';
+export { spaApiOgPreviewDesktop } from './spa-api-og-preview-desktop.js';
 
 export async function spaApiOgPreview(request: Request): Promise<Response> {
   const userId = await getClerkUserIdFromRequest(request);

@@ -1,6 +1,6 @@
 # nota-server (Express)
 
-Small API for **server-only** operations: Nota Pro entitlement (Clerk Billing) and related routes. The web and desktop SPAs call this service when `VITE_NOTA_SERVER_API_URL` is set; otherwise they use same-origin `/api/*` on Vercel.
+Small API for **server-only** operations: Nota Pro entitlement (Clerk Billing) and related routes. The web and desktop SPAs call this service via **`VITE_NOTA_SERVER_API_URL`** with `Authorization: Bearer <Clerk session JWT>` (there is no same-origin fallback on Vercel).
 
 Production builds bundle TypeScript with **esbuild** and run on **Node.js 22+** (shared Clerk billing logic is imported from `apps/nota.app` at build time). Local development can still use **Bun** for fast runs.
 
