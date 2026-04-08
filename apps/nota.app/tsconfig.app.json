@@ -16,7 +16,7 @@
     "resolveJsonModule": true,
     "allowJs": true,
     "forceConsistentCasingInFileNames": true,
-    "rootDir": "app",
+    "rootDir": ".",
     "baseUrl": ".",
     "paths": {
       "~/*": [
@@ -35,6 +35,7 @@
     "tsBuildInfoFile": "dist/tsconfig.app.tsbuildinfo"
   },
   "include": [
+    "api/**/*.ts",
     "app/**/*.d.ts",
     "app/**/*.ts",
     "app/**/*.tsx",

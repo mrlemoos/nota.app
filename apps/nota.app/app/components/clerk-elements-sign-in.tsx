@@ -182,11 +182,10 @@ export function ClerkElementsSignIn(): JSX.Element {
           We&apos;ll email you a link to reset it.
         </p>
         <Clerk.GlobalError className={cn('mb-3 text-center', errorTextClass)} />
-        <SignIn.SupportedStrategy
-          name="reset_password_email_code"
-          className={cn(buttonVariants({ variant: 'default', size: 'lg' }), 'w-full')}
-        >
-          Reset password
+        <SignIn.SupportedStrategy name="reset_password_email_code" asChild>
+          <Button type="button" size="lg" className="w-full">
+            Reset password
+          </Button>
         </SignIn.SupportedStrategy>
         <SignIn.Action
           navigate="previous"
