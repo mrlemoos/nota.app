@@ -8,6 +8,7 @@
   ],
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "emitDeclarationOnly": false,
     "jsx": "react-jsx",
     "moduleResolution": "bundler",
     "types": ["node"],
