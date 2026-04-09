@@ -1,5 +1,5 @@
 import { next } from '@vercel/functions';
-import { isSpaShellPathnameAllowed } from './app/lib/spa-pathname-policy';
+import { isSpaShellPathnameAllowed } from './app/lib/spa-pathname-policy.js';
 
 export const config = {
   matcher: '/((?!api/).*)',
