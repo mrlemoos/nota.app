@@ -29,7 +29,6 @@
     "@tiptap/pm": "^2.11.5",
     "@tiptap/react": "^2.11.5",
     "@tiptap/starter-kit": "^2.11.5",
-    "@vercel/functions": "^3.0.0",
     "@xyflow/react": "^12.10.1",
     "chrono-node": "^2.9.0",
     "class-variance-authority": "^0.7.1",
