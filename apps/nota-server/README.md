@@ -43,9 +43,9 @@ Clients send `Authorization: Bearer <Clerk session JWT>`. The server validates i
 
 Use the **repository root** as the Railway service root (not `apps/nota-server` alone): the bundle step compiles **`apps/nota-server/src`** only; Clerk Billing helpers and OG preview logic live under **`apps/nota-server/src/lib/`**.
 
-[`railway.json`](../../railway.json) at the repo root uses **`Dockerfile.nota-server`** (Docker builder, not Railpack). The image runs **`npm ci`** on a clean tree: [`.dockerignore`](../../.dockerignore) excludes all `node_modules`, so Railpack-style **EBUSY** mounts on `node_modules/.cache` or `apps/nota-marketing/node_modules/.astro` are avoided.
+[`railway.json`](../../railway.json) at the repo root uses **[`infra/Dockerfile.nota-server`](../../infra/Dockerfile.nota-server)** (Docker builder, not Railpack). The image runs **`npm ci`** on a clean tree: [`.dockerignore`](../../.dockerignore) excludes all `node_modules`, so Railpack-style **EBUSY** mounts on `node_modules/.cache` or `apps/nota-marketing/node_modules/.astro` are avoided.
 
-- **Build:** `docker build -f Dockerfile.nota-server .` (Railway runs this via config-as-code).
+- **Build:** `docker build -f infra/Dockerfile.nota-server .` (Railway runs this via config-as-code).
 - **Start:** `node apps/nota-server/dist/index.js` (also the image **CMD**).
 
 Set **`CLERK_SECRET_KEY`** in the host environment. Optionally set **`NOTA_SERVER_CORS_ORIGINS`** as above.
