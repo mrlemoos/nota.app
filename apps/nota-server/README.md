@@ -41,7 +41,7 @@ Clients send `Authorization: Bearer <Clerk session JWT>`. The server validates i
 
 ## Deploy (Railway)
 
-Use the **repository root** as the Railway service root (not `apps/nota-server` alone): the bundle step resolves `apps/nota.app/app/lib/nota-pro-api-logic.ts` from the monorepo.
+Use the **repository root** as the Railway service root (not `apps/nota-server` alone): the bundle step compiles **`apps/nota-server/src`** only; Clerk Billing helpers and OG preview logic live under **`apps/nota-server/src/lib/`**.
 
 [`railway.json`](../../railway.json) at the repo root uses **`Dockerfile.nota-server`** (Docker builder, not Railpack). The image runs **`npm ci`** on a clean tree: [`.dockerignore`](../../.dockerignore) excludes all `node_modules`, so Railpack-style **EBUSY** mounts on `node_modules/.cache` or `apps/nota-marketing/node_modules/.astro` are avoided.
 

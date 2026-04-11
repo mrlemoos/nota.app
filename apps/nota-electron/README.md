@@ -74,8 +74,7 @@ If **Production** has protection rules (required reviewers, wait timers), each r
 | `VITE_SUPABASE_URL` | Supabase project URL |
 | `VITE_SUPABASE_ANON_KEY` | Supabase anon (public) key |
 | `VITE_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (same instance as the web app) |
-| `CLERK_SECRET_KEY` | Clerk secret key (server-only); bundled into `electron-og-api.mjs` at web build time so packaged link previews can verify the session |
-| `VITE_NOTA_SERVER_API_URL` | nota-server HTTPS origin, no trailing slash (production Railway example: `https://notaappnota-server-production.up.railway.app`) |
+| `VITE_NOTA_SERVER_API_URL` | **Required** for Nota Pro and link previews: nota-server HTTPS origin, no trailing slash (production Railway example: `https://notaappnota-server-production.up.railway.app`). OG fetch runs on the server, not in the SPA build. |
 
 ### Triggering CI release
 
@@ -112,5 +111,5 @@ With `APPLE_CERTIFICATE_BASE64` unset, CI still produces **unsigned** artefacts.
 
 - **Dev mode**: Loads from `http://localhost:4200` (Vite dev server).
 - **Prod mode (packaged)**: Loads **`https://app.nota.mrlemoos.dev`** — the same deployed **`nota.app`** SPA as the web client ([`src/app-load-url.ts`](src/app-load-url.ts)). Release builds still embed **`nota.app/dist`** via `electron-builder` until that dependency is removed.
-- **Link preview**: Uses the hosted **`GET /api/og-preview`** on Vercel (same as the browser app). Configure **`CLERK_SECRET_KEY`** and public **`VITE_*`** on the Vercel project that serves **`app.nota.mrlemoos.dev`**.
+- **Link preview**: Same as the web app—the SPA calls **`nota-server`** `GET /api/og-preview` using **`VITE_NOTA_SERVER_API_URL`** and the Clerk session JWT. **`CLERK_SECRET_KEY`** belongs only on the **`nota-server`** host, not in the Electron or Vercel SPA builds.
 - **Nota Pro entitlement**: The deployed app must be built with **`VITE_NOTA_SERVER_API_URL`** pointing at **[`nota-server`](../nota-server)**. Ensure **`NOTA_SERVER_CORS_ORIGINS`** on the server includes **`https://app.nota.mrlemoos.dev`** when you use an explicit allowlist.

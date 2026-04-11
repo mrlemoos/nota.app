@@ -9,4 +9,21 @@ export default [
     // Override or add rules here
     rules: {},
   },
+  {
+    files: ['app/**/*.ts', 'app/**/*.tsx'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@clerk/backend',
+              message:
+                'Clerk backend is server-only; use apps/nota-server instead.',
+            },
+          ],
+        },
+      ],
+    },
+  },
 ];

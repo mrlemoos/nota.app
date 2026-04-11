@@ -2,7 +2,7 @@ import {
   invalidateNotaProCacheForUser,
   jsonResponseNotaProEntitledForUser,
   jsonResponseNotaProInvalidateOk,
-} from '../../../nota.app/app/lib/nota-pro-api-logic.ts';
+} from '../lib/nota-pro-api-logic.ts';
 import { getUserIdFromBearer } from '../auth.ts';
 
 export async function notaProEntitledHandler(

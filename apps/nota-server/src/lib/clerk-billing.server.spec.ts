@@ -1,12 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  getServerNotaProEntitled,
-  invalidateServerNotaProCache,
-} from './clerk-billing.server';
+import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
 
-const getUserBillingSubscription = vi.fn();
+const getUserBillingSubscription = mock();
 
-vi.mock('@clerk/backend', () => ({
+mock.module('@clerk/backend', () => ({
   createClerkClient: () => ({
     billing: {
       getUserBillingSubscription: (...args: unknown[]) =>
@@ -14,6 +10,10 @@ vi.mock('@clerk/backend', () => ({
     },
   }),
 }));
+
+const { getServerNotaProEntitled, invalidateServerNotaProCache } = await import(
+  './clerk-billing.server.ts'
+);
 
 describe('getServerNotaProEntitled', () => {
   const prevSecret = process.env.CLERK_SECRET_KEY;
@@ -34,19 +34,23 @@ describe('getServerNotaProEntitled', () => {
 
   it('returns false when the secret is missing', async () => {
     delete process.env.CLERK_SECRET_KEY;
-    await expect(getServerNotaProEntitled('user-1')).resolves.toBe(false);
+    expect(await getServerNotaProEntitled('user-1')).toBe(false);
   });
 
   it('returns true for an active subscription', async () => {
-    getUserBillingSubscription.mockResolvedValue({ status: 'active' });
-    await expect(getServerNotaProEntitled('user-1')).resolves.toBe(true);
+    getUserBillingSubscription.mockImplementation(() =>
+      Promise.resolve({ status: 'active' }),
+    );
+    expect(await getServerNotaProEntitled('user-1')).toBe(true);
   });
 
   it('returns false on 404 / missing subscription', async () => {
-    getUserBillingSubscription.mockRejectedValue({
-      status: 404,
-      errors: [{ code: 'resource_not_found' }],
-    });
-    await expect(getServerNotaProEntitled('user-1')).resolves.toBe(false);
+    getUserBillingSubscription.mockImplementation(() =>
+      Promise.reject({
+        status: 404,
+        errors: [{ code: 'resource_not_found' }],
+      }),
+    );
+    expect(await getServerNotaProEntitled('user-1')).toBe(false);
   });
 });

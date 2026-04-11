@@ -40,8 +40,6 @@
     "app/**/*.tsx",
     "app/**/*.js",
     "app/**/*.jsx",
-    "**/.server/**/*.ts",
-    "**/.server/**/*.tsx",
     "**/.client/**/*.ts",
     "**/.client/**/*.tsx"
   ],

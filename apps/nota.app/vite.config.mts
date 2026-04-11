@@ -3,16 +3,13 @@ import fs from 'node:fs';
 import fsPromises from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { IncomingMessage, ServerResponse } from 'node:http';
-import * as esbuild from 'esbuild';
 import type { Plugin } from 'vite';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
-import { spaApiOgPreview } from './app/lib/spa-api-og-preview';
 
 const appDir = path.join(fileURLToPath(new URL('.', import.meta.url)), 'app');
 const monorepoRoot = path.resolve(fileURLToPath(new URL('.', import.meta.url)), '../..');
-/** `@clerk/clerk-react` pins `@clerk/shared@3.x`; the repo also hoists `@clerk/shared@4.x` for `@clerk/backend`. Always bundle the React-line copy so Clerk hooks match `<ClerkProvider>`. */
+/** `@clerk/clerk-react` pins `@clerk/shared@3.x`; the repo also hoists `@clerk/shared@4.x`. Always bundle the React-line copy so Clerk hooks match `<ClerkProvider>`. */
 const clerkSharedRoot = (() => {
   const nextToReact = path.join(
     monorepoRoot,
@@ -25,39 +22,6 @@ const clerkSharedRoot = (() => {
 })();
 const clerkReactRoot = path.join(monorepoRoot, 'node_modules/@clerk/clerk-react');
 const clerkTypesRoot = path.join(monorepoRoot, 'node_modules/@clerk/types');
-
-function webHeaders(req: IncomingMessage): Headers {
-  const h = new Headers();
-  for (const [k, v] of Object.entries(req.headers)) {
-    if (v === undefined) continue;
-    if (Array.isArray(v)) {
-      for (const x of v) {
-        h.append(k, x);
-      }
-    } else {
-      h.set(k, v);
-    }
-  }
-  return h;
-}
-
-function collectBody(req: IncomingMessage): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    req.on('data', (c) => chunks.push(c as Buffer));
-    req.on('end', () => resolve(Buffer.concat(chunks)));
-    req.on('error', reject);
-  });
-}
-
-async function sendWebResponse(res: ServerResponse, r: Response): Promise<void> {
-  res.statusCode = r.status;
-  r.headers.forEach((value, key) => {
-    res.setHeader(key, value);
-  });
-  const buf = Buffer.from(await r.arrayBuffer());
-  res.end(buf);
-}
 
 function notaDesktopArtifactsPlugin(appRoot: string): Plugin {
   return {
@@ -77,28 +41,6 @@ function notaDesktopArtifactsPlugin(appRoot: string): Plugin {
         }),
         'utf8',
       );
-      await esbuild.build({
-        entryPoints: [
-          path.join(appRoot, 'app/lib/electron-og-preview-entry.ts'),
-        ],
-        bundle: true,
-        platform: 'node',
-        format: 'esm',
-        outfile: path.join(outDir, 'electron-og-api.mjs'),
-        absWorkingDir: appRoot,
-        alias: {
-          '~': path.join(appRoot, 'app'),
-          '@': path.join(appRoot, 'app'),
-        },
-        // Packaged Electron runs this bundle in the main process; verifyToken needs a secret.
-        // CI should set CLERK_SECRET_KEY when building the client that ships inside the DMG/ZIP.
-        define: {
-          'process.env.CLERK_SECRET_KEY': JSON.stringify(
-            process.env.CLERK_SECRET_KEY ?? '',
-          ),
-        },
-        logLevel: 'warning',
-      });
     },
   };
 }
@@ -151,47 +93,7 @@ export default defineConfig(({ mode }) => {
     },
     plugins: process.env.VITEST
       ? []
-      : [
-          react(),
-          notaDesktopArtifactsPlugin(import.meta.dirname),
-          {
-            name: 'nota-spa-api',
-            configureServer(server) {
-              server.middlewares.use(async (req, res, next) => {
-                const rawUrl = req.url ?? '';
-                const pathname = rawUrl.split('?')[0] ?? '';
-                if (!pathname.startsWith('/api/')) {
-                  next();
-                  return;
-                }
-                try {
-                  const host = req.headers.host ?? 'localhost';
-                  const fullUrl = new URL(rawUrl, `http://${host}`);
-                  const nodeReq = req as IncomingMessage;
-                  let body: Buffer = Buffer.alloc(0);
-                  if (nodeReq.method !== 'GET' && nodeReq.method !== 'HEAD') {
-                    body = (await collectBody(nodeReq)) as Buffer;
-                  }
-                  const request = new Request(fullUrl.toString(), {
-                    method: nodeReq.method,
-                    headers: webHeaders(nodeReq),
-                    body: body.length ? new Uint8Array(body) : undefined,
-                  });
-                  let response: Response;
-                  if (pathname === '/api/og-preview') {
-                    response = await spaApiOgPreview(request);
-                  } else {
-                    next();
-                    return;
-                  }
-                  await sendWebResponse(res as ServerResponse, response);
-                } catch (e) {
-                  next(e);
-                }
-              });
-            },
-          },
-        ],
+      : [react(), notaDesktopArtifactsPlugin(import.meta.dirname)],
     build: {
       outDir: './dist',
       emptyOutDir: true,

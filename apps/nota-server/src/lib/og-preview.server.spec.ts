@@ -1,8 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'bun:test';
 import {
   assertUrlSafeForOgFetch,
   parseOgFromHtml,
-} from './og-preview.server';
+} from './og-preview.server.ts';
 
 describe('parseOgFromHtml', () => {
   it('extracts og tags and resolves relative image', () => {

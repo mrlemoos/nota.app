@@ -11,18 +11,20 @@ type OgErrorJson = {
   error: string;
 };
 
-function notaServerBase(): string | undefined {
+function notaServerBase(): string {
   const b = import.meta.env.VITE_NOTA_SERVER_API_URL;
   if (typeof b !== 'string' || !b.trim()) {
-    return undefined;
+    throw new Error(
+      'Link previews require VITE_NOTA_SERVER_API_URL (apps/nota-server) to be set.',
+    );
   }
   return b.replace(/\/$/, '');
 }
 
 /**
- * Fetches Open Graph metadata for link previews. Uses nota-server when
- * `VITE_NOTA_SERVER_API_URL` is set (Bearer auth); otherwise same-origin
- * `/api/og-preview` (Vite dev middleware or Electron bundle).
+ * Fetches Open Graph metadata for link previews via **`apps/nota-server`**
+ * (`GET /api/og-preview`) with Bearer auth. The SPA does not implement OG fetch;
+ * set `VITE_NOTA_SERVER_API_URL` in local and hosted environments.
  */
 export async function fetchOgPreviewForEditor(
   href: string,
@@ -30,18 +32,14 @@ export async function fetchOgPreviewForEditor(
   const q = `url=${encodeURIComponent(href)}`;
   const base = notaServerBase();
 
-  let res: Response;
-  if (base) {
-    const token = await getClerkAccessToken();
-    if (!token) {
-      throw new Error('Unauthorized');
-    }
-    res = await fetch(`${base}/api/og-preview?${q}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-  } else {
-    res = await fetch(`/api/og-preview?${q}`, { credentials: 'same-origin' });
+  const token = await getClerkAccessToken();
+  if (!token) {
+    throw new Error('Unauthorized');
   }
+
+  const res = await fetch(`${base}/api/og-preview?${q}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
 
   const data = (await res.json()) as OgPreviewJson | OgErrorJson;
   if (!res.ok) {

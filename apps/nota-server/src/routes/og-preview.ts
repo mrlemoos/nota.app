@@ -1,5 +1,5 @@
-import { getServerNotaProEntitled } from '../../../nota.app/app/lib/clerk-billing.server.ts';
-import { fetchOgPreview } from '../../../nota.app/app/lib/og-preview.server.ts';
+import { getServerNotaProEntitled } from '../lib/clerk-billing.server.ts';
+import { fetchOgPreview } from '../lib/og-preview.server.ts';
 import { getUserIdFromBearer } from '../auth.ts';
 
 export async function ogPreviewHandler(request: Request): Promise<Response> {
