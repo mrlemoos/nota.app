@@ -13,9 +13,8 @@
     "electron:dev": "nx dev nota-electron",
     "electron:pack": "nx electron:pack nota-electron",
     "release:electron": "nx run @nota.app/nota-electron:electron:release",
-    "dev:all": "concurrently \"nx dev nota.app\" \"sleep 3 && nx dev nota-electron\"",
-    "generate:nota-icons": "node apps/nota.app/scripts/generate-nota-icons.mjs",
-    "dev:marketing": "nx run @nota.app/nota-marketing:dev"
+    "dev": "nx run-many -t dev",
+    "generate:nota-icons": "node apps/nota.app/scripts/generate-nota-icons.mjs"
   },
   "private": true,
   "dependencies": {
