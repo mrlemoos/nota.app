@@ -10,11 +10,6 @@ export const WELCOME_NOTE_CONTENT: Json = {
   type: 'doc',
   content: [
     {
-      type: 'heading',
-      attrs: { level: 1 },
-      content: [{ type: 'text', text: 'Welcome to Nota' }],
-    },
-    {
       type: 'paragraph',
       content: [
         {
@@ -58,7 +53,22 @@ export const WELCOME_NOTE_CONTENT: Json = {
                 { type: 'text', marks: [{ type: 'bold' }], text: 'Command palette' },
                 {
                   type: 'text',
-                  text: ' — press ⌘K (Mac) or Ctrl+K (Windows) to jump to a note, create one, or sign out.',
+                  text: ' — Press ⌘K to jump to a note, create one, or sign out.',
+                },
+              ],
+            },
+          ],
+        },
+        {
+          type: 'listItem',
+          content: [
+            {
+              type: 'paragraph',
+              content: [
+                { type: 'text', marks: [{ type: 'bold' }], text: 'Sidebar' },
+                {
+                  type: 'text',
+                  text: ' — Press ⌘S to toggle the note list sidebar.',
                 },
               ],
             },
@@ -81,7 +91,7 @@ export const WELCOME_NOTE_CONTENT: Json = {
                 },
                 {
                   type: 'text',
-                  text: ' shortcut (Mod+D) — turn it on under Settings when you want a dated note for the day.',
+                  text: ' shortcut (⌘D) — turn it on under Settings when you want a dated note for the day.',
                 },
               ],
             },
