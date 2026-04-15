@@ -17,6 +17,7 @@ import {
   putServerNoteIfNotDirty,
   storedNoteToListRow,
 } from '../lib/notes-offline';
+import { syncServerNotesToIdbInChunks } from '../lib/sync-server-notes-to-idb';
 import { listNotes } from '../models/notes';
 import { getUserPreferences } from '../models/user-preferences';
 import { isClerkAccessTokenGetterRegistered } from '../lib/clerk-token-ref';
@@ -205,9 +206,7 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
       }
       setUserPreferences(prefs);
 
-      for (const n of serverNotes) {
-        await putServerNoteIfNotDirty(userId, n);
-      }
+      await syncServerNotesToIdbInChunks(userId, serverNotes, putServerNoteIfNotDirty);
       const stored = await listStoredNotes(userId);
       setNotes(mergeNoteLists(serverNotes, stored));
     } catch (e) {

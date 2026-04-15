@@ -15,6 +15,7 @@ import {
   putServerNoteIfNotDirty,
   storedNoteToListRow,
 } from '../lib/notes-offline';
+import { fetchNoteRowAndAttachmentsParallel } from '../lib/note-detail-fetch';
 import { getNote } from '../models/notes';
 import { listNoteAttachments } from '../models/note-attachments';
 import { hashForScreen, replaceAppHash } from '../lib/app-navigation';
@@ -97,16 +98,23 @@ export function NoteDetailPanel({ noteId }: { noteId: string }): React.ReactNode
         }
 
         try {
-          const row = await getNote(client, noteId);
+          const { row, attachments: atts } =
+            await fetchNoteRowAndAttachmentsParallel(client, noteId, {
+              getNote,
+              listNoteAttachments,
+            });
           if (row) {
-            await putServerNoteIfNotDirty(uid, row);
             const local = await getStoredNote(uid, noteId);
             const merged = mergeNoteWithLocal(row, local);
-            const atts = await listNoteAttachments(client, noteId);
             if (!cancelled) {
               setNote(merged);
               setAttachments(atts);
             }
+            queueMicrotask(() => {
+              if (!cancelled) {
+                void putServerNoteIfNotDirty(uid, row);
+              }
+            });
             return;
           }
         } catch (e) {

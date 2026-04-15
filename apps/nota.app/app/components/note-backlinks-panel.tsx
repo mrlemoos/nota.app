@@ -1,4 +1,4 @@
-import { useMemo, type JSX } from 'react';
+import { useDeferredValue, useMemo, type JSX } from 'react';
 import { buildNoteLinkGraph } from '../lib/note-link-graph';
 import { cn } from '@/lib/utils';
 import { useNotesData } from '../context/notes-data-context';
@@ -7,14 +7,15 @@ import { noteHashHref } from './note-detail-panel';
 
 export function NoteBacklinksPanel({ noteId }: { noteId: string }): JSX.Element {
   const { notes } = useNotesData();
+  const deferredNotes = useDeferredValue(notes);
   const screen = useAppNavigationScreen();
 
   const { backlinkIds, byId } = useMemo(() => {
-    const { backlinks } = buildNoteLinkGraph(notes);
+    const { backlinks } = buildNoteLinkGraph(deferredNotes);
     const ids = [...(backlinks.get(noteId) ?? [])].sort();
-    const map = new Map(notes.map((n) => [n.id, n]));
+    const map = new Map(deferredNotes.map((n) => [n.id, n]));
     return { backlinkIds: ids, byId: map };
-  }, [notes, noteId]);
+  }, [deferredNotes, noteId]);
 
   return (
     <section
