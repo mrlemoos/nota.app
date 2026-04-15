@@ -11,12 +11,12 @@ const siteRoot = new URL('/', site).href;
 const pricingUrl = new URL('/pricing', site).href;
 
 /** Guide amounts; keep in sync with Clerk Billing / Stripe (USD). */
-const priceMonthlyUsd = '2.99';
-const priceAnnualUsd = '24.99';
+const priceMonthlyUsd = '2.49';
+const priceAnnualUsd = '19.49';
 
-const pricingTitle = 'Nota Pricing — From $2.99/month';
+const pricingTitle = 'Nota Pricing — From $2.49/month';
 const pricingDescription =
-  'Nota is a paid Mac notes app: subscribe in-app for cloud sync and backup. Guide prices $24.99/year or $2.99/month (USD); lifetime offered when available in checkout.';
+  'Nota is a paid Mac notes app: subscribe in-app for cloud sync and backup. Guide prices $19.49/year or $2.49/month (USD); lifetime offered when available in checkout.';
 
 const structuredData = {
   '@context': 'https://schema.org',
@@ -90,7 +90,7 @@ const structuredData = {
           <p class="text-3xl font-semibold tracking-tight text-sidebar-foreground">
             {'$' + priceAnnualUsd + ' / year'}
           </p>
-          <p class="mb-6 text-sm font-medium text-primary">Save about 30% vs monthly</p>
+          <p class="mb-6 text-sm font-medium text-primary">Save about 35% vs monthly</p>
           <ul class="space-y-3 text-sm text-muted-foreground">
             <li>Full app access</li>
             <li>Cloud sync and secure backup</li>
