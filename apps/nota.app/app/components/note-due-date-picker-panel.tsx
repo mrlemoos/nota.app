@@ -2,8 +2,8 @@ import {
   useCallback,
   useEffect,
   useState,
-  type FormEvent,
   type JSX,
+  type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
 } from 'react';
 import { DayPicker } from 'react-day-picker';
@@ -167,7 +167,10 @@ export function NoteDueDatePickerPanel({
     }
   };
 
-  const onNlSubmit = (e: FormEvent) => {
+  const onNlInputKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== 'Enter') {
+      return;
+    }
     e.preventDefault();
     applyNaturalLanguage();
   };
@@ -181,7 +184,7 @@ export function NoteDueDatePickerPanel({
       aria-label="Note due date"
       onMouseDownCapture={keepBubbleSelectionUnlessTextField}
     >
-      <form onSubmit={onNlSubmit} className="space-y-2">
+      <div className="space-y-2">
         <label className="block text-xs font-medium text-muted-foreground">
           Natural language
           <input
@@ -189,6 +192,7 @@ export function NoteDueDatePickerPanel({
             value={nlInput}
             onChange={(e) => setNlInput(e.target.value)}
             onBlur={applyNaturalLanguage}
+            onKeyDown={onNlInputKeyDown}
             placeholder="e.g. next Friday 3pm"
             className="mt-1 w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:outline-none"
             disabled={saving || disabled}
@@ -199,7 +203,7 @@ export function NoteDueDatePickerPanel({
             {nlError}
           </p>
         ) : null}
-      </form>
+      </div>
 
       <div className="nota-due-day-picker mt-3 flex justify-center">
         <DayPicker
