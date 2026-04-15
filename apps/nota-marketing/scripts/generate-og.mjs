@@ -14,6 +14,10 @@ const outDir = path.join(__dirname, '../public/og');
 const W = 1200;
 const H = 630;
 
+/** Keep in sync with `src/pages/pricing.astro` guide amounts. */
+const priceMonthlyUsd = '2.49';
+const priceAnnualUsd = '19.49';
+
 /** Background and decorative layers aligned with HeroLandscape + .mkt-dark */
 function decor() {
   return `
@@ -65,8 +69,9 @@ async function main() {
   const pricingInner = `
   ${decor()}
   <text x="72" y="118" font-family="Georgia, 'Times New Roman', serif" font-size="22" fill="#a3a3a3" letter-spacing="0.04em">NOTA</text>
-  <text x="72" y="300" font-family="Georgia, 'Times New Roman', serif" font-size="72" fill="#fafafa">Pricing</text>
-  <text x="72" y="388" font-family="ui-sans-serif, system-ui, sans-serif" font-size="26" fill="#a3a3a3">Free download · Pro adds sync — upgrade in the app.</text>
+  <text x="72" y="286" font-family="Georgia, 'Times New Roman', serif" font-size="72" fill="#fafafa">Pricing</text>
+  <text x="72" y="378" font-family="ui-sans-serif, system-ui, sans-serif" font-size="36" fill="#fafafa">$${priceMonthlyUsd}/mo · $${priceAnnualUsd}/yr USD</text>
+  <text x="72" y="434" font-family="ui-sans-serif, system-ui, sans-serif" font-size="24" fill="#a3a3a3">Subscribe in Settings after sign-in · paid Mac app</text>
 `;
 
   await writePng('home.png', homeInner);
