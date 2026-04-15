@@ -324,7 +324,7 @@ export function NotesSpaShell(): JSX.Element {
       ) : null}
       <div
         className={cn(
-          'nota-notes-root flex h-full min-h-0 min-h-dvh flex-1 bg-linear-to-b from-muted/25 to-background',
+          'nota-notes-root flex h-full min-h-0 flex-1 bg-linear-to-b from-muted/25 to-background',
         )}
       >
         {!paywalled && !open ? (

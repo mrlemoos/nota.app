@@ -20,7 +20,7 @@ export function SpaNotFound({
       id="spa-not-found"
       aria-labelledby="spa-not-found-title"
       className={cn(
-        'relative isolate flex h-full min-h-0 min-h-dvh flex-1 flex-col overflow-y-auto items-center justify-center',
+        'relative isolate flex min-h-0 flex-1 h-dvh flex-col overflow-y-auto items-center justify-center',
         'px-4 py-10 pb-[max(2.5rem,env(safe-area-inset-bottom))]',
         'pt-[max(2.5rem,env(safe-area-inset-top))]',
       )}

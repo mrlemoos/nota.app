@@ -15,7 +15,7 @@ export function NotaProGate(): JSX.Element {
   return (
     <div
       className={cn(
-        'nota-notes-root flex h-full min-h-0 min-h-dvh flex-1 flex-col bg-linear-to-b from-muted/25 to-background',
+        'nota-notes-root flex h-full min-h-0 flex-1 flex-col bg-linear-to-b from-muted/25 to-background',
         isElectron && 'pt-[env(safe-area-inset-top)]',
       )}
     >

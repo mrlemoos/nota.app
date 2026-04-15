@@ -14,7 +14,7 @@ export default function Login(): JSX.Element {
     <main
       id="main-content"
       className={cn(
-        'relative isolate flex h-full min-h-0 min-h-dvh flex-1 overflow-y-auto items-center justify-center px-4 py-8 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))]',
+        'relative isolate flex min-h-0 flex-1 h-dvh overflow-y-auto items-center justify-center px-4 py-8 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))]',
       )}
     >
       <div className="absolute inset-0 z-0">

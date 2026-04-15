@@ -94,14 +94,14 @@ export function SpaApp(): JSX.Element {
 
   if (loading) {
     return (
-      <div className="flex h-full min-h-0 min-h-dvh items-center justify-center bg-background text-muted-foreground text-sm">
+      <div className="flex h-dvh min-h-0 items-center justify-center bg-background text-muted-foreground text-sm">
         Loading…
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-0 h-full min-h-dvh flex-col bg-background text-foreground">
+    <div className="flex h-dvh min-h-0 flex-col bg-background text-foreground">
       {!anyShellActive ? (
         <div
           className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-6 text-center text-sm text-muted-foreground"
@@ -133,7 +133,7 @@ export function SpaApp(): JSX.Element {
       </SpaAuthPanel>
       <SpaAuthPanel active={landingActive} panelId="spa-screen-landing">
         {user ? (
-          <div className="flex h-full min-h-0 min-h-dvh flex-1 items-center justify-center bg-background text-muted-foreground text-sm">
+          <div className="flex min-h-0 flex-1 h-dvh items-center justify-center bg-background text-muted-foreground text-sm">
             Loading…
           </div>
         ) : (

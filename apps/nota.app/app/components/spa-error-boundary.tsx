@@ -18,7 +18,7 @@ export class SpaErrorBoundary extends Component<Props, State> {
   override render(): ReactNode {
     if (this.state.error) {
       return (
-        <div className="flex h-full min-h-0 min-h-dvh flex-col items-center justify-center gap-4 overflow-y-auto bg-background px-6 text-center text-sm text-foreground">
+        <div className="flex h-dvh min-h-0 flex-col items-center justify-center gap-4 overflow-y-auto bg-background px-6 text-center text-sm text-foreground">
           <p className="max-w-sm text-muted-foreground">
             Something went wrong loading Nota. You can try again or reload the app.
           </p>
