@@ -4,28 +4,28 @@ import { mapClerkToHashFragment } from './clerk-hash-navigation';
 describe('mapClerkToHashFragment', () => {
   const current = 'http://localhost:4200/#/notes';
 
-  it('maps /sign-in to /login', () => {
+  it('maps /sign-in to /sign-in hash (Clerk Core 3 hash routing)', () => {
     expect(mapClerkToHashFragment('/sign-in', current)).toEqual({
-      fragment: '/login',
+      fragment: '/sign-in',
     });
   });
 
-  it('maps /sign-in/verify to /login/verify', () => {
+  it('maps /sign-in/verify to /sign-in/verify', () => {
     expect(
       mapClerkToHashFragment('/sign-in/verify-email-code', current),
-    ).toEqual({ fragment: '/login/verify-email-code' });
+    ).toEqual({ fragment: '/sign-in/verify-email-code' });
   });
 
-  it('maps /sign-up to /signup', () => {
+  it('maps /sign-up to /sign-up hash', () => {
     expect(mapClerkToHashFragment('/sign-up', current)).toEqual({
-      fragment: '/signup',
+      fragment: '/sign-up',
     });
   });
 
-  it('maps /sign-up/verify-email-address to /signup/verify-email-address', () => {
+  it('maps /sign-up/verify-email-address to /sign-up/verify-email-address', () => {
     expect(
       mapClerkToHashFragment('/sign-up/verify-email-address', current),
-    ).toEqual({ fragment: '/signup/verify-email-address' });
+    ).toEqual({ fragment: '/sign-up/verify-email-address' });
   });
 
   it('preserves /login and subpaths', () => {
@@ -48,7 +48,7 @@ describe('mapClerkToHashFragment', () => {
 
   it('appends search on mapped paths', () => {
     expect(mapClerkToHashFragment('/sign-up?a=1', current)).toEqual({
-      fragment: '/signup?a=1',
+      fragment: '/sign-up?a=1',
     });
   });
 
@@ -64,7 +64,7 @@ describe('mapClerkToHashFragment', () => {
 
   it('maps hyphenated hash-style paths if passed as pathname', () => {
     expect(mapClerkToHashFragment('/sign-up/verify-email-address', current)).toEqual({
-      fragment: '/signup/verify-email-address',
+      fragment: '/sign-up/verify-email-address',
     });
   });
 });

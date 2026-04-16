@@ -1,6 +1,6 @@
 /**
  * Hash-based SPA navigation: single source of truth for notes shell view + active note id.
- * Grammar: #/ | #/login | #/signup | #/sign-in | #/sign-up (Clerk hyphenated segments and subpaths) | #/notes | … | #/404 — unknown paths resolve to `notFound`.
+ * Grammar: #/ | #/sign-in | #/sign-up | #/login | #/signup (legacy) | #/notes | … | #/404 — unknown paths resolve to `notFound`.
  */
 
 export type NotesShellPanel =
@@ -100,9 +100,9 @@ export function hashForScreen(screen: AppNavScreen): string {
     case 'notFound':
       return '#/404';
     case 'login':
-      return '#/login';
+      return '#/sign-in';
     case 'signup':
-      return '#/signup';
+      return '#/sign-up';
     case 'notes': {
       switch (screen.panel) {
         case 'list':

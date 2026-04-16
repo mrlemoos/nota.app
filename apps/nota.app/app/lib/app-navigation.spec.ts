@@ -72,6 +72,14 @@ describe('parseAppNavFromLocation', () => {
     expect(href).toBe('#/404');
   });
 
+  it('hashForScreen maps login to Clerk hash #/sign-in', () => {
+    expect(hashForScreen({ kind: 'login' })).toBe('#/sign-in');
+  });
+
+  it('hashForScreen maps signup to Clerk hash #/sign-up', () => {
+    expect(hashForScreen({ kind: 'signup' })).toBe('#/sign-up');
+  });
+
   it('returns login when hash is #/login', () => {
     // Arrange
     stubWindowHash('#/login');

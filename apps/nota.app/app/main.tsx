@@ -1,4 +1,5 @@
 import { ClerkProvider } from '@clerk/react';
+import { ui } from '@clerk/ui';
 import { PostHogProvider } from '@posthog/react';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -50,6 +51,7 @@ if (!clerkPublishableKey) {
 
 createRoot(rootEl).render(
   <ClerkProvider
+    ui={ui}
     publishableKey={clerkPublishableKey}
     signInUrl={clerkFullSignInUrl()}
     signUpUrl={clerkFullSignUpUrl()}

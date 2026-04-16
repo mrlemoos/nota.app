@@ -1,7 +1,8 @@
 /**
- * Clerk path/hash mode emits `/sign-in` and `/sign-up` (hyphenated). Our hash SPA uses
- * `#/login` and `#/signup`. Map internal Clerk navigations so we stay on the SPA instead
- * of falling back to the hosted Account Portal (full page reload loop).
+ * Clerk path/hash mode uses `/sign-in` and `/sign-up`. The SPA hash must stay on those
+ * segments so `<SignIn routing="hash" />` / `<SignUp routing="hash" />` (Core 3) mount.
+ * We still accept legacy `#/login` / `#/signup` in `parseAppNavFromLocation`.
+ * Map same-origin Clerk navigations into the hash so we avoid the hosted Account Portal reload loop.
  */
 export function mapClerkToHashFragment(
   to: string,
@@ -34,13 +35,13 @@ export function mapClerkToHashFragment(
   if (pathnameOnly === '/sign-in' || pathnameOnly.startsWith('/sign-in/')) {
     const rest =
       pathnameOnly === '/sign-in' ? '' : pathnameOnly.slice('/sign-in'.length);
-    return { fragment: `/login${rest}${search}` };
+    return { fragment: `/sign-in${rest}${search}` };
   }
 
   if (pathnameOnly === '/sign-up' || pathnameOnly.startsWith('/sign-up/')) {
     const rest =
       pathnameOnly === '/sign-up' ? '' : pathnameOnly.slice('/sign-up'.length);
-    return { fragment: `/signup${rest}${search}` };
+    return { fragment: `/sign-up${rest}${search}` };
   }
 
   if (pathnameOnly === '/login' || pathnameOnly.startsWith('/login/')) {
@@ -64,11 +65,11 @@ export function clerkSpaOriginWithPath(): string {
 }
 
 export function clerkFullSignInUrl(): string {
-  return `${clerkSpaOriginWithPath()}#/login`;
+  return `${clerkSpaOriginWithPath()}#/sign-in`;
 }
 
 export function clerkFullSignUpUrl(): string {
-  return `${clerkSpaOriginWithPath()}#/signup`;
+  return `${clerkSpaOriginWithPath()}#/sign-up`;
 }
 
 export function clerkFullNotesUrl(): string {
