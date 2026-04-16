@@ -12,13 +12,13 @@ import { useAudioToNoteSession } from '../stores/audio-to-note-session';
 import { studyNotePlaceholderQueuedTitle } from '../lib/study-note-title';
 
 function pickRecorderMime(): string | undefined {
-  /** Prefer containers xAI STT accepts natively (see POST /v1/stt docs); WebM is converted to WAV before upload. */
+  /** WebM/Opus first: Chromium MP4/M4A recordings are often rejected by xAI STT; we WAV-transcode for STT anyway. */
   const types = [
-    'audio/mp4',
-    'audio/ogg;codecs=opus',
-    'audio/ogg',
     'audio/webm;codecs=opus',
     'audio/webm',
+    'audio/ogg;codecs=opus',
+    'audio/ogg',
+    'audio/mp4',
   ];
   for (const t of types) {
     if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(t)) {

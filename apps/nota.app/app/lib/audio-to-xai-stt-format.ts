@@ -1,6 +1,7 @@
 /**
- * xAI batch STT (`POST /v1/stt`) accepts: wav, mp3, ogg, opus, flac, aac, mp4, m4a, mkv — not WebM.
- * Browsers usually emit `audio/webm` / `video/webm`; we decode and re-export as WAV for compatibility.
+ * xAI batch STT (`POST /v1/stt`) documents several containers, but in practice
+ * `MediaRecorder` output for MP4/M4A/AAC is often rejected as corrupt; we decode
+ * those in the browser and upload PCM WAV (same as WebM).
  */
 
 function writeString(view: DataView, offset: number, str: string): void {
@@ -52,28 +53,26 @@ export function audioBufferToWav(buffer: AudioBuffer): Blob {
   return new Blob([arrayBuffer], { type: 'audio/wav' });
 }
 
-function isLikelyXaiSupportedContainerMime(mime: string): boolean {
+/** Types we send as-is to STT; everything else (WebM, MP4, M4A, …) is decoded to WAV first. */
+function isPassThroughSttMime(mime: string): boolean {
   const m = mime.toLowerCase();
   return (
     m.includes('wav') ||
     m.includes('mpeg') ||
     m.includes('mp3') ||
-    m.includes('mp4') ||
     m.includes('ogg') ||
     m.includes('opus') ||
     m.includes('flac') ||
-    m.includes('aac') ||
-    m.includes('m4a') ||
     m.includes('mkv')
   );
 }
 
 /**
- * Returns a Blob suitable for xAI STT (WAV if the input was WebM or other unsupported container).
+ * Returns a Blob suitable for xAI STT (decodes to WAV unless MIME is a known-good pass-through).
  */
 export async function ensureBlobForXaiStt(input: Blob): Promise<Blob> {
   const t = (input.type || '').toLowerCase();
-  if (isLikelyXaiSupportedContainerMime(t)) {
+  if (isPassThroughSttMime(t)) {
     return input;
   }
 
