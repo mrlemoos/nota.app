@@ -8,7 +8,7 @@
   ],
   "dependencies": {
     "@base-ui/react": "^1.3.0",
-    "@clerk/clerk-react": "^5.61.4",
+    "@clerk/clerk-react": "^5.61.5",
     "@clerk/elements": "^0.24.13",
     "@fontsource-variable/inter": "^5.2.8",
     "@fontsource-variable/source-serif-4": "^5.2.9",
