@@ -110,8 +110,131 @@ function redirectParamLooksNested(encodedValue: string): boolean {
   return /sign_(?:in|up)_(?:force|fallback)_redirect_url(?:=|%3D)/i.test(s);
 }
 
+/** Triple-encoded segments (e.g. `%253A`) or a hash query that re-embeds Clerk redirect keys. */
+function redirectOrReturnUrlLooksPoisoned(encodedValue: string): boolean {
+  if (redirectParamLooksNested(encodedValue)) {
+    return true;
+  }
+  if (/%253[a-f0-9]{2}/i.test(encodedValue)) {
+    return true;
+  }
+  let s = encodedValue;
+  for (let i = 0; i < 10; i++) {
+    try {
+      const next = decodeURIComponent(s);
+      if (next === s) {
+        break;
+      }
+      s = next;
+    } catch {
+      break;
+    }
+  }
+  const hashIdx = s.indexOf('#');
+  if (hashIdx === -1) {
+    return false;
+  }
+  const afterHash = s.slice(hashIdx + 1);
+  const q = afterHash.indexOf('?');
+  if (q === -1) {
+    return false;
+  }
+  const hashQuery = afterHash.slice(q);
+  if (/sign_(?:in|up)_(?:force|fallback)_redirect_url/i.test(hashQuery)) {
+    return true;
+  }
+  if (hashQuery.length > 120) {
+    return true;
+  }
+  return false;
+}
+
 const SIGN_REDIRECT_PARAM =
   /^sign_(?:in|up)_(?:force|fallback)_redirect_url$/i;
+
+const REDIRECT_OR_RETURN_PARAM = /^(redirect_url|return_url)$/i;
+
+function fullyDecodeRedirectValue(encodedValue: string): string {
+  let s = encodedValue;
+  for (let i = 0; i < 10; i++) {
+    try {
+      const next = decodeURIComponent(s);
+      if (next === s) {
+        break;
+      }
+      s = next;
+    } catch {
+      break;
+    }
+  }
+  return s;
+}
+
+/**
+ * Replace a poisoned `redirect_url` / `return_url` with a same-origin URL that has no nested hash query.
+ */
+function canonicalUrlForPoisonedRedirectOrReturn(
+  authPathPart: string,
+  encodedValue: string,
+): string {
+  const d = fullyDecodeRedirectValue(encodedValue);
+  const onSignUp =
+    authPathPart.startsWith('/sign-up') || authPathPart.startsWith('/signup');
+  const onSignIn =
+    authPathPart.startsWith('/sign-in') || authPathPart.startsWith('/login');
+
+  if (onSignUp) {
+    if (/#\/sign-in\b/i.test(d) || d.includes('/sign-in?')) {
+      return clerkFullSignInUrl();
+    }
+    if (/#\/sign-up\b/i.test(d) || d.includes('/sign-up?')) {
+      return clerkFullSignUpUrl();
+    }
+  }
+  if (onSignIn) {
+    if (/#\/sign-up\b/i.test(d) || d.includes('/sign-up?')) {
+      return clerkFullSignUpUrl();
+    }
+    if (/#\/sign-in\b/i.test(d) || d.includes('/sign-in?')) {
+      return clerkFullSignInUrl();
+    }
+  }
+  return clerkFullNotesUrl();
+}
+
+function authHashFragmentStillPoisoned(fragment: string): boolean {
+  if (/%253[a-f0-9]{2}/i.test(fragment)) {
+    return true;
+  }
+  const qIndex = fragment.indexOf('?');
+  if (qIndex === -1) {
+    return false;
+  }
+  const pathPart = fragment.slice(0, qIndex);
+  const params = new URLSearchParams(fragment.slice(qIndex + 1));
+  for (const key of params.keys()) {
+    const val = params.get(key);
+    if (!val) {
+      continue;
+    }
+    if (SIGN_REDIRECT_PARAM.test(key) && redirectParamLooksNested(val)) {
+      return true;
+    }
+    if (REDIRECT_OR_RETURN_PARAM.test(key) && redirectOrReturnUrlLooksPoisoned(val)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function isRootAuthPath(path: string): boolean {
+  return (
+    path === '/sign-in' ||
+    path === '/sign-up' ||
+    path === '/login' ||
+    path === '/signup'
+  );
+}
 
 /**
  * Collapse runaway Clerk redirect query values (nested `sign_*_force_redirect_url` chains)
@@ -135,15 +258,21 @@ export function sanitizeClerkAuthHashFragment(fragment: string): string {
   const params = new URLSearchParams(fragment.slice(qIndex + 1));
   const notes = clerkFullNotesUrl();
   for (const key of [...params.keys()]) {
-    if (!SIGN_REDIRECT_PARAM.test(key)) {
-      continue;
-    }
     const val = params.get(key);
     if (!val) {
       continue;
     }
-    if (redirectParamLooksNested(val)) {
-      params.set(key, notes);
+    if (SIGN_REDIRECT_PARAM.test(key)) {
+      if (redirectParamLooksNested(val)) {
+        params.set(key, notes);
+      }
+      continue;
+    }
+    if (REDIRECT_OR_RETURN_PARAM.test(key) && redirectOrReturnUrlLooksPoisoned(val)) {
+      params.set(
+        key,
+        canonicalUrlForPoisonedRedirectOrReturn(pathPart, val),
+      );
     }
   }
   const out = params.toString();
@@ -229,10 +358,17 @@ export function repairClerkAuthLocationHash(): void {
     return;
   }
   const sanitized = sanitizeClerkAuthHashFragment(raw);
-  if (sanitized === raw) {
+  if (sanitized !== raw) {
+    const url = new URL(window.location.href);
+    url.hash = sanitized;
+    window.history.replaceState(window.history.state, '', url.toString());
     return;
   }
-  const url = new URL(window.location.href);
-  url.hash = sanitized;
-  window.history.replaceState(window.history.state, '', url.toString());
+  if (isRootAuthPath(path) && authHashFragmentStillPoisoned(raw)) {
+    replaceAppHash(
+      path.startsWith('/sign-up') || path.startsWith('/signup')
+        ? { kind: 'signup' }
+        : { kind: 'login' },
+    );
+  }
 }

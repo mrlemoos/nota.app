@@ -141,6 +141,41 @@ describe('sanitizeClerkAuthHashFragment', () => {
       'http://localhost:4200/#/notes',
     );
   });
+
+  it('replaces nested redirect_url pointing at sign-in with a clean sign-in URL', () => {
+    stubWindowLocation({ origin: 'http://localhost:4200', pathname: '/' });
+    const notes = 'http://localhost:4200/#/notes';
+    const nestedRedirectToSignIn =
+      'http://localhost:4200/#/sign-in?sign_up_force_redirect_url=' +
+      encodeURIComponent('http://localhost:4200/#/notes') +
+      '&sign_in_force_redirect_url=' +
+      encodeURIComponent('http://localhost:4200/#/notes') +
+      '&redirect_url=' +
+      encodeURIComponent('http://localhost:4200/#/sign-in');
+    const fragment =
+      '/sign-up?sign_up_force_redirect_url=' +
+      encodeURIComponent(notes) +
+      '&sign_in_force_redirect_url=' +
+      encodeURIComponent(notes) +
+      '&redirect_url=' +
+      encodeURIComponent(nestedRedirectToSignIn);
+    const out = sanitizeClerkAuthHashFragment(fragment);
+    expect(out).toMatch(/^\/sign-up\?/);
+    const params = new URLSearchParams(out.slice('/sign-up?'.length));
+    expect(params.get('sign_up_force_redirect_url')).toBe(notes);
+    expect(params.get('sign_in_force_redirect_url')).toBe(notes);
+    expect(params.get('redirect_url')).toBe('http://localhost:4200/#/sign-in');
+  });
+
+  it('sanitises return_url with triple-encoded segments', () => {
+    stubWindowLocation({ origin: 'http://localhost:4200', pathname: '/' });
+    const poisoned =
+      'http%3A%2F%2Flocalhost%3A4200%2F%23%2Fsign-in%3Fsign_up_force_redirect_url%3Dhttp%253A%252F%252Flocalhost%253A4200%252F%2523%252Fnotes';
+    const fragment = `/sign-up?return_url=${poisoned}`;
+    const out = sanitizeClerkAuthHashFragment(fragment);
+    const params = new URLSearchParams(out.slice('/sign-up?'.length));
+    expect(params.get('return_url')).toBe('http://localhost:4200/#/sign-in');
+  });
 });
 
 describe('repairClerkAuthLocationHash', () => {
