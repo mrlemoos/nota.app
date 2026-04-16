@@ -9,13 +9,14 @@ const vercelJsonPath = path.join(
   'vercel.json',
 );
 
-function scriptSrcTokens(csp: string): string[] {
+function directiveTokens(csp: string, directive: string): string[] {
   const parts = csp.split(';').map((s) => s.trim());
-  const scriptPart = parts.find((p) => p.startsWith('script-src '));
-  if (!scriptPart) {
+  const prefix = `${directive} `;
+  const part = parts.find((p) => p.startsWith(prefix));
+  if (!part) {
     return [];
   }
-  return scriptPart.slice('script-src '.length).split(/\s+/).filter(Boolean);
+  return part.slice(prefix.length).split(/\s+/).filter(Boolean);
 }
 
 describe('nota.app vercel.json CSP', () => {
@@ -28,9 +29,13 @@ describe('nota.app vercel.json CSP', () => {
       (h) => h.key === 'Content-Security-Policy',
     )?.value;
     expect(csp).toBeDefined();
-    const tokens = scriptSrcTokens(csp!);
-    expect(tokens).toContain('https://*.nota.mrlemoos.dev');
-    expect(tokens).toContain('https://clerk.nota.mrlemoos.dev');
-    expect(tokens).toContain('https://*.i.posthog.com');
+    const scriptTokens = directiveTokens(csp!, 'script-src');
+    expect(scriptTokens).toContain('https://*.nota.mrlemoos.dev');
+    expect(scriptTokens).toContain('https://clerk.nota.mrlemoos.dev');
+    expect(scriptTokens).toContain('https://*.i.posthog.com');
+
+    const workerTokens = directiveTokens(csp!, 'worker-src');
+    expect(workerTokens).toContain("'self'");
+    expect(workerTokens).toContain('blob:');
   });
 });
