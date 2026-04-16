@@ -1,11 +1,10 @@
 import { useAuth } from '@clerk/react';
 import type { JSX } from 'react';
 import { AuthCardEpigraph } from '@/components/auth-card-epigraph';
+import { AuthScreenHashLink } from '@/components/auth-screen-hash-link';
 import { NotaClerkSignIn } from '@/components/nota-clerk-prefab-auth';
 import { CartoonLandscape } from '@/components/cartoon-landscape';
-import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { hashForScreen } from '../lib/app-navigation';
 
 export default function Login(): JSX.Element {
   const { isLoaded, userId } = useAuth();
@@ -40,15 +39,7 @@ export default function Login(): JSX.Element {
             <NotaClerkSignIn />
             <p className="mt-4 text-center text-sm text-muted-foreground">
               Don&apos;t have an account?{' '}
-              <a
-                href={hashForScreen({ kind: 'signup' })}
-                className={cn(
-                  buttonVariants({ variant: 'link', size: 'sm' }),
-                  'h-auto p-0 text-sm',
-                )}
-              >
-                Sign up
-              </a>
+              <AuthScreenHashLink target="signup">Sign up</AuthScreenHashLink>
             </p>
           </>
         )}
