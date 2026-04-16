@@ -30,5 +30,7 @@ describe('nota.app vercel.json CSP', () => {
     expect(csp).toBeDefined();
     const tokens = scriptSrcTokens(csp!);
     expect(tokens).toContain('https://*.nota.mrlemoos.dev');
+    expect(tokens).toContain('https://clerk.nota.mrlemoos.dev');
+    expect(tokens).toContain('https://*.i.posthog.com');
   });
 });
