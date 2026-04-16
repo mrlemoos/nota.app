@@ -9,6 +9,7 @@ import { SignedInCommandPalette } from './signed-in-command-palette';
 import { useAppNavigationScreen } from './hooks/use-app-navigation-screen';
 import { SpaNotFound } from './components/spa-not-found';
 import { replaceAppHash, syncAppNavigation } from './lib/app-navigation';
+import { repairClerkAuthLocationHash } from './lib/clerk-hash-navigation';
 import { cn } from './lib/utils';
 
 function SpaAuthPanel({
@@ -72,6 +73,12 @@ export function SpaApp(): JSX.Element {
   useLayoutEffect(() => {
     redirectAuthShell(user, loading, kind);
   }, [user, loading, kind]);
+
+  useLayoutEffect(() => {
+    if (kind === 'login' || kind === 'signup') {
+      repairClerkAuthLocationHash();
+    }
+  }, [kind]);
 
   const landingActive = kind === 'landing';
   const notFoundActive = kind === 'notFound';

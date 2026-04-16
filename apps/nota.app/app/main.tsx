@@ -24,6 +24,7 @@ import {
   clerkFullSignUpUrl,
   clerkRouterPush,
   clerkRouterReplace,
+  repairClerkAuthLocationHash,
 } from './lib/clerk-hash-navigation';
 import { ClerkSsoCallbackRoute } from './components/clerk-sso-callback-route';
 import { SpaApp } from './spa-app';
@@ -48,6 +49,8 @@ if (!rootEl) {
 if (!clerkPublishableKey) {
   throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY');
 }
+
+repairClerkAuthLocationHash();
 
 createRoot(rootEl).render(
   <ClerkProvider

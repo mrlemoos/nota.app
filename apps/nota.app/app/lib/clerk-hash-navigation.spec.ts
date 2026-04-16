@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import * as appNavigation from './app-navigation';
 import {
   mapClerkToHashFragment,
+  repairClerkAuthLocationHash,
   sanitizeClerkAuthHashFragment,
 } from './clerk-hash-navigation';
 
@@ -138,5 +140,30 @@ describe('sanitizeClerkAuthHashFragment', () => {
     expect(params.get('sign_in_force_redirect_url')).toBe(
       'http://localhost:4200/#/notes',
     );
+  });
+});
+
+describe('repairClerkAuthLocationHash', () => {
+  it('calls replaceAppHash(signup) when the auth hash query is oversized', () => {
+    const replaceSpy = vi
+      .spyOn(appNavigation, 'replaceAppHash')
+      .mockImplementation(() => {});
+    const junk = 'z'.repeat(3000);
+    const hash = `#/sign-up?${junk}`;
+    const prevWindow = globalThis.window;
+    vi.stubGlobal('window', {
+      ...prevWindow,
+      location: {
+        ...prevWindow.location,
+        origin: 'http://localhost:4200',
+        pathname: '/',
+        hash,
+        href: `http://localhost:4200${hash.startsWith('#') ? hash : `#${hash}`}`,
+      },
+      history: prevWindow.history,
+    });
+    repairClerkAuthLocationHash();
+    expect(replaceSpy).toHaveBeenCalledWith({ kind: 'signup' });
+    replaceSpy.mockRestore();
   });
 });
