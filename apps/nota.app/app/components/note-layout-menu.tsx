@@ -3,7 +3,12 @@ import { TypeCursorIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import type { NoteEditorSettings } from '../lib/note-editor-settings';
+import {
+  NOTE_THEME_LABEL,
+  NOTE_THEME_OPTIONS,
+  noteThemeSelectValue,
+  type NoteEditorSettings,
+} from '../lib/note-editor-settings';
 
 type NoteLayoutMenuProps = {
   settings: NoteEditorSettings;
@@ -74,12 +79,12 @@ export function NoteLayoutMenu({
                 htmlFor="nota-note-layout-font"
                 className="text-xs font-medium text-muted-foreground"
               >
-                Font
+                {NOTE_THEME_LABEL}
               </label>
               <select
                 id="nota-note-layout-font"
                 className={selectClass}
-                value={settings.font ?? ''}
+                value={noteThemeSelectValue(settings)}
                 onChange={(e) => {
                   const v = e.target.value;
                   onSettingsChange({
@@ -87,13 +92,17 @@ export function NoteLayoutMenu({
                     font:
                       v === ''
                         ? undefined
-                        : (v as NonNullable<NoteEditorSettings['font']>),
+                        : v === 'sans'
+                          ? 'sans'
+                          : 'mono',
                   });
                 }}
               >
-                <option value="">App default (sans)</option>
-                <option value="serif">Serif</option>
-                <option value="mono">Monospace</option>
+                {NOTE_THEME_OPTIONS.map((opt) => (
+                  <option key={opt.value || 'london'} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
               </select>
             </div>
             <div>

@@ -7,6 +7,7 @@
 @import "@fontsource-variable/inter";
 @import "@fontsource/instrument-serif/400.css";
 @import "@fontsource-variable/source-serif-4";
+@import "@fontsource/geist-sans/latin.css";
 
 @source "../../apps";
 @source "../../packages";
@@ -447,7 +448,9 @@
   --font-heading: var(--font-sans);
   --font-sans: 'Inter Variable', sans-serif;
   --font-serif: 'Instrument Serif', ui-serif, Georgia, serif;
-  /* Long-form note body when per-note font is serif (title stays Instrument). */
+  /* London theme: Instrument Serif titles; Geist Sans body. */
+  --font-london-body: 'Geist Sans', ui-sans-serif, system-ui, sans-serif;
+  /* Marketing / legacy long-form serif (nota.app London body uses --font-london-body). */
   --font-note-body: 'Source Serif 4 Variable', Georgia, 'Times New Roman', serif;
 
   --color-background: var(--background);

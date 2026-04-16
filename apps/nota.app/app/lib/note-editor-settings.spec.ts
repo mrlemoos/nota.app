@@ -2,8 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   filterNotesForNoteGraph,
   isNoteVisibleInNoteGraph,
+  NOTE_THEME_LABEL,
+  NOTE_THEME_OPTIONS,
   noteEditorSettingsToJson,
   noteSurfaceClassNames,
+  noteThemeSelectValue,
   parseNoteEditorSettings,
 } from './note-editor-settings';
 import type { Json, Note } from '~/types/database.types';
@@ -58,7 +61,7 @@ describe('parseNoteEditorSettings', () => {
     expect(result).toEqual({ font: 'mono', measure: 'narrow' });
   });
 
-  it('treats sans-only settings as app default', () => {
+  it('preserves sans (Ottawa theme)', () => {
     // Arrange
     const raw = { font: 'sans' } as Json;
 
@@ -66,10 +69,10 @@ describe('parseNoteEditorSettings', () => {
     const result = parseNoteEditorSettings(raw);
 
     // Assert
-    expect(result).toEqual({});
+    expect(result).toEqual({ font: 'sans' });
   });
 
-  it('strips sans font but keeps measure', () => {
+  it('preserves sans font and measure', () => {
     // Arrange
     const raw = { font: 'sans', measure: 'wide' } as Json;
 
@@ -77,7 +80,7 @@ describe('parseNoteEditorSettings', () => {
     const result = parseNoteEditorSettings(raw);
 
     // Assert
-    expect(result).toEqual({ measure: 'wide' });
+    expect(result).toEqual({ font: 'sans', measure: 'wide' });
   });
 
   it('returns empty object when validation fails', () => {
@@ -107,18 +110,14 @@ describe('noteEditorSettingsToJson', () => {
     expect(result).toEqual({});
   });
 
-  it('serialises non-default keys', () => {
-    // Arrange
-    const settings = { font: 'serif' as const, measure: 'wide' as const };
-
-    // Act
-    const result = noteEditorSettingsToJson(settings);
-
-    // Assert
-    expect(result).toEqual({
-      font: 'serif',
-      measure: 'wide',
+  it('serialises Ottawa and mono fonts and omits London (serif)', () => {
+    expect(
+      noteEditorSettingsToJson({ font: 'sans', measure: 'wide' as const }),
+    ).toEqual({ font: 'sans', measure: 'wide' });
+    expect(noteEditorSettingsToJson({ font: 'mono' })).toEqual({
+      font: 'mono',
     });
+    expect(noteEditorSettingsToJson({ font: 'serif' })).toEqual({});
   });
 
   it('serialises showInNoteGraph false only', () => {
@@ -140,12 +139,12 @@ describe('showInNoteGraph', () => {
     });
   });
 
-  it('keeps showInNoteGraph when stripping sans font', () => {
+  it('keeps showInNoteGraph with sans font', () => {
     const result = parseNoteEditorSettings({
       font: 'sans',
       showInNoteGraph: false,
     } as Json);
-    expect(result).toEqual({ showInNoteGraph: false });
+    expect(result).toEqual({ font: 'sans', showInNoteGraph: false });
   });
 });
 
@@ -182,7 +181,7 @@ describe('filterNotesForNoteGraph', () => {
 });
 
 describe('noteSurfaceClassNames', () => {
-  it('uses sans and standard width for empty settings', () => {
+  it('uses London (Instrument + Geist) and standard width for empty settings', () => {
     // Arrange
     const settings = {};
 
@@ -192,12 +191,12 @@ describe('noteSurfaceClassNames', () => {
     // Assert
     expect(result).toEqual({
       maxWidthClass: 'max-w-3xl',
-      titleFontClass: 'font-sans',
-      bodyFontClass: 'font-sans',
+      titleFontClass: 'font-serif',
+      bodyFontClass: 'font-london-body',
     });
   });
 
-  it('maps serif title and reading body with narrow measure', () => {
+  it('maps legacy serif to London with narrow measure', () => {
     // Arrange
     const settings = { font: 'serif' as const, measure: 'narrow' as const };
 
@@ -208,7 +207,16 @@ describe('noteSurfaceClassNames', () => {
     expect(result).toEqual({
       maxWidthClass: 'max-w-prose',
       titleFontClass: 'font-serif',
-      bodyFontClass: 'font-note-body',
+      bodyFontClass: 'font-london-body',
+    });
+  });
+
+  it('maps Ottawa (sans) with narrow measure', () => {
+    const settings = { font: 'sans' as const, measure: 'narrow' as const };
+    expect(noteSurfaceClassNames(settings)).toEqual({
+      maxWidthClass: 'max-w-prose',
+      titleFontClass: 'font-sans',
+      bodyFontClass: 'font-sans',
     });
   });
 
@@ -225,5 +233,23 @@ describe('noteSurfaceClassNames', () => {
       titleFontClass: 'font-mono',
       bodyFontClass: 'font-mono',
     });
+  });
+});
+
+describe('note theme copy', () => {
+  it('exposes Note theme label and city option names', () => {
+    expect(NOTE_THEME_LABEL).toBe('Note theme');
+    expect(NOTE_THEME_OPTIONS.map((o) => o.label)).toEqual([
+      'London',
+      'Ottawa',
+      'San Francisco',
+    ]);
+  });
+
+  it('noteThemeSelectValue maps stored font to select value', () => {
+    expect(noteThemeSelectValue({})).toBe('');
+    expect(noteThemeSelectValue({ font: 'serif' })).toBe('');
+    expect(noteThemeSelectValue({ font: 'sans' })).toBe('sans');
+    expect(noteThemeSelectValue({ font: 'mono' })).toBe('mono');
   });
 });

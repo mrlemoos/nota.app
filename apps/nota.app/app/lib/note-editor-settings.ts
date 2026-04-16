@@ -9,6 +9,27 @@ const noteEditorSettingsSchema = z.object({
 
 export type NoteEditorSettings = z.infer<typeof noteEditorSettingsSchema>;
 
+export const NOTE_THEME_LABEL = 'Note theme' as const;
+
+export const NOTE_THEME_OPTIONS = [
+  { value: '' as const, label: 'London' },
+  { value: 'sans' as const, label: 'Ottawa' },
+  { value: 'mono' as const, label: 'San Francisco' },
+] as const;
+
+/** Value for the note theme `<select>`: London is default or legacy `serif`. */
+export function noteThemeSelectValue(
+  settings: NoteEditorSettings,
+): (typeof NOTE_THEME_OPTIONS)[number]['value'] {
+  if (settings.font === 'sans') {
+    return 'sans';
+  }
+  if (settings.font === 'mono') {
+    return 'mono';
+  }
+  return '';
+}
+
 /** Parse `notes.editor_settings` JSON; invalid or non-objects yield `{}`. */
 export function parseNoteEditorSettings(
   raw: Note['editor_settings'] | null | undefined,
@@ -20,17 +41,13 @@ export function parseNoteEditorSettings(
   if (!parsed.success) {
     return {};
   }
-  const { font, ...rest } = parsed.data;
-  if (font === 'sans') {
-    return { ...rest };
-  }
   return parsed.data;
 }
 
 /** Minimal JSON for Supabase; omit keys that match app defaults. */
 export function noteEditorSettingsToJson(settings: NoteEditorSettings): Json {
   const o: Record<string, unknown> = {};
-  if (settings.font) {
+  if (settings.font === 'sans' || settings.font === 'mono') {
     o.font = settings.font;
   }
   if (settings.measure) {
@@ -59,17 +76,17 @@ export function noteSurfaceClassNames(settings: NoteEditorSettings): {
   bodyFontClass: string;
 } {
   const titleFontClass =
-    settings.font === 'serif'
-      ? 'font-serif'
-      : settings.font === 'mono'
-        ? 'font-mono'
-        : 'font-sans';
+    settings.font === 'mono'
+      ? 'font-mono'
+      : settings.font === 'sans'
+        ? 'font-sans'
+        : 'font-serif';
   const bodyFontClass =
-    settings.font === 'serif'
-      ? 'font-note-body'
-      : settings.font === 'mono'
-        ? 'font-mono'
-        : 'font-sans';
+    settings.font === 'mono'
+      ? 'font-mono'
+      : settings.font === 'sans'
+        ? 'font-sans'
+        : 'font-london-body';
   const maxWidthClass =
     settings.measure === 'narrow'
       ? 'max-w-prose'
