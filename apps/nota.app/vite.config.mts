@@ -7,6 +7,7 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
 const appDir = path.join(fileURLToPath(new URL('.', import.meta.url)), 'app');
+const viteStubsDir = path.join(import.meta.dirname, 'vite-stubs');
 
 function notaDesktopArtifactsPlugin(appRoot: string): Plugin {
   return {
@@ -45,10 +46,22 @@ export default defineConfig(({ mode }) => {
     root: import.meta.dirname,
     publicDir: 'public',
     resolve: {
+      // Prefer the hoisted `@clerk/shared` v4 (same React context as `ClerkProvider` from `@clerk/react`).
+      // Do not alias `@clerk/shared/*` to a filesystem path — that skips `exports` and breaks `@clerk/shared/error`, etc.
+      dedupe: ['@clerk/shared'],
       alias: [
-        // App imports use `@/` and `~/`; Clerk packages resolve via normal `node_modules` (single `@clerk/shared@4` tree).
+        // App imports use `@/` and `~/`.
         { find: '~', replacement: appDir },
         { find: '@', replacement: appDir },
+        // `@clerk/elements` imports Next.js router hooks; Nota is Vite + hash SPA only.
+        {
+          find: 'next/navigation',
+          replacement: path.join(viteStubsDir, 'next-navigation.ts'),
+        },
+        {
+          find: 'next/compat/router',
+          replacement: path.join(viteStubsDir, 'next-compat-router.ts'),
+        },
       ],
     },
     cacheDir: '../../node_modules/.vite/apps/nota.app',
@@ -98,7 +111,9 @@ export default defineConfig(({ mode }) => {
       },
     },
     ssr: {
-      noExternal: ['gsap', '@gsap/react'],
+      // `@clerk/elements` imports `next/*`; alias those to `vite-stubs/*`. Vitest must
+      // transform this package (not serve prebundled node_modules) or aliases are skipped.
+      noExternal: ['gsap', '@gsap/react', '@clerk/elements'],
     },
     test: {
       name: '@nota.app/nota.app',
