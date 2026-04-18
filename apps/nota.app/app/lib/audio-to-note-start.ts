@@ -51,3 +51,20 @@ export async function startStudyNotesFromRecording(options: {
     useAudioToNoteSession.getState().beginSession(id);
   }
 }
+
+/**
+ * Starts assistive capture for the note already open in the shell: merges generated
+ * content after the existing body and keeps the current title.
+ */
+export async function startStudyNotesAppendToOpenNote(options: {
+  userId: string;
+  notaProEntitled: boolean;
+  openNoteId: string;
+}): Promise<void> {
+  if (!options.notaProEntitled || !options.userId || !options.openNoteId) {
+    return;
+  }
+  useAudioToNoteSession
+    .getState()
+    .beginSession(options.openNoteId, { append: true });
+}

@@ -72,6 +72,8 @@ export function AudioToNoteDock(): JSX.Element | null {
 
   const runPipeline = useCallback(
     async (blob: Blob, mime: string, targetNoteId: string, uid: string) => {
+      const appendToExisting =
+        useAudioToNoteSession.getState().appendToExisting;
       if (!isLikelyOnline()) {
         const buf = await blob.arrayBuffer();
         await enqueuePendingAudioNoteJob({
@@ -79,13 +81,16 @@ export function AudioToNoteDock(): JSX.Element | null {
           userId: uid,
           audio: buf,
           mime: mime || blob.type || 'audio/webm',
+          ...(appendToExisting ? { append: true } : {}),
         });
-        const queuedTitle = studyNotePlaceholderQueuedTitle();
-        await saveLocalNoteDraft(uid, {
-          id: targetNoteId,
-          title: queuedTitle,
-        });
-        patchNoteInList(targetNoteId, { title: queuedTitle });
+        if (!appendToExisting) {
+          const queuedTitle = studyNotePlaceholderQueuedTitle();
+          await saveLocalNoteDraft(uid, {
+            id: targetNoteId,
+            title: queuedTitle,
+          });
+          patchNoteInList(targetNoteId, { title: queuedTitle });
+        }
         await refreshNotesList({ silent: true });
         reset();
         return;
@@ -123,6 +128,7 @@ export function AudioToNoteDock(): JSX.Element | null {
           recording,
           patchNoteInList,
           refreshNotesList,
+          mode: appendToExisting ? 'append' : 'replace',
         });
         reset();
         if (recordingUploadFailure !== undefined) {

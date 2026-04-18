@@ -1,7 +1,7 @@
 import { idbRequest, transactionComplete } from './notes-offline/db';
 
 const DB_NAME = 'nota-audio-note-pending';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE = 'jobs';
 
 export type PendingAudioNoteJob = {
@@ -11,6 +11,8 @@ export type PendingAudioNoteJob = {
   audio: ArrayBuffer;
   mime: string;
   createdAt: string;
+  /** When true, merge into the note and preserve title (same as live append capture). */
+  append?: boolean;
 };
 
 function openDb(): Promise<IDBDatabase> {
@@ -23,6 +25,7 @@ function openDb(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(STORE)) {
         db.createObjectStore(STORE, { keyPath: 'id' });
       }
+      // v2: optional `append` on jobs — existing rows omit it (replace behaviour).
     };
   });
 }

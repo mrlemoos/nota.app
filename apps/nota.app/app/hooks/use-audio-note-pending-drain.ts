@@ -57,6 +57,7 @@ export function useAudioNotePendingDrain(enabled: boolean): void {
             recording,
             patchNoteInList,
             refreshNotesList,
+            mode: j.append ? 'append' : 'replace',
           });
           if (recordingUploadFailure !== undefined) {
             const warning = formatStudyRecordingUploadWarning(

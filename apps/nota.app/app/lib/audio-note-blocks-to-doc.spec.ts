@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  studyNotesBlocksToTiptapNodes,
   studyNotesResultToTiptapDoc,
   type AudioNoteStudyResult,
 } from './audio-note-blocks-to-doc';
@@ -61,5 +62,22 @@ describe('studyNotesResultToTiptapDoc', () => {
       },
     });
     expect(doc.content[1]).toMatchObject({ type: 'paragraph' });
+  });
+});
+
+describe('studyNotesBlocksToTiptapNodes', () => {
+  it('returns only generated blocks (no recording node)', () => {
+    // Arrange
+    const input: AudioNoteStudyResult = {
+      title: 'X',
+      blocks: [{ type: 'paragraph', text: 'Generated' }],
+    };
+
+    // Act
+    const nodes = studyNotesBlocksToTiptapNodes(input);
+
+    // Assert
+    expect(nodes).toHaveLength(1);
+    expect(nodes[0]).toMatchObject({ type: 'paragraph' });
   });
 });

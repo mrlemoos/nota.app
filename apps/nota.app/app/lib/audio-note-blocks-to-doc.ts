@@ -15,29 +15,26 @@ function textNode(text: string): Record<string, unknown> {
   return { type: 'text', text };
 }
 
-export type StudyNotesDocOptions = {
-  /** Original recording block (prepended above generated study content). */
-  recording?: { attachmentId: string; filename: string };
-};
+export function noteAudioContentNode(recording: {
+  attachmentId: string;
+  filename: string;
+}): Record<string, unknown> {
+  return {
+    type: 'noteAudio',
+    attrs: {
+      attachmentId: recording.attachmentId,
+      filename: recording.filename || 'Recording',
+    },
+  };
+}
 
 /**
- * Converts assistive-capture study-note blocks to TipTap / StarterKit-compatible JSON.
+ * TipTap nodes for the model-generated blocks only (no recording wrapper).
  */
-export function studyNotesResultToTiptapDoc(
+export function studyNotesBlocksToTiptapNodes(
   result: AudioNoteStudyResult,
-  opts?: StudyNotesDocOptions,
-): Json {
+): Record<string, unknown>[] {
   const content: Record<string, unknown>[] = [];
-
-  if (opts?.recording?.attachmentId) {
-    content.push({
-      type: 'noteAudio',
-      attrs: {
-        attachmentId: opts.recording.attachmentId,
-        filename: opts.recording.filename || 'Recording',
-      },
-    });
-  }
 
   for (const block of result.blocks) {
     if (block.type === 'heading') {
@@ -74,11 +71,32 @@ export function studyNotesResultToTiptapDoc(
     }
   }
 
+  return content;
+}
+
+export type StudyNotesDocOptions = {
+  /** Original recording block (prepended above generated study content). */
+  recording?: { attachmentId: string; filename: string };
+};
+
+/**
+ * Converts assistive-capture study-note blocks to TipTap / StarterKit-compatible JSON.
+ */
+export function studyNotesResultToTiptapDoc(
+  result: AudioNoteStudyResult,
+  opts?: StudyNotesDocOptions,
+): Json {
+  const nodes: Record<string, unknown>[] = [];
+  if (opts?.recording?.attachmentId) {
+    nodes.push(noteAudioContentNode(opts.recording));
+  }
+  nodes.push(...studyNotesBlocksToTiptapNodes(result));
+
   return {
     type: 'doc',
     content:
-      content.length > 0
-        ? content
+      nodes.length > 0
+        ? nodes
         : [{ type: 'paragraph', content: [] }],
   } as Json;
 }
