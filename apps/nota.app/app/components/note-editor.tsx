@@ -4,6 +4,7 @@ import {
   useRef,
   useEffect,
   useLayoutEffect,
+  memo,
   type ChangeEvent,
   type KeyboardEvent,
 } from 'react';
@@ -12,14 +13,13 @@ import { useStickyDocTitle } from '../context/sticky-doc-title';
 import { persistedDisplayTitle } from '../lib/note-title';
 import { getBrowserClient } from '../lib/supabase/browser';
 import { useRootLoaderData } from '../context/spa-session-context';
-import { useNotesData } from '../context/notes-data-context';
+import { useNotesDataMeta } from '../context/notes-data-context';
 import { mergeUpdatedNoteLocalContent } from '../lib/note-updated-content-merge';
 import {
-  drainNotesOutbox,
-  isLikelyOnline,
   markNoteSyncedFromServer,
   saveLocalNoteDraft,
-} from '../lib/notes-offline';
+} from '../lib/notes-offline/local-note-store';
+import { drainNotesOutbox, isLikelyOnline } from '../lib/notes-offline/sync-notes';
 import { updateNote } from '../models/notes';
 import type { Json, Note, NoteAttachment } from '~/types/database.types';
 import {
@@ -33,6 +33,8 @@ import type { Editor } from '@tiptap/core';
 
 interface NoteEditorProps {
   note: Note;
+  /** Full vault list for `@` mention candidates (parent avoids TipTap subscribing to vault context). */
+  noteMentionCandidates: Note[];
   attachments: NoteAttachment[];
   titleFontClassName: string;
   bodyFontClassName: string;
@@ -41,15 +43,16 @@ interface NoteEditorProps {
 
 const SAVE_DEBOUNCE_MS = 800;
 
-export function NoteEditor({
+function NoteEditorImpl({
   note,
+  noteMentionCandidates,
   attachments,
   titleFontClassName,
   bodyFontClassName,
   onNoteUpdated,
 }: NoteEditorProps) {
   const { user } = useRootLoaderData() ?? { user: null };
-  const { notaProEntitled } = useNotesData();
+  const { notaProEntitled } = useNotesDataMeta();
   const { scrollRootRef, scrollRootEpoch, setSticky, resetSticky } =
     useStickyDocTitle();
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>(
@@ -476,6 +479,7 @@ export function NoteEditor({
           noteId={note.id}
           contentRevision={note.updated_at}
           userId={user?.id ?? ''}
+          noteMentionCandidates={noteMentionCandidates}
           attachments={attachments}
           dueAt={note.due_at}
           isDeadline={note.is_deadline}
@@ -486,3 +490,5 @@ export function NoteEditor({
     </div>
   );
 }
+
+export const NoteEditor = memo(NoteEditorImpl);

@@ -239,7 +239,14 @@ function scheduleNavigationSync(): void {
   });
 }
 
-if (typeof window !== 'undefined') {
+/**
+ * Registers hash / history listeners and patches `pushState` / `replaceState` once.
+ * Call from `main.tsx` so tests and scripts can import navigation helpers without side effects.
+ */
+export function bootstrapAppNavigation(): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
   window.addEventListener('hashchange', () => {
     notify();
   });

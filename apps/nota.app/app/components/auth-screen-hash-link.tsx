@@ -1,5 +1,5 @@
 import type { VariantProps } from 'class-variance-authority';
-import type { JSX, MouseEvent, ReactNode } from 'react';
+import type { JSX, ReactNode } from 'react';
 import { buttonVariants } from '@/components/ui/button';
 import { hashForScreen, replaceAppHash } from '@/lib/app-navigation';
 import { cn } from '@/lib/utils';

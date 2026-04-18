@@ -1,9 +1,12 @@
 import { UserButton } from '@clerk/react';
-import { useLayoutEffect, useMemo, useState, type JSX } from 'react';
+import { useLayoutEffect, useState, type JSX } from 'react';
 import { cn } from '@/lib/utils';
 import { ThemeMenu } from '../components/theme-menu';
 import { useRootLoaderData } from '../context/spa-session-context';
-import { useNotesData } from '../context/notes-data-context';
+import {
+  useNotesDataActions,
+  useNotesDataMeta,
+} from '../context/notes-data-context';
 import { submitUserPreferencesToggle } from '../lib/use-sync-user-preferences';
 import { useNotaPreferencesStore } from '../stores/nota-preferences';
 import { NotaProSettingsSection } from '../components/nota-pro-settings-section';
@@ -11,7 +14,8 @@ import { hashForScreen } from '../lib/app-navigation';
 
 export default function NotesSettings(): JSX.Element {
   const { user } = useRootLoaderData();
-  const { setUserPreferencesInState, notaProEntitled } = useNotesData();
+  const { notaProEntitled } = useNotesDataMeta();
+  const { setUserPreferencesInState } = useNotesDataActions();
   const openTodaysNoteShortcut = useNotaPreferencesStore(
     (s) => s.openTodaysNoteShortcut,
   );
@@ -35,13 +39,6 @@ export default function NotesSettings(): JSX.Element {
     setModDLabel(isApple ? '⌘D' : 'Ctrl+D');
     setHistoryBackLabel(isApple ? '⌘[' : 'Ctrl+[');
     setHistoryForwardLabel(isApple ? '⌘]' : 'Ctrl+]');
-  }, []);
-
-  const afterSignOutUrl = useMemo(() => {
-    if (typeof window === 'undefined') {
-      return '';
-    }
-    return `${window.location.origin}${window.location.pathname}${hashForScreen({ kind: 'landing' })}`;
   }, []);
 
   return (
@@ -130,7 +127,6 @@ export default function NotesSettings(): JSX.Element {
               </div>
               <div className="flex shrink-0 justify-start sm:justify-end">
                 <UserButton
-                  afterSignOutUrl={afterSignOutUrl || undefined}
                   appearance={{
                     elements: {
                       avatarBox: 'size-9 ring-1 ring-border/40',

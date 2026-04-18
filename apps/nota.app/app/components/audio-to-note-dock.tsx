@@ -8,11 +8,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useRootLoaderData } from '../context/spa-session-context';
-import { useNotesData } from '../context/notes-data-context';
+import { useNotesDataActions } from '../context/notes-data-context';
 import { postAudioToNoteStream } from '../lib/audio-to-note-client';
 import { applyAudioNoteStudyResult } from '../lib/audio-to-note-apply';
 import { uploadStudyRecordingAttachment } from '../lib/pdf-attachment-client';
-import { isLikelyOnline, saveLocalNoteDraft } from '../lib/notes-offline';
+import { saveLocalNoteDraft } from '../lib/notes-offline/local-note-store';
+import { isLikelyOnline } from '../lib/notes-offline/sync-notes';
 import { enqueuePendingAudioNoteJob } from '../lib/audio-note-pending-idb';
 import { useAudioToNoteSession } from '../stores/audio-to-note-session';
 import { formatStudyRecordingUploadWarning } from '../lib/study-recording-upload-warning';
@@ -48,7 +49,7 @@ const PAUSED_STATUS = 'Paused. Resume when you are ready to continue.';
 export function AudioToNoteDock(): JSX.Element | null {
   const { user } = useRootLoaderData() ?? { user: null };
   const userId = user?.id ?? null;
-  const { patchNoteInList, refreshNotesList } = useNotesData();
+  const { patchNoteInList, refreshNotesList } = useNotesDataActions();
 
   const phase = useAudioToNoteSession((s) => s.phase);
   const recordingSessionId = useAudioToNoteSession((s) => s.recordingSessionId);

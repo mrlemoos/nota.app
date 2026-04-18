@@ -1,6 +1,5 @@
 import type { Editor } from '@tiptap/core';
 import { Node as PMNode } from '@tiptap/pm/model';
-import { TextSelection } from '@tiptap/pm/state';
 import type { EditorView } from '@tiptap/pm/view';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -18,10 +17,8 @@ import {
   useMemo,
   useRef,
   useState,
-  type Dispatch,
   type JSX,
   type MutableRefObject,
-  type SetStateAction,
 } from 'react';
 import { LinkPreview } from './tiptap/link-preview-extension';
 import { NotaLink } from './tiptap/nota-link';
@@ -45,7 +42,10 @@ import { TableEditorMenu } from './tiptap/table-editor-menu';
 import { NoteDueDateBubbleMenu } from './note-due-date-bubble-menu';
 import { NotaDueDateInteraction } from './tiptap/nota-due-date-interaction';
 import { hrefForNote, parseNoteLinkPath } from '../lib/internal-note-link';
-import { useNotesData } from '../context/notes-data-context';
+import {
+  useNotesDataActions,
+  useNotesDataMeta,
+} from '../context/notes-data-context';
 import {
   absoluteUrlForNote,
   navigateFromLegacyPath,
@@ -53,125 +53,11 @@ import {
 import { persistedDisplayTitle } from '../lib/note-title';
 import { findNoteMentionTrigger } from '../lib/tiptap-note-mention';
 import { NoteLinkMentionMenu } from './tiptap/note-link-mention-menu';
-
-/**
- * Inserts the internal note link using the same `EditorView` that receives
- * `handleKeyDown`, so Enter confirmation does not depend on TipTap `Editor`
- * refs or `dom.editor` (which can disagree with the active view).
- */
-function insertNoteLinkAtMentionRangeView(
-  view: EditorView,
-  from: number,
-  to: number,
-  target: Note,
-): boolean {
-  const { state } = view;
-  const linkMark = state.schema.marks.link;
-  if (!linkMark) return false;
-
-  const href = hrefForNote(target.id);
-  const label = persistedDisplayTitle(target.title || '');
-  const mark = linkMark.create({
-    href,
-    target: null,
-    rel: null,
-    class: 'tiptap-link',
-    skipLinkPreview: true,
-  });
-
-  const tr = state.tr;
-  tr.delete(from, to);
-  tr.insert(from, state.schema.text(label, [mark]));
-  tr.setSelection(TextSelection.create(tr.doc, from + label.length));
-  tr.setStoredMarks([]);
-  view.dispatch(tr.scrollIntoView());
-
-  const dom = view.dom as HTMLElement & { editor?: Editor };
-  const ed = dom.editor;
-  if (ed && !ed.isDestroyed) {
-    ed
-      .chain()
-      .focus()
-      .setParagraph()
-      .command(({ tr: innerTr, dispatch }) => {
-        if (dispatch) {
-          innerTr.setStoredMarks([]);
-        }
-        return true;
-      })
-      .run();
-  } else {
-    view.focus();
-  }
-  return true;
-}
-
-function insertNoteLinkAtMentionRange(
-  ed: Editor,
-  from: number,
-  to: number,
-  target: Note,
-): void {
-  insertNoteLinkAtMentionRangeView(ed.view, from, to, target);
-}
-
-type NoteMentionConfirmRefs = {
-  canInsertAttachmentsRef: MutableRefObject<boolean>;
-  filterNoteCandidatesRef: MutableRefObject<(query: string) => Note[]>;
-  mentionTriggerKeyRef: MutableRefObject<string | null>;
-  mentionSelectedIndexRef: MutableRefObject<number>;
-};
-
-/**
- * Inserts the note link for the active `@` mention if the trigger and a
- * non-empty candidate list are present. Shared by `handleKeyDown` (desktop
- * Enter/Tab) and `beforeinput` (mobile Return where keydown is unreliable).
- */
-function tryConfirmNoteMention(
-  view: EditorView,
-  setMention: Dispatch<
-    SetStateAction<{ from: number; query: string; selectedIndex: number } | null>
-  >,
-  refs: NoteMentionConfirmRefs,
-): boolean {
-  const state = view.state;
-
-  if (!refs.canInsertAttachmentsRef.current) {
-    return false;
-  }
-  const trigger = findNoteMentionTrigger(state);
-  if (!trigger) {
-    return false;
-  }
-  const filtered = refs.filterNoteCandidatesRef.current(trigger.query);
-  if (filtered.length === 0) {
-    return false;
-  }
-
-  const triggerKey = `${trigger.from}:${trigger.query}`;
-  if (refs.mentionTriggerKeyRef.current !== triggerKey) {
-    refs.mentionSelectedIndexRef.current = 0;
-    refs.mentionTriggerKeyRef.current = triggerKey;
-  }
-
-  const idx = Math.min(
-    refs.mentionSelectedIndexRef.current,
-    filtered.length - 1,
-  );
-  const target = filtered[idx]!;
-  const to = state.selection.from;
-  const inserted = insertNoteLinkAtMentionRangeView(
-    view,
-    trigger.from,
-    to,
-    target,
-  );
-  if (!inserted) {
-    return false;
-  }
-  setMention(null);
-  return true;
-}
+import {
+  insertNoteLinkAtMentionRange,
+  tryConfirmNoteMention,
+  type NoteMentionConfirmRefs,
+} from './tiptap-note-mention-flow';
 
 function isDocContentEqual(editor: Editor, content: unknown): boolean {
   if (content === null || content === undefined) {
@@ -199,6 +85,8 @@ interface TipTapEditorProps {
   /** Server revision (e.g. `note.updated_at`). When it changes, body re-syncs from `content` if the document differs. */
   contentRevision?: string;
   userId: string;
+  /** Vault notes for `@` mentions (passed from parent so this module need not subscribe to list context). */
+  noteMentionCandidates: Note[];
   attachments: NoteAttachment[];
   dueAt?: string | null;
   isDeadline?: boolean;
@@ -214,6 +102,7 @@ export function TipTapEditor({
   noteId,
   contentRevision,
   userId,
+  noteMentionCandidates,
   attachments,
   dueAt = null,
   isDeadline = false,
@@ -228,8 +117,8 @@ export function TipTapEditor({
   >(async () => {});
 
   const [isMounted, setIsMounted] = useState(false);
-  const { refreshNotesList, notes: sidebarNotes, notaProEntitled } =
-    useNotesData();
+  const { refreshNotesList } = useNotesDataActions();
+  const { notaProEntitled } = useNotesDataMeta();
   const notaProEntitledRef = useRef(notaProEntitled);
   notaProEntitledRef.current = notaProEntitled;
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -246,13 +135,13 @@ export function TipTapEditor({
   const filterNoteCandidates = useCallback(
     (query: string) => {
       const q = query.trim().toLowerCase();
-      const c = sidebarNotes.filter((n) => n.id !== noteId);
+      const c = noteMentionCandidates.filter((n) => n.id !== noteId);
       if (!q) return c;
       return c.filter((n) =>
         persistedDisplayTitle(n.title || '').toLowerCase().includes(q),
       );
     },
-    [sidebarNotes, noteId],
+    [noteMentionCandidates, noteId],
   );
 
   const filterNoteCandidatesRef = useRef(filterNoteCandidates);
@@ -296,6 +185,9 @@ export function TipTapEditor({
     mentionSelectedIndexRef,
   };
 
+  const mentionConfirmRefsLatest = useRef(mentionConfirmRefs);
+  mentionConfirmRefsLatest.current = mentionConfirmRefs;
+
   const extensions = useMemo(
     () => [
       StarterKit.configure({
@@ -338,14 +230,12 @@ export function TipTapEditor({
     [onSaveDueDate, placeholder],
   );
 
-  const editor = useEditor({
-    extensions,
-    content: content || { type: 'doc', content: [{ type: 'paragraph' }] },
-    onUpdate: ({ editor: ed }) => {
-      onUpdate(ed.getJSON());
-    },
-    editorProps: {
-      handleKeyDown: (_view, event) => {
+  // Explicit `EditorView` / DOM event types: `stableEditorProps` is memoised with `[]`, so
+  // TipTap does not infer these handler parameters; annotations avoid implicit `any` under
+  // strict TypeScript (they are not required at runtime).
+  const stableEditorProps = useMemo(
+    () => ({
+      handleKeyDown: (_view: EditorView, event: KeyboardEvent) => {
         if (!canInsertAttachmentsRef.current) return false;
         const trigger = findNoteMentionTrigger(_view.state);
         if (!trigger) return false;
@@ -405,7 +295,7 @@ export function TipTapEditor({
           const handled = tryConfirmNoteMention(
             _view,
             setMention,
-            mentionConfirmRefs,
+            mentionConfirmRefsLatest.current,
           );
           if (handled) {
             event.preventDefault();
@@ -416,7 +306,7 @@ export function TipTapEditor({
         return false;
       },
       handleDOMEvents: {
-        beforeinput: (_view, event) => {
+        beforeinput: (_view: EditorView, event: Event) => {
           if (!(event instanceof InputEvent)) return false;
           if (event.isComposing) return false;
           if (
@@ -428,7 +318,7 @@ export function TipTapEditor({
           const handled = tryConfirmNoteMention(
             _view,
             setMention,
-            mentionConfirmRefs,
+            mentionConfirmRefsLatest.current,
           );
           if (handled) {
             event.preventDefault();
@@ -436,7 +326,7 @@ export function TipTapEditor({
           }
           return false;
         },
-        click: (_view, event) => {
+        click: (_view: EditorView, event: MouseEvent) => {
           if (event.button !== 0) return false;
           const el = event.target as HTMLElement | null;
           const anchor = el?.closest?.('a.tiptap-link') as HTMLAnchorElement | null;
@@ -471,7 +361,7 @@ export function TipTapEditor({
           window.open(anchor.href, '_blank', 'noopener,noreferrer');
           return true;
         },
-        dragover: (_view, event) => {
+        dragover: (_view: EditorView, event: DragEvent) => {
           const dt = event.dataTransfer;
           if (!dt || !dt.types.includes('Files')) {
             return false;
@@ -487,7 +377,7 @@ export function TipTapEditor({
           setIsFileDragOver(true);
           return false;
         },
-        dragleave: (_view, event) => {
+        dragleave: (_view: EditorView, event: DragEvent) => {
           const related = event.relatedTarget;
           if (
             related instanceof globalThis.Node &&
@@ -498,7 +388,7 @@ export function TipTapEditor({
           setIsFileDragOver(false);
           return false;
         },
-        drop: (_view, event) => {
+        drop: (_view: EditorView, event: DragEvent) => {
           setIsFileDragOver(false);
           const dt = event.dataTransfer;
           if (!dt || !dt.types.includes('Files')) {
@@ -520,8 +410,22 @@ export function TipTapEditor({
           return true;
         },
       },
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- TipTap: stable `editorProps` identity; live values via refs.
+    [],
+  );
+
+  const editor = useEditor(
+    {
+      extensions,
+      content: content || { type: 'doc', content: [{ type: 'paragraph' }] },
+      onUpdate: ({ editor: ed }) => {
+        onUpdate(ed.getJSON());
+      },
+      editorProps: stableEditorProps,
     },
-  }, [extensions]);
+    [extensions, stableEditorProps],
+  );
 
   editorRef.current = editor ?? null;
   if (bodyEditorRef) {
@@ -769,7 +673,7 @@ export function TipTapEditor({
           }}
           onSelect={handleMentionSelectNote}
           emptyMessage={
-            sidebarNotes.filter((n) => n.id !== noteId).length === 0
+            noteMentionCandidates.filter((n) => n.id !== noteId).length === 0
               ? 'No other notes yet'
               : 'No matching notes'
           }

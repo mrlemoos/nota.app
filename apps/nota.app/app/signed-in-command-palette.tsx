@@ -1,11 +1,11 @@
 import { CommandPalette } from './components/command-palette';
 import { useRootLoaderData } from './context/spa-session-context';
-import { useOptionalNotesData } from './context/notes-data-context';
+import { useOptionalNotesDataMeta } from './context/notes-data-context';
 
 export function SignedInCommandPalette() {
   const { user } = useRootLoaderData();
-  const notesData = useOptionalNotesData();
-  const notesUnlocked = !!notesData && !notesData.loading;
+  const meta = useOptionalNotesDataMeta();
+  const notesUnlocked = !!meta && !meta.loading;
 
   if (!user) {
     return null;

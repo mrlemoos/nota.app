@@ -1,7 +1,10 @@
 import { useEffect } from 'react';
 import { useRootLoaderData } from '../context/spa-session-context';
-import { useNotesData } from '../context/notes-data-context';
-import { isLikelyOnline } from '../lib/notes-offline';
+import {
+  useNotesDataActions,
+  useNotesDataMeta,
+} from '../context/notes-data-context';
+import { isLikelyOnline } from '../lib/notes-offline/sync-notes';
 import {
   listPendingAudioNoteJobs,
   removePendingAudioNoteJob,
@@ -11,6 +14,7 @@ import { applyAudioNoteStudyResult } from '../lib/audio-to-note-apply';
 import { uploadStudyRecordingAttachment } from '../lib/pdf-attachment-client';
 import { formatStudyRecordingUploadWarning } from '../lib/study-recording-upload-warning';
 import { useAudioToNoteSession } from '../stores/audio-to-note-session';
+import { subscribeOnline } from '../lib/browser-connectivity';
 
 /**
  * When the device is back online, processes queued audio-to-note jobs from IndexedDB.
@@ -18,8 +22,8 @@ import { useAudioToNoteSession } from '../stores/audio-to-note-session';
 export function useAudioNotePendingDrain(enabled: boolean): void {
   const { user } = useRootLoaderData() ?? {};
   const userId = user?.id;
-  const { notaProEntitled, loading, patchNoteInList, refreshNotesList } =
-    useNotesData();
+  const { notaProEntitled, loading } = useNotesDataMeta();
+  const { patchNoteInList, refreshNotesList } = useNotesDataActions();
 
   useEffect(() => {
     if (!enabled || !notaProEntitled || !userId || loading) {
@@ -76,8 +80,7 @@ export function useAudioNotePendingDrain(enabled: boolean): void {
     };
 
     void drain();
-    window.addEventListener('online', drain);
-    return () => window.removeEventListener('online', drain);
+    return subscribeOnline(drain);
   }, [
     enabled,
     notaProEntitled,

@@ -1,11 +1,15 @@
 import { PricingTable } from '@clerk/react';
 import { useCallback, useState, type JSX } from 'react';
 import { Button } from '@/components/ui/button';
-import { useNotesData } from '../context/notes-data-context';
+import {
+  useNotesDataActions,
+  useNotesDataMeta,
+} from '../context/notes-data-context';
 import { postNotaProInvalidate } from '../lib/nota-server-client';
 
 export function NotaProSettingsSection(): JSX.Element {
-  const { notaProEntitled, refreshNotesList, loading } = useNotesData();
+  const { notaProEntitled, loading } = useNotesDataMeta();
+  const { refreshNotesList } = useNotesDataActions();
   const [refreshBusy, setRefreshBusy] = useState(false);
 
   const runRefresh = useCallback(() => {

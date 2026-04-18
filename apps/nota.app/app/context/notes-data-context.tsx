@@ -1,7 +1,7 @@
 import {
   createContext,
+  use,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -11,12 +11,14 @@ import {
 import type { Note, UserPreferences } from '~/types/database.types';
 import { getBrowserClient } from '../lib/supabase/browser';
 import {
-  isLikelyOnline,
   listStoredNotes,
-  mergeNoteLists,
   putServerNoteIfNotDirty,
+} from '../lib/notes-offline/local-note-store';
+import {
+  mergeNoteLists,
   storedNoteToListRow,
-} from '../lib/notes-offline';
+} from '../lib/notes-offline/merge-note-with-local';
+import { isLikelyOnline } from '../lib/notes-offline/sync-notes';
 import { syncServerNotesToIdbInChunks } from '../lib/sync-server-notes-to-idb';
 import { listNotes } from '../models/notes';
 import { getUserPreferences } from '../models/user-preferences';
@@ -53,7 +55,63 @@ export type NotesDataContextValue = {
   setUserPreferencesInState: (row: UserPreferences | null) => void;
 };
 
-const NotesDataContext = createContext<NotesDataContextValue | null>(null);
+export type NotesDataActionsSlice = Pick<
+  NotesDataContextValue,
+  | 'refreshNotesList'
+  | 'patchNoteInList'
+  | 'removeNoteFromList'
+  | 'insertNoteAtFront'
+  | 'setUserPreferencesInState'
+>;
+
+export type NotesDataVaultSlice = Pick<NotesDataContextValue, 'notes'>;
+
+export type NotesDataMetaSlice = Pick<
+  NotesDataContextValue,
+  'notaProEntitled' | 'loading' | 'userPreferences' | 'loadError'
+>;
+
+export const NotesDataActionsContext = createContext<NotesDataActionsSlice | null>(
+  null,
+);
+export const NotesDataVaultContext = createContext<NotesDataVaultSlice | null>(
+  null,
+);
+export const NotesDataMetaContext = createContext<NotesDataMetaSlice | null>(
+  null,
+);
+
+function requireNotesDataProviderValue<T>(value: T | null | undefined): T {
+  if (value == null) {
+    throw new Error('NotesDataProvider is required');
+  }
+  return value;
+}
+
+type FullNotesDataSlices = {
+  actions: NotesDataActionsSlice;
+  vault: NotesDataVaultSlice;
+  meta: NotesDataMetaSlice;
+};
+
+function parseFullNotesDataSlices(
+  actions: NotesDataActionsSlice | null,
+  vault: NotesDataVaultSlice | null,
+  meta: NotesDataMetaSlice | null,
+): FullNotesDataSlices | null {
+  if (!actions || !vault || !meta) {
+    return null;
+  }
+  return { actions, vault, meta };
+}
+
+function requireFullNotesDataSlices(
+  actions: NotesDataActionsSlice | null,
+  vault: NotesDataVaultSlice | null,
+  meta: NotesDataMetaSlice | null,
+): FullNotesDataSlices {
+  return requireNotesDataProviderValue(parseFullNotesDataSlices(actions, vault, meta));
+}
 
 async function waitForClerkBridge(maxMs = 600): Promise<void> {
   const deadline = Date.now() + maxMs;
@@ -315,26 +373,16 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const value = useMemo(
+  const actionsValue = useMemo(
     () =>
       ({
-        notaProEntitled,
-        notes,
-        userPreferences,
-        loadError,
-        loading,
         refreshNotesList,
         patchNoteInList,
         removeNoteFromList,
         insertNoteAtFront,
         setUserPreferencesInState: setUserPreferences,
-      }) satisfies NotesDataContextValue,
+      }) satisfies NotesDataActionsSlice,
     [
-      notaProEntitled,
-      notes,
-      userPreferences,
-      loadError,
-      loading,
       refreshNotesList,
       patchNoteInList,
       removeNoteFromList,
@@ -342,21 +390,107 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
     ],
   );
 
+  const vaultValue = useMemo(
+    (): NotesDataVaultSlice => ({
+      notes,
+    }),
+    [notes],
+  );
+
+  const metaValue = useMemo(
+    () =>
+      ({
+        notaProEntitled,
+        loading,
+        userPreferences,
+        loadError,
+      }) satisfies NotesDataMetaSlice,
+    [notaProEntitled, loading, userPreferences, loadError],
+  );
+
   return (
-    <NotesDataContext.Provider value={value}>
-      {children}
-    </NotesDataContext.Provider>
+    <NotesDataActionsContext.Provider value={actionsValue}>
+      <NotesDataMetaContext.Provider value={metaValue}>
+        <NotesDataVaultContext.Provider value={vaultValue}>
+          {children}
+        </NotesDataVaultContext.Provider>
+      </NotesDataMetaContext.Provider>
+    </NotesDataActionsContext.Provider>
+  );
+}
+
+export function useNotesDataActions(): NotesDataActionsSlice {
+  return requireNotesDataProviderValue(use(NotesDataActionsContext));
+}
+
+export function useNotesDataVault(): NotesDataVaultSlice {
+  return requireNotesDataProviderValue(use(NotesDataVaultContext));
+}
+
+export function useNotesDataMeta(): NotesDataMetaSlice {
+  return requireNotesDataProviderValue(use(NotesDataMetaContext));
+}
+
+function useMergedNotesData(
+  actions: NotesDataActionsSlice,
+  vault: NotesDataVaultSlice,
+  meta: NotesDataMetaSlice,
+): NotesDataContextValue {
+  return useMemo(
+    () => ({
+      ...actions,
+      ...vault,
+      ...meta,
+    }),
+    [actions, vault, meta],
   );
 }
 
 export function useNotesData(): NotesDataContextValue {
-  const v = useContext(NotesDataContext);
-  if (!v) {
-    throw new Error('NotesDataProvider is required');
-  }
-  return v;
+  const slices = requireFullNotesDataSlices(
+    use(NotesDataActionsContext),
+    use(NotesDataVaultContext),
+    use(NotesDataMetaContext),
+  );
+  return useMergedNotesData(slices.actions, slices.vault, slices.meta);
 }
 
 export function useOptionalNotesData(): NotesDataContextValue | null {
-  return useContext(NotesDataContext);
+  const slices = parseFullNotesDataSlices(
+    use(NotesDataActionsContext),
+    use(NotesDataVaultContext),
+    use(NotesDataMetaContext),
+  );
+  if (!slices) {
+    return null;
+  }
+  return useMergedNotesData(slices.actions, slices.vault, slices.meta);
+}
+
+/**
+ * Meta slice only when the full notes tree is mounted; for gates that must not
+ * subscribe to `notes` churn (e.g. command palette shell).
+ */
+export function useOptionalNotesDataMeta(): NotesDataMetaSlice | null {
+  const slices = parseFullNotesDataSlices(
+    use(NotesDataActionsContext),
+    use(NotesDataVaultContext),
+    use(NotesDataMetaContext),
+  );
+  if (!slices) {
+    return null;
+  }
+  return slices.meta;
+}
+
+export function useOptionalNotesDataActions(): NotesDataActionsSlice | null {
+  const slices = parseFullNotesDataSlices(
+    use(NotesDataActionsContext),
+    use(NotesDataVaultContext),
+    use(NotesDataMetaContext),
+  );
+  if (!slices) {
+    return null;
+  }
+  return slices.actions;
 }

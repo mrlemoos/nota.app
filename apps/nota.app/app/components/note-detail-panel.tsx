@@ -10,22 +10,29 @@ import {
 import { getBrowserClient } from '../lib/supabase/browser';
 import {
   getStoredNote,
-  isLikelyOnline,
-  mergeNoteWithLocal,
   putServerNoteIfNotDirty,
+} from '../lib/notes-offline/local-note-store';
+import {
+  mergeNoteWithLocal,
   storedNoteToListRow,
-} from '../lib/notes-offline';
+} from '../lib/notes-offline/merge-note-with-local';
+import { isLikelyOnline } from '../lib/notes-offline/sync-notes';
 import { fetchNoteRowAndAttachmentsParallel } from '../lib/note-detail-fetch';
 import { getNote } from '../models/notes';
 import { listNoteAttachments } from '../models/note-attachments';
 import { hashForScreen, replaceAppHash } from '../lib/app-navigation';
 import { shouldRefetchOpenNoteFromVaultList } from '../lib/open-note-vault-list-sync';
-import { useNotesData } from '../context/notes-data-context';
+import {
+  useNotesDataActions,
+  useNotesDataMeta,
+  useNotesDataVault,
+} from '../context/notes-data-context';
 import { useSpaSession } from '../context/spa-session-context';
 
 export function NoteDetailPanel({ noteId }: { noteId: string }): React.ReactNode {
-  const { notes, notaProEntitled, patchNoteInList, loading: vaultLoading } =
-    useNotesData();
+  const { notes } = useNotesDataVault();
+  const { notaProEntitled, loading: vaultLoading } = useNotesDataMeta();
+  const { patchNoteInList } = useNotesDataActions();
   const { user } = useSpaSession();
   const [note, setNote] = useState<Note | null>(null);
   const [attachments, setAttachments] = useState<NoteAttachment[]>([]);
@@ -261,6 +268,7 @@ export function NoteDetailPanel({ noteId }: { noteId: string }): React.ReactNode
       >
         <NoteEditor
           note={displayNote}
+          noteMentionCandidates={notes}
           attachments={attachments}
           titleFontClassName={layout.titleFontClass}
           bodyFontClassName={layout.bodyFontClass}

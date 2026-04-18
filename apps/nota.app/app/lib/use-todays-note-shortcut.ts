@@ -2,7 +2,7 @@ import { useEffect, useEffectEvent, useRef } from 'react';
 import { openTodaysNoteClient } from './open-todays-note';
 import type { Note } from '~/types/database.types';
 import { navigateFromLegacyPath } from './app-navigation';
-import { useOptionalNotesData } from '../context/notes-data-context';
+import { useOptionalNotesDataActions } from '../context/notes-data-context';
 
 export function useTodaysNoteShortcut(
   notes: Pick<Note, 'id'>[],
@@ -10,9 +10,9 @@ export function useTodaysNoteShortcut(
   enabled: boolean,
   notaProEntitled: boolean,
 ): void {
-  const notesData = useOptionalNotesData();
-  const refreshRef = useRef(notesData?.refreshNotesList);
-  refreshRef.current = notesData?.refreshNotesList;
+  const actions = useOptionalNotesDataActions();
+  const refreshRef = useRef(actions?.refreshNotesList);
+  refreshRef.current = actions?.refreshNotesList;
 
   const onKeyDown = useEffectEvent((e: KeyboardEvent): void => {
     if (!enabled || !userId) {

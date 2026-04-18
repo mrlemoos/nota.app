@@ -1,6 +1,5 @@
 import { ClerkProvider } from '@clerk/react';
 import { ui } from '@clerk/ui';
-import { PostHogProvider } from '@posthog/react';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 /* Import via the JS graph so Vite emits `url(./files/*.woff2)` assets. `@import` inside
@@ -11,7 +10,8 @@ import '@fontsource/instrument-serif/400.css';
 import '@fontsource-variable/source-serif-4/index.css';
 import '@fontsource/geist-sans/latin.css';
 import '../styles.css';
-import './lib/app-navigation';
+import { bootstrapAppNavigation } from './lib/app-navigation';
+import { DeferredPostHogRoot } from './components/deferred-posthog-root';
 import { SpaErrorBoundary } from './components/spa-error-boundary';
 import { ThemeProvider } from './components/theme-provider';
 import { ClerkSupabaseBridge } from './context/clerk-supabase-bridge';
@@ -28,11 +28,6 @@ import {
 } from './lib/clerk-hash-navigation';
 import { ClerkSsoCallbackRoute } from './components/clerk-sso-callback-route';
 import { SpaApp } from './spa-app';
-
-const POSTHOG_OPTIONS = {
-  api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST,
-  defaults: '2026-01-30',
-} as const;
 
 const POSTHOG_PROJECT_TOKEN = import.meta.env.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN;
 
@@ -73,6 +68,8 @@ window.addEventListener(
   { once: true },
 );
 
+bootstrapAppNavigation();
+
 createRoot(rootEl).render(
   <ClerkProvider
     ui={ui}
@@ -86,7 +83,7 @@ createRoot(rootEl).render(
     allowedRedirectProtocols={['nota:']}
   >
     <StrictMode>
-      <PostHogProvider apiKey={POSTHOG_PROJECT_TOKEN} options={POSTHOG_OPTIONS}>
+      <DeferredPostHogRoot apiKey={POSTHOG_PROJECT_TOKEN}>
         <ClerkSupabaseBridge>
           <ClerkSsoCallbackRoute />
           <ThemeProvider defaultTheme="system" storageKey="nota-ui-theme">
@@ -101,7 +98,7 @@ createRoot(rootEl).render(
             </SpaSessionProvider>
           </ThemeProvider>
         </ClerkSupabaseBridge>
-      </PostHogProvider>
+      </DeferredPostHogRoot>
     </StrictMode>
   </ClerkProvider>,
 );

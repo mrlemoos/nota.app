@@ -22,10 +22,11 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import type { Note } from '~/types/database.types';
-import { useNotesData } from '../context/notes-data-context';
+import { useNotesDataVault } from '../context/notes-data-context';
 import { navigateFromLegacyPath } from '../lib/app-navigation';
 import { filterNotesForNoteGraph } from '../lib/note-editor-settings';
 import { buildNoteLinkGraph } from '../lib/note-link-graph';
+import { notesToIdMap } from '../lib/notes-id-map';
 import { cn } from '@/lib/utils';
 
 type NoteNodeData = { label: string };
@@ -58,7 +59,7 @@ const nodeTypes = { note: NoteGraphNode };
 
 function buildFlowModel(notes: Note[]): { nodes: Node[]; edges: Edge[] } {
   const { outgoing } = buildNoteLinkGraph(notes);
-  const idSet = new Set(notes.map((n) => n.id));
+  const idSet = new Set(notesToIdMap(notes).keys());
   const cols = Math.max(1, Math.ceil(Math.sqrt(notes.length)));
 
   const nodes: Node[] = notes.map((note, i) => {
@@ -91,7 +92,7 @@ function buildFlowModel(notes: Note[]): { nodes: Node[]; edges: Edge[] } {
 }
 
 function NotesGraphFlowInner(): JSX.Element {
-  const { notes } = useNotesData();
+  const { notes } = useNotesDataVault();
 
   const visibleNotes = useMemo(
     () => filterNotesForNoteGraph(notes),
