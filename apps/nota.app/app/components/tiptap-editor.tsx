@@ -196,6 +196,8 @@ interface TipTapEditorProps {
   onUpdate: (content: unknown) => void;
   placeholder?: string;
   noteId: string;
+  /** Server revision (e.g. `note.updated_at`). When it changes, body re-syncs from `content` if the document differs. */
+  contentRevision?: string;
   userId: string;
   attachments: NoteAttachment[];
   dueAt?: string | null;
@@ -210,6 +212,7 @@ export function TipTapEditor({
   onUpdate,
   placeholder = 'Start writing...',
   noteId,
+  contentRevision,
   userId,
   attachments,
   dueAt = null,
@@ -236,6 +239,7 @@ export function TipTapEditor({
   >([]);
   const [isFileDragOver, setIsFileDragOver] = useState(false);
   const prevNoteIdRef = useRef<string | undefined>(undefined);
+  const prevContentRevisionRef = useRef<string | undefined>(undefined);
   const navigateRef = useRef(navigateFromLegacyPath);
   navigateRef.current = navigateFromLegacyPath;
 
@@ -545,11 +549,22 @@ export function TipTapEditor({
     if (!editor || !content) return;
     if (noteId !== prevNoteIdRef.current) {
       prevNoteIdRef.current = noteId;
+      prevContentRevisionRef.current = contentRevision;
+      if (!isDocContentEqual(editor, content)) {
+        editor.commands.setContent(content, false);
+      }
+      return;
+    }
+    if (
+      contentRevision !== undefined &&
+      contentRevision !== prevContentRevisionRef.current
+    ) {
+      prevContentRevisionRef.current = contentRevision;
       if (!isDocContentEqual(editor, content)) {
         editor.commands.setContent(content, false);
       }
     }
-  }, [editor, content, noteId]);
+  }, [editor, content, contentRevision, noteId]);
 
   useEffect(() => {
     if (!editor) return;

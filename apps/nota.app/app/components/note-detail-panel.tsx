@@ -19,6 +19,7 @@ import { fetchNoteRowAndAttachmentsParallel } from '../lib/note-detail-fetch';
 import { getNote } from '../models/notes';
 import { listNoteAttachments } from '../models/note-attachments';
 import { hashForScreen, replaceAppHash } from '../lib/app-navigation';
+import { shouldRefetchOpenNoteFromVaultList } from '../lib/open-note-vault-list-sync';
 import { useNotesData } from '../context/notes-data-context';
 import { useSpaSession } from '../context/spa-session-context';
 
@@ -145,6 +146,55 @@ export function NoteDetailPanel({ noteId }: { noteId: string }): React.ReactNode
       cancelled = true;
     };
   }, [noteId, notaProEntitled, user?.id]);
+
+  /** When the vault list row updates ahead of this panel (e.g. study notes + `patchNoteInList`), re-merge and refetch attachments. */
+  useEffect(() => {
+    if (
+      !notaProEntitled ||
+      !user?.id ||
+      vaultLoading ||
+      !fetchSettled ||
+      !noteFromList ||
+      noteFromList.id !== noteId
+    ) {
+      return;
+    }
+    if (!shouldRefetchOpenNoteFromVaultList(note, noteFromList)) {
+      return;
+    }
+
+    let cancelled = false;
+    const uid = user.id;
+
+    void (async () => {
+      try {
+        const local = await getStoredNote(uid, noteId);
+        const merged = mergeNoteWithLocal(noteFromList, local);
+        const client = getBrowserClient();
+        const atts = await listNoteAttachments(client, noteId);
+        if (!cancelled) {
+          setNote(merged);
+          setAttachments(atts);
+        }
+      } catch (e) {
+        if (isLikelyOnline()) {
+          console.error(e);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    fetchSettled,
+    note,
+    noteFromList,
+    noteId,
+    notaProEntitled,
+    user?.id,
+    vaultLoading,
+  ]);
 
   useEffect(() => {
     if (

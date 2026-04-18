@@ -9,6 +9,8 @@ import {
 import { postAudioToNoteStream } from '../lib/audio-to-note-client';
 import { applyAudioNoteStudyResult } from '../lib/audio-to-note-apply';
 import { uploadStudyRecordingAttachment } from '../lib/pdf-attachment-client';
+import { formatStudyRecordingUploadWarning } from '../lib/study-recording-upload-warning';
+import { useAudioToNoteSession } from '../stores/audio-to-note-session';
 
 /**
  * When the device is back online, processes queued audio-to-note jobs from IndexedDB.
@@ -36,6 +38,7 @@ export function useAudioNotePendingDrain(enabled: boolean): void {
           let recording:
             | { attachmentId: string; filename: string }
             | undefined;
+          let recordingUploadFailure: unknown;
           try {
             const att = await uploadStudyRecordingAttachment(
               j.noteId,
@@ -44,8 +47,8 @@ export function useAudioNotePendingDrain(enabled: boolean): void {
               j.mime,
             );
             recording = { attachmentId: att.id, filename: att.filename };
-          } catch {
-            // Continue without embedded recording.
+          } catch (e) {
+            recordingUploadFailure = e;
           }
           await applyAudioNoteStudyResult({
             noteId: j.noteId,
@@ -55,6 +58,15 @@ export function useAudioNotePendingDrain(enabled: boolean): void {
             patchNoteInList,
             refreshNotesList,
           });
+          if (recordingUploadFailure !== undefined) {
+            const warning = formatStudyRecordingUploadWarning(
+              recordingUploadFailure,
+            );
+            console.warn('[nota] Study recording upload failed', warning);
+            useAudioToNoteSession
+              .getState()
+              .setRecordingAttachmentWarning(warning);
+          }
           await removePendingAudioNoteJob(j.id);
         } catch {
           return;

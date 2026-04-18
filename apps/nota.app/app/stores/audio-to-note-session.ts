@@ -9,11 +9,14 @@ type State = {
   streamPreview: string;
   error: string | null;
   statusLine: string;
+  /** Shown in shell when recording storage upload fails but study notes still save. */
+  recordingAttachmentWarning: string | null;
   reset: () => void;
   beginSession: (noteId: string) => void;
   setProcessing: (line: string) => void;
   appendPreview: (chunk: string) => void;
   setError: (message: string) => void;
+  setRecordingAttachmentWarning: (message: string | null) => void;
 };
 
 export const useAudioToNoteSession = create<State>((set) => ({
@@ -23,6 +26,7 @@ export const useAudioToNoteSession = create<State>((set) => ({
   streamPreview: '',
   error: null,
   statusLine: '',
+  recordingAttachmentWarning: null,
   reset: () =>
     set({
       phase: 'idle',
@@ -30,6 +34,7 @@ export const useAudioToNoteSession = create<State>((set) => ({
       streamPreview: '',
       error: null,
       statusLine: '',
+      recordingAttachmentWarning: null,
     }),
   beginSession: (noteId) =>
     set((s) => ({
@@ -39,6 +44,7 @@ export const useAudioToNoteSession = create<State>((set) => ({
       streamPreview: '',
       error: null,
       statusLine: 'Requesting microphone…',
+      recordingAttachmentWarning: null,
     })),
   setProcessing: (line) =>
     set({ phase: 'processing', statusLine: line, streamPreview: '' }),
@@ -48,4 +54,6 @@ export const useAudioToNoteSession = create<State>((set) => ({
     })),
   setError: (message) =>
     set({ phase: 'error', error: message, statusLine: '' }),
+  setRecordingAttachmentWarning: (message) =>
+    set({ recordingAttachmentWarning: message }),
 }));

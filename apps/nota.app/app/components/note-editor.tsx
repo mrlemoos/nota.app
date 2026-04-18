@@ -474,6 +474,7 @@ export function NoteEditor({
           onUpdate={handleUpdate}
           placeholder="Start writing your note..."
           noteId={note.id}
+          contentRevision={note.updated_at}
           userId={user?.id ?? ''}
           attachments={attachments}
           dueAt={note.due_at}

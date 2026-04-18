@@ -1,4 +1,10 @@
-import { useEffect, useRef, useCallback, type JSX } from 'react';
+import {
+  useEffect,
+  useRef,
+  useCallback,
+  useState,
+  type JSX,
+} from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useRootLoaderData } from '../context/spa-session-context';
@@ -9,6 +15,8 @@ import { uploadStudyRecordingAttachment } from '../lib/pdf-attachment-client';
 import { isLikelyOnline, saveLocalNoteDraft } from '../lib/notes-offline';
 import { enqueuePendingAudioNoteJob } from '../lib/audio-note-pending-idb';
 import { useAudioToNoteSession } from '../stores/audio-to-note-session';
+import { formatStudyRecordingUploadWarning } from '../lib/study-recording-upload-warning';
+import { formatRecordingDuration } from '../lib/format-recording-duration';
 import { studyNotePlaceholderQueuedTitle } from '../lib/study-note-title';
 
 function pickRecorderMime(): string | undefined {
@@ -34,6 +42,9 @@ type RecorderSession = {
   stream: MediaStream;
 };
 
+const RECORDING_STATUS = 'Recording… press Stop when you are finished.';
+const PAUSED_STATUS = 'Paused. Resume when you are ready to continue.';
+
 export function AudioToNoteDock(): JSX.Element | null {
   const { user } = useRootLoaderData() ?? { user: null };
   const userId = user?.id ?? null;
@@ -46,13 +57,18 @@ export function AudioToNoteDock(): JSX.Element | null {
   const streamPreview = useAudioToNoteSession((s) => s.streamPreview);
   const error = useAudioToNoteSession((s) => s.error);
 
-  const beginSession = useAudioToNoteSession((s) => s.beginSession);
   const setProcessing = useAudioToNoteSession((s) => s.setProcessing);
   const appendPreview = useAudioToNoteSession((s) => s.appendPreview);
   const setError = useAudioToNoteSession((s) => s.setError);
   const reset = useAudioToNoteSession((s) => s.reset);
 
   const sessionRef = useRef<RecorderSession | null>(null);
+  const elapsedActiveMsRef = useRef(0);
+  const activeSegmentStartRef = useRef(0);
+
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [pauseSupported, setPauseSupported] = useState(false);
+  const [recorderPaused, setRecorderPaused] = useState(false);
 
   const runPipeline = useCallback(
     async (blob: Blob, mime: string, targetNoteId: string, uid: string) => {
@@ -88,6 +104,7 @@ export function AudioToNoteDock(): JSX.Element | null {
         let recording:
           | { attachmentId: string; filename: string }
           | undefined;
+        let recordingUploadFailure: unknown;
         try {
           const att = await uploadStudyRecordingAttachment(
             targetNoteId,
@@ -96,8 +113,8 @@ export function AudioToNoteDock(): JSX.Element | null {
             mime || blob.type || 'audio/webm',
           );
           recording = { attachmentId: att.id, filename: att.filename };
-        } catch {
-          // Study notes still save if storage upload fails.
+        } catch (e) {
+          recordingUploadFailure = e;
         }
         await applyAudioNoteStudyResult({
           noteId: targetNoteId,
@@ -108,6 +125,15 @@ export function AudioToNoteDock(): JSX.Element | null {
           refreshNotesList,
         });
         reset();
+        if (recordingUploadFailure !== undefined) {
+          const warning = formatStudyRecordingUploadWarning(
+            recordingUploadFailure,
+          );
+          console.warn('[nota] Study recording upload failed', warning);
+          useAudioToNoteSession
+            .getState()
+            .setRecordingAttachmentWarning(warning);
+        }
       } catch (e) {
         const msg = e instanceof Error ? e.message : 'Could not generate study notes';
         setError(msg);
@@ -145,6 +171,81 @@ export function AudioToNoteDock(): JSX.Element | null {
     rec.stop();
   }, [reset, runPipeline, userId]);
 
+  const cancelRecording = useCallback(() => {
+    const s = sessionRef.current;
+    if (!s) {
+      reset();
+      return;
+    }
+    const { rec, stream } = s;
+    rec.onstop = () => {
+      stream.getTracks().forEach((t) => t.stop());
+      sessionRef.current = null;
+      reset();
+    };
+    if (rec.state !== 'inactive') {
+      rec.stop();
+    } else {
+      stream.getTracks().forEach((t) => t.stop());
+      sessionRef.current = null;
+      reset();
+    }
+  }, [reset]);
+
+  const togglePauseResume = useCallback(() => {
+    const s = sessionRef.current;
+    if (!s) {
+      return;
+    }
+    const { rec } = s;
+    if (typeof rec.pause !== 'function' || typeof rec.resume !== 'function') {
+      return;
+    }
+    if (rec.state === 'recording') {
+      elapsedActiveMsRef.current += performance.now() - activeSegmentStartRef.current;
+      try {
+        rec.pause();
+      } catch {
+        return;
+      }
+      setRecorderPaused(true);
+      useAudioToNoteSession.setState({ statusLine: PAUSED_STATUS });
+    } else if (rec.state === 'paused') {
+      try {
+        rec.resume();
+      } catch {
+        return;
+      }
+      activeSegmentStartRef.current = performance.now();
+      setRecorderPaused(false);
+      useAudioToNoteSession.setState({ statusLine: RECORDING_STATUS });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (phase !== 'recording') {
+      setPauseSupported(false);
+      setRecorderPaused(false);
+      setElapsedSeconds(0);
+      return;
+    }
+
+    const id = window.setInterval(() => {
+      const s = sessionRef.current;
+      if (!s) {
+        return;
+      }
+      const { rec } = s;
+      const now = performance.now();
+      const activeMs =
+        elapsedActiveMsRef.current +
+        (rec.state === 'recording' ? now - activeSegmentStartRef.current : 0);
+      setElapsedSeconds(Math.floor(activeMs / 1000));
+    }, 250);
+
+    return () => window.clearInterval(id);
+  }, [phase, recordingSessionId, recorderPaused]);
+
   useEffect(() => {
     if (phase !== 'recording' || !noteId) {
       return;
@@ -171,8 +272,14 @@ export function AudioToNoteDock(): JSX.Element | null {
         };
         rec.start(1000);
         sessionRef.current = { rec, chunks, stream };
+        elapsedActiveMsRef.current = 0;
+        activeSegmentStartRef.current = performance.now();
+        setRecorderPaused(false);
+        setPauseSupported(
+          typeof rec.pause === 'function' && typeof rec.resume === 'function',
+        );
         useAudioToNoteSession.setState({
-          statusLine: 'Recording… press Stop when you are finished.',
+          statusLine: RECORDING_STATUS,
         });
       } catch (e) {
         const msg =
@@ -218,11 +325,46 @@ export function AudioToNoteDock(): JSX.Element | null {
       ) : null}
 
       {phase === 'recording' ? (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span
+              className="font-medium tabular-nums tracking-tight text-foreground"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              {formatRecordingDuration(elapsedSeconds)}
+            </span>
+            {pauseSupported ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={togglePauseResume}
+                aria-label={recorderPaused ? 'Resume recording' : 'Pause recording'}
+              >
+                {recorderPaused ? 'Resume' : 'Pause'}
+              </Button>
+            ) : null}
+          </div>
           <p className="text-muted-foreground">{statusLine}</p>
-          <Button type="button" variant="default" onClick={stopRecording}>
-            Stop and generate
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="default"
+              onClick={stopRecording}
+              aria-label="Stop recording and generate study notes"
+            >
+              Stop and generate
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={cancelRecording}
+              aria-label="Cancel recording without saving"
+            >
+              Cancel
+            </Button>
+          </div>
         </div>
       ) : null}
 

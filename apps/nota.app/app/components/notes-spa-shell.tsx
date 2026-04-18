@@ -46,6 +46,7 @@ import { noteHashHref, NoteDetailPanel } from './note-detail-panel';
 import { spaCreateNote } from '../lib/spa-create-note';
 import { spaDeleteNoteById } from '../lib/spa-delete-note';
 import { AudioToNoteDock } from './audio-to-note-dock';
+import { StudyRecordingUploadWarningBanner } from './study-recording-upload-warning-banner';
 import { useAudioNotePendingDrain } from '../hooks/use-audio-note-pending-drain';
 
 const NotesGraphRoute = lazy(async () => import('../routes/notes.graph'));
@@ -638,7 +639,12 @@ export function NotesSpaShell(): JSX.Element {
           </ShellPanel>
         </main>
       </div>
-      {!paywalled ? <AudioToNoteDock /> : null}
+      {!paywalled ? (
+        <>
+          <StudyRecordingUploadWarningBanner />
+          <AudioToNoteDock />
+        </>
+      ) : null}
     </>
   );
 }
