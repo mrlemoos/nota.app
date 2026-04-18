@@ -240,6 +240,8 @@ export function NotesSpaShell(): JSX.Element {
             ref={asideRef}
             className={cn(
               'flex h-full min-h-0 min-w-0 shrink-0 flex-col overflow-hidden',
+              // Match NOTA_SIDEBAR_WIDTH_PX so first paint is capped before GSAP applies inline maxWidth.
+              open ? 'max-w-[288px]' : 'max-w-0',
               notesChrome,
               !open && 'pointer-events-none',
             )}
