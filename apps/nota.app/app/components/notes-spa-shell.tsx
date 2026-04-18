@@ -454,7 +454,15 @@ export function NotesSpaShell(): JSX.Element {
                               )}
                               aria-current={isActive ? 'page' : undefined}
                             >
-                              <div className="font-medium">{noteLabel}</div>
+                              <SimpleTooltip
+                                label={noteLabel}
+                                side="top"
+                                delay={750}
+                              >
+                                <div className="min-w-0 truncate font-medium">
+                                  {noteLabel}
+                                </div>
+                              </SimpleTooltip>
                               <div className="mt-0.5 text-xs text-muted-foreground">
                                 {new Date(note.updated_at).toLocaleDateString(
                                   undefined,
