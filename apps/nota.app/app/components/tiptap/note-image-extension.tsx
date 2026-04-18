@@ -147,7 +147,7 @@ function NoteImageNodeView(props: NodeViewProps) {
     <NodeViewWrapper
       as="div"
       className={cn(
-        'note-image-block my-4 overflow-hidden rounded-md border border-border/60 bg-muted/20',
+        'note-image-block my-4 overflow-hidden rounded-md bg-muted/20',
         props.selected &&
           'ring-2 ring-ring/40 ring-offset-2 ring-offset-background',
       )}
@@ -227,7 +227,7 @@ function NoteImageNodeView(props: NodeViewProps) {
           </div>
 
           {!missing ? (
-            <div className="overflow-hidden rounded-md border border-border/40 bg-background/50">
+            <div className="overflow-hidden rounded-md bg-background/50">
               {loadError ? (
                 <p className="p-4 text-sm text-destructive" role="alert">
                   {loadError}
