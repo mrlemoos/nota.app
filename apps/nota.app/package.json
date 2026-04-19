@@ -24,7 +24,7 @@
     "@hugeicons/core-free-icons": "^4.0.0",
     "@hugeicons/react": "^1.1.6",
     "@posthog/react": "^1.8.2",
-    "@supabase/supabase-js": "^2.101.1",
+    "@supabase/supabase-js": "^2.103.2",
     "@tiptap/extension-code-block": "^2.11.5",
     "@tiptap/extension-code-block-lowlight": "2.11.5",
     "@tiptap/extension-emoji": "^3.22.3",
