@@ -4,7 +4,7 @@ import { notaKbdReferenceValueClass } from '@/lib/nota-kbd-styles';
 import {
   filterShortcutCatalogSections,
   NOTA_SHORTCUT_SECTIONS,
-} from '@/lib/nota-shortcuts-catalog';
+} from '@/lib/nota-shortcuts-catalogue';
 import { useNotaPreferencesStore } from '@/stores/nota-preferences';
 
 export default function NotesShortcuts(): JSX.Element {
