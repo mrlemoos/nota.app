@@ -204,6 +204,20 @@ export const NOTA_SHORTCUT_SECTIONS: ShortcutCatalogSection[] = [
         keysOther: 'Ctrl+Shift+7',
       },
       {
+        description: 'Toggle task list',
+        detail:
+          'Also available as Insert task list in the command palette (⌘K / Ctrl+K).',
+        keysApple: '⇧⌘9',
+        keysOther: 'Ctrl+Shift+9',
+      },
+      {
+        description: 'Task item from markdown',
+        detail:
+          'At the start of a line, type [ ] or [x] and then Space so the editor promotes a task item (unchecked or checked).',
+        keysApple: '[ ]',
+        keysOther: '[ ]',
+      },
+      {
         description: 'Blockquote',
         keysApple: '⇧⌘B',
         keysOther: 'Ctrl+Shift+B',

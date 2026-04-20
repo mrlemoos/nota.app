@@ -23,6 +23,7 @@ import {
   SparklesIcon,
   Sun01Icon,
   TableIcon,
+  TaskDaily01Icon,
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { cn } from '@/lib/utils';
@@ -111,6 +112,8 @@ export function CommandPalette(): JSX.Element {
     canInsertMermaid,
     insertTableAtCursor,
     canInsertTable,
+    insertTaskListAtCursor,
+    canInsertTaskList,
   } = useNoteEditorCommands();
   const commandInputRef = useRef<HTMLInputElement | null>(null);
   const [newNoteHotkeyLabel, setNewNoteHotkeyLabel] = useState('⌘N');
@@ -666,6 +669,35 @@ export function CommandPalette(): JSX.Element {
                         className="text-muted-foreground group-aria-selected:text-accent-foreground"
                       />
                       <span className="min-w-0 flex-1">Insert table</span>
+                    </Command.Item>
+                    <Command.Item
+                      value="insert-task-list"
+                      disabled={!canInsertTaskList}
+                      keywords={[
+                        'task',
+                        'todo',
+                        'checklist',
+                        'checkbox',
+                        'list',
+                        'insert',
+                      ]}
+                      onSelect={() => {
+                        if (!canInsertTaskList) return;
+                        insertTaskListAtCursor();
+                        closePalette();
+                      }}
+                      className={cn(
+                        commandItemRowClass,
+                        'group text-foreground',
+                        'aria-selected:bg-accent aria-selected:text-accent-foreground',
+                        'aria-disabled:pointer-events-none aria-disabled:opacity-50',
+                      )}
+                    >
+                      <PaletteItemIcon
+                        icon={TaskDaily01Icon}
+                        className="text-muted-foreground group-aria-selected:text-accent-foreground"
+                      />
+                      <span className="min-w-0 flex-1">Insert task list</span>
                     </Command.Item>
                     <Command.Item
                       value="delete-this-note"

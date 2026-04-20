@@ -19,6 +19,9 @@ type NoteEditorCommandsContextValue = {
   registerTableInserter: (fn: (() => void) | null) => void;
   insertTableAtCursor: () => void;
   canInsertTable: boolean;
+  registerTaskListInserter: (fn: (() => void) | null) => void;
+  insertTaskListAtCursor: () => void;
+  canInsertTaskList: boolean;
 };
 
 const NoteEditorCommandsContext =
@@ -35,6 +38,9 @@ const fallbackValue: NoteEditorCommandsContextValue = {
   registerTableInserter: noopRegister,
   insertTableAtCursor: noopInsert,
   canInsertTable: false,
+  registerTaskListInserter: noopRegister,
+  insertTaskListAtCursor: noopInsert,
+  canInsertTaskList: false,
 };
 
 export function NoteEditorCommandsProvider({
@@ -46,6 +52,8 @@ export function NoteEditorCommandsProvider({
   const [hasMermaid, setHasMermaid] = useState(false);
   const tableFnRef = useRef<(() => void) | null>(null);
   const [hasTable, setHasTable] = useState(false);
+  const taskListFnRef = useRef<(() => void) | null>(null);
+  const [hasTaskList, setHasTaskList] = useState(false);
 
   const registerMermaidInserter = useCallback((fn: (() => void) | null) => {
     mermaidFnRef.current = fn;
@@ -65,6 +73,15 @@ export function NoteEditorCommandsProvider({
     tableFnRef.current?.();
   }, []);
 
+  const registerTaskListInserter = useCallback((fn: (() => void) | null) => {
+    taskListFnRef.current = fn;
+    setHasTaskList(fn != null);
+  }, []);
+
+  const insertTaskListAtCursor = useCallback(() => {
+    taskListFnRef.current?.();
+  }, []);
+
   const value = useMemo(
     () =>
       ({
@@ -74,6 +91,9 @@ export function NoteEditorCommandsProvider({
         registerTableInserter,
         insertTableAtCursor,
         canInsertTable: hasTable,
+        registerTaskListInserter,
+        insertTaskListAtCursor,
+        canInsertTaskList: hasTaskList,
       }) satisfies NoteEditorCommandsContextValue,
     [
       registerMermaidInserter,
@@ -82,6 +102,9 @@ export function NoteEditorCommandsProvider({
       registerTableInserter,
       insertTableAtCursor,
       hasTable,
+      registerTaskListInserter,
+      insertTaskListAtCursor,
+      hasTaskList,
     ],
   );
 
@@ -145,6 +168,28 @@ export function useRegisterNoteEditorTableInserter(editor: Editor | null): void 
     ctx.registerTableInserter(run);
     return () => {
       ctx.registerTableInserter(null);
+    };
+  }, [editor, ctx]);
+}
+
+/** Registers TipTap `toggleTaskList`; clears on unmount or when `editor` is null. */
+export function useRegisterNoteEditorTaskListInserter(
+  editor: Editor | null,
+): void {
+  const ctx = useContext(NoteEditorCommandsContext);
+
+  useEffect(() => {
+    if (!ctx) return;
+    if (!editor) {
+      ctx.registerTaskListInserter(null);
+      return;
+    }
+    const run = () => {
+      editor.chain().focus().toggleTaskList().run();
+    };
+    ctx.registerTaskListInserter(run);
+    return () => {
+      ctx.registerTaskListInserter(null);
     };
   }, [editor, ctx]);
 }

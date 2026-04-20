@@ -8,6 +8,8 @@ import Table from '@tiptap/extension-table';
 import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from '@tiptap/extension-table-header';
 import TableRow from '@tiptap/extension-table-row';
+import TaskItem from '@tiptap/extension-task-item';
+import TaskList from '@tiptap/extension-task-list';
 import Emoji from '@tiptap/extension-emoji';
 import { NotaCodeBlock } from './tiptap/nota-code-block';
 import {
@@ -37,6 +39,7 @@ import type { Note, NoteAttachment } from '~/types/database.types';
 import {
   useRegisterNoteEditorMermaidInserter,
   useRegisterNoteEditorTableInserter,
+  useRegisterNoteEditorTaskListInserter,
 } from '../context/note-editor-commands';
 import { TableEditorMenu } from './tiptap/table-editor-menu';
 import { NoteDueDateBubbleMenu } from './note-due-date-bubble-menu';
@@ -194,6 +197,13 @@ export function TipTapEditor({
         codeBlock: false,
       }),
       NotaCodeBlock,
+      TaskList.configure({
+        HTMLAttributes: { class: 'nota-task-list' },
+      }),
+      TaskItem.configure({
+        nested: true,
+        HTMLAttributes: { class: 'nota-task-item' },
+      }),
       NotaLink.configure({
         autolink: true,
         linkOnPaste: true,
@@ -444,6 +454,7 @@ export function TipTapEditor({
 
   useRegisterNoteEditorMermaidInserter(editor);
   useRegisterNoteEditorTableInserter(editor);
+  useRegisterNoteEditorTaskListInserter(editor);
 
   useEffect(() => {
     setIsMounted(true);
