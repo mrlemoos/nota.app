@@ -21,8 +21,7 @@ function isConfigurationError(message: string): boolean {
   return (
     message.includes('SUPABASE_URL') ||
     message.includes('SUPABASE_SERVICE_ROLE_KEY') ||
-    message.includes('set XAI_API_KEY') ||
-    message.includes('XAI_EMBEDDING_MODEL')
+    message.includes('NOTA_SEMANTIC_EMBEDDINGS_API_KEY')
   );
 }
 

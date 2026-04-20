@@ -1,5 +1,5 @@
--- Semantic search index: one row per note with pgvector embedding (xAI Grok embeddings).
--- Dimension must match XAI_EMBEDDING_DIMENSIONS / the active embedding model output (default 1536).
+-- Semantic search index: one row per note with pgvector embedding (OpenAI-compatible /v1/embeddings).
+-- Dimension must match NOTA_SEMANTIC_EMBEDDINGS_DIMENSIONS and the active model (default 1536).
 CREATE EXTENSION IF NOT EXISTS vector;
 
 CREATE TABLE IF NOT EXISTS public.note_semantic_index (
@@ -42,7 +42,7 @@ CREATE POLICY "Users can delete own semantic index rows"
     USING (user_id = (auth.jwt()->>'sub'));
 
 COMMENT ON TABLE public.note_semantic_index IS
-    'Per-note embedding for semantic search; rebuilt by nota-server using xAI Grok embeddings.';
+    'Per-note embedding for semantic search; rebuilt by nota-server (OpenAI-compatible embeddings API).';
 
 -- Called by nota-server (service role) for vector similarity; not exposed to browsers.
 CREATE OR REPLACE FUNCTION public.match_note_semantic_index(

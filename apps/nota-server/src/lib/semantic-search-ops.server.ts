@@ -4,7 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { extractPlainTextFromDocJson } from './note-plain-text.server.ts';
 import { parseSemanticSearchQuery } from './semantic-search-query.server.ts';
-import { embedTextWithXai } from './xai-embeddings.server.ts';
+import { embedTextForSemanticSearch } from './semantic-embeddings.server.ts';
 
 const MAX_EMBED_INPUT_CHARS = 12_000;
 
@@ -93,7 +93,9 @@ export async function semanticSearchNotes(params: {
 
   const embeddingInput = semantic.slice(0, MAX_EMBED_INPUT_CHARS);
 
-  const vectorStr = vectorToPgLiteral(await embedTextWithXai(embeddingInput));
+  const vectorStr = vectorToPgLiteral(
+    await embedTextForSemanticSearch(embeddingInput),
+  );
 
   type MatchRow = { note_id: string; distance: number };
 
@@ -188,7 +190,7 @@ export async function upsertSemanticIndexForNote(params: {
   }
 
   const embedInput = searchDocument.slice(0, MAX_EMBED_INPUT_CHARS);
-  const vector = await embedTextWithXai(embedInput);
+  const vector = await embedTextForSemanticSearch(embedInput);
 
   const { error: upErr } = await supabase.from('note_semantic_index').upsert(
     {

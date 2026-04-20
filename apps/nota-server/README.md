@@ -1,6 +1,6 @@
 # nota-server (Express)
 
-Small API for **server-only** operations: Nota Pro entitlement (Clerk Billing), link previews, **assistive audio-to-note** (xAI speech-to-text + Grok study notes, streamed via SSE), and related routes. The web and desktop SPAs call this service via **`VITE_NOTA_SERVER_API_URL`** with `Authorization: Bearer <Clerk session JWT>` (there is no same-origin fallback on Vercel).
+Small API for **server-only** operations: Nota Pro entitlement (Clerk Billing), link previews, **assistive audio-to-note** (xAI speech-to-text + Grok study notes, streamed via SSE), **semantic note search** (OpenAI-compatible embeddings + Supabase pgvector), and related routes. The web and desktop SPAs call this service via **`VITE_NOTA_SERVER_API_URL`** with `Authorization: Bearer <Clerk session JWT>` (there is no same-origin fallback on Vercel).
 
 Production builds bundle TypeScript with **esbuild** and run on **Node.js 22+** (shared Clerk billing logic is imported from `apps/nota.app` at build time). Local development can still use **Bun** for fast runs.
 
@@ -74,4 +74,10 @@ Use the **repository root** as the Railway service root (not `apps/nota-server` 
 - **Build:** `docker build -f infra/Dockerfile.nota-server .` (Railway runs this via config-as-code).
 - **Start:** `node apps/nota-server/dist/index.js` (also the image **CMD**).
 
-Set **`CLERK_SECRET_KEY`** and **`XAI_API_KEY`** (for audio-to-note) in the host environment. Optionally set **`NOTA_SERVER_CORS_ORIGINS`** as above.
+Set **`CLERK_SECRET_KEY`**, **`XAI_API_KEY`** (for audio-to-note), **`SUPABASE_URL`**, **`SUPABASE_SERVICE_ROLE_KEY`**, and **`NOTA_SEMANTIC_EMBEDDINGS_API_KEY`** (for semantic search; OpenAI-compatible embeddings—xAI does not expose raw `/v1/embeddings` for external vector databases) in the host environment. Optionally set **`NOTA_SERVER_CORS_ORIGINS`** as above.
+
+## Semantic search (Nota Pro)
+
+- **Endpoints:** `POST /api/semantic-search`, `POST /api/search/index-note`, `POST /api/search/reindex-all` — same Bearer JWT and Nota Pro gate as other Pro routes.
+- **Embeddings:** Implemented as **`POST {NOTA_SEMANTIC_EMBEDDINGS_API_BASE}/embeddings`** with an OpenAI-style JSON body (`model`, `input`). Defaults target **OpenAI** (`text-embedding-3-small`, 1536 dimensions); override base URL and model for any compatible provider.
+- **Storage:** Rows in Supabase **`note_semantic_index`** — apply migration **`0012_note_semantic_index.sql`** and keep **`vector(N)`** aligned with **`NOTA_SEMANTIC_EMBEDDINGS_DIMENSIONS`**.
