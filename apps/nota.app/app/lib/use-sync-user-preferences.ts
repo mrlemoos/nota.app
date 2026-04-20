@@ -33,7 +33,9 @@ export function useSyncUserPreferences(
       hydratedLoaderRef.current.updated_at ===
         userPreferencesFromServer.updated_at &&
       hydratedLoaderRef.current.open_todays_note_shortcut ===
-        userPreferencesFromServer.open_todays_note_shortcut
+        userPreferencesFromServer.open_todays_note_shortcut &&
+      hydratedLoaderRef.current.show_note_backlinks ===
+        userPreferencesFromServer.show_note_backlinks
     ) {
       return;
     }
@@ -46,8 +48,11 @@ export function useSyncUserPreferences(
       if (!userId || !isLikelyOnline() || !cloudSyncEnabled) {
         return;
       }
-      const { preferencesPendingSync, openTodaysNoteShortcut } =
-        useNotaPreferencesStore.getState();
+      const {
+        preferencesPendingSync,
+        openTodaysNoteShortcut,
+        showNoteBacklinks,
+      } = useNotaPreferencesStore.getState();
       if (!preferencesPendingSync) {
         return;
       }
@@ -56,6 +61,7 @@ export function useSyncUserPreferences(
           const client = getBrowserClient();
           const row = await upsertUserPreferences(client, userId, {
             open_todays_note_shortcut: openTodaysNoteShortcut,
+            show_note_backlinks: showNoteBacklinks,
           });
           markPreferencesSynced(row);
           onServerRowCommitted?.(row);
@@ -76,8 +82,16 @@ export function useSyncUserPreferences(
   }, [userId, markPreferencesSynced, onServerRowCommitted, cloudSyncEnabled]);
 }
 
-export function submitUserPreferencesToggle(
-  open: boolean,
+export type UserPreferencesSyncPatch = Pick<
+  UserPreferences,
+  'open_todays_note_shortcut' | 'show_note_backlinks'
+>;
+
+/**
+ * Persists the given preference fields when online and cloud sync is enabled.
+ */
+export function submitUserPreferencesPatch(
+  patch: Partial<UserPreferencesSyncPatch>,
   userId: string | undefined,
   onServerRowCommitted?: (row: UserPreferences) => void,
   cloudSyncEnabled = true,
@@ -85,12 +99,13 @@ export function submitUserPreferencesToggle(
   if (!userId || !isLikelyOnline() || !cloudSyncEnabled) {
     return;
   }
+  if (Object.keys(patch).length === 0) {
+    return;
+  }
   void (async () => {
     try {
       const client = getBrowserClient();
-      const row = await upsertUserPreferences(client, userId, {
-        open_todays_note_shortcut: open,
-      });
+      const row = await upsertUserPreferences(client, userId, patch);
       useNotaPreferencesStore.getState().markPreferencesSynced(row);
       onServerRowCommitted?.(row);
     } catch {

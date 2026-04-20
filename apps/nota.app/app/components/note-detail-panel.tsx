@@ -28,6 +28,7 @@ import {
 import { useSpaSession } from '../context/spa-session-context';
 import { ATTACHMENT_SIGNED_URL_TTL_SEC } from '../lib/pdf-attachment-client';
 import { useStickyDocTitle } from '../context/sticky-doc-title';
+import { useNotaPreferencesStore } from '../stores/nota-preferences';
 
 export function NoteDetailPanel({ noteId }: { noteId: string }): React.ReactNode {
   const { notes } = useNotesDataVault();
@@ -35,6 +36,7 @@ export function NoteDetailPanel({ noteId }: { noteId: string }): React.ReactNode
   const { patchNoteInList } = useNotesDataActions();
   const { user } = useSpaSession();
   const { scrollRootRef } = useStickyDocTitle();
+  const showNoteBacklinks = useNotaPreferencesStore((s) => s.showNoteBacklinks);
   const [note, setNote] = useState<Note | null>(null);
   const [attachments, setAttachments] = useState<NoteAttachment[]>([]);
   const [fetchSettled, setFetchSettled] = useState(false);
@@ -352,9 +354,11 @@ export function NoteDetailPanel({ noteId }: { noteId: string }): React.ReactNode
           onNoteUpdated={handleNoteUpdated}
           bannerSignedUrl={bannerSignedUrl}
         />
-        <div className={layout.bodyFontClass}>
-          <NoteBacklinksPanel noteId={noteId} />
-        </div>
+        {showNoteBacklinks ? (
+          <div className={layout.bodyFontClass}>
+            <NoteBacklinksPanel noteId={noteId} />
+          </div>
+        ) : null}
       </div>
     </div>
   );

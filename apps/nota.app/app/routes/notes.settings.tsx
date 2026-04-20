@@ -7,7 +7,7 @@ import {
   useNotesDataActions,
   useNotesDataMeta,
 } from '../context/notes-data-context';
-import { submitUserPreferencesToggle } from '../lib/use-sync-user-preferences';
+import { submitUserPreferencesPatch } from '../lib/use-sync-user-preferences';
 import { useNotaPreferencesStore } from '../stores/nota-preferences';
 import { NotaProSettingsSection } from '../components/nota-pro-settings-section';
 import { hashForScreen } from '../lib/app-navigation';
@@ -21,6 +21,10 @@ export default function NotesSettings(): JSX.Element {
   );
   const setOpenTodaysNoteShortcut = useNotaPreferencesStore(
     (s) => s.setOpenTodaysNoteShortcut,
+  );
+  const showNoteBacklinks = useNotaPreferencesStore((s) => s.showNoteBacklinks);
+  const setShowNoteBacklinks = useNotaPreferencesStore(
+    (s) => s.setShowNoteBacklinks,
   );
   const [modDLabel, setModDLabel] = useState('⌘D');
   const [historyBackLabel, setHistoryBackLabel] = useState('⌘[');
@@ -76,8 +80,8 @@ export default function NotesSettings(): JSX.Element {
               onChange={(e) => {
                 const checked = e.target.checked;
                 setOpenTodaysNoteShortcut(checked);
-                submitUserPreferencesToggle(
-                  checked,
+                submitUserPreferencesPatch(
+                  { open_todays_note_shortcut: checked },
                   user?.id,
                   setUserPreferencesInState,
                   notaProEntitled,
@@ -107,6 +111,39 @@ export default function NotesSettings(): JSX.Element {
             >
               View all shortcuts
             </a>
+          </p>
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="text-sm font-medium text-foreground">Notes</h2>
+          <label
+            htmlFor="nota-show-note-backlinks"
+            className={cn(
+              'flex cursor-pointer select-none items-start gap-3 rounded-lg border border-border/60 bg-muted/20 px-4 py-3',
+            )}
+          >
+            <input
+              id="nota-show-note-backlinks"
+              type="checkbox"
+              checked={showNoteBacklinks}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setShowNoteBacklinks(checked);
+                submitUserPreferencesPatch(
+                  { show_note_backlinks: checked },
+                  user?.id,
+                  setUserPreferencesInState,
+                  notaProEntitled,
+                );
+              }}
+              className="mt-0.5 size-4 shrink-0 rounded border border-input accent-primary"
+            />
+            <span className="text-sm leading-snug text-muted-foreground">
+              Show backlinks on open notes
+            </span>
+          </label>
+          <p className="text-sm text-muted-foreground">
+            Lists other notes that link to the note you have open.
           </p>
         </section>
 

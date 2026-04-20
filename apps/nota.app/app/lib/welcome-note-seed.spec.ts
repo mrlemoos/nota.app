@@ -16,6 +16,7 @@ vi.mock('../models/user-preferences', () => ({
     Promise.resolve({
       user_id: 'user-1',
       open_todays_note_shortcut: false,
+      show_note_backlinks: true,
       welcome_seeded: false,
       updated_at: '',
     }),

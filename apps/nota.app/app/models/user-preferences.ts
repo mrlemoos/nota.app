@@ -22,6 +22,7 @@ export async function getUserPreferences(
   return {
     user_id: userId,
     open_todays_note_shortcut: false,
+    show_note_backlinks: true,
     welcome_seeded: false,
     updated_at: new Date(0).toISOString(),
   };
@@ -32,6 +33,7 @@ export async function upsertUserPreferences(
   userId: string,
   patch: {
     open_todays_note_shortcut?: boolean;
+    show_note_backlinks?: boolean;
     welcome_seeded?: boolean;
   },
 ): Promise<UserPreferences> {
@@ -42,6 +44,10 @@ export async function upsertUserPreferences(
       patch.open_todays_note_shortcut !== undefined
         ? patch.open_todays_note_shortcut
         : current.open_todays_note_shortcut,
+    show_note_backlinks:
+      patch.show_note_backlinks !== undefined
+        ? patch.show_note_backlinks
+        : current.show_note_backlinks,
     welcome_seeded:
       patch.welcome_seeded !== undefined
         ? patch.welcome_seeded

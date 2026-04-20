@@ -168,6 +168,7 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
     const defaultPrefs = (): UserPreferences => ({
       user_id: userId,
       open_todays_note_shortcut: false,
+      show_note_backlinks: true,
       welcome_seeded: false,
       updated_at: new Date(0).toISOString(),
     });

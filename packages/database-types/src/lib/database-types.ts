@@ -107,18 +107,21 @@ export interface Database {
         Row: {
           user_id: string;
           open_todays_note_shortcut: boolean;
+          show_note_backlinks: boolean;
           updated_at: string;
           welcome_seeded: boolean;
         };
         Insert: {
           user_id: string;
           open_todays_note_shortcut?: boolean;
+          show_note_backlinks?: boolean;
           updated_at?: string;
           welcome_seeded?: boolean;
         };
         Update: {
           user_id?: string;
           open_todays_note_shortcut?: boolean;
+          show_note_backlinks?: boolean;
           updated_at?: string;
           welcome_seeded?: boolean;
         };
