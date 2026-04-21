@@ -1,5 +1,9 @@
 import { getBrowserClient } from './supabase/browser';
 import {
+  getValidNoteAttachmentSignedUrlCacheEntry,
+  setCachedNoteAttachmentSignedUrl,
+} from './note-attachment-signed-url-cache';
+import {
   NOTE_PDFS_BUCKET,
   createNoteAttachmentRecord,
   noteAttachmentStoragePath,
@@ -9,6 +13,47 @@ import type { NoteAttachment } from '~/types/database.types';
 export const ATTACHMENT_SIGNED_URL_TTL_SEC = 3600;
 /** @deprecated use ATTACHMENT_SIGNED_URL_TTL_SEC */
 export const PDF_SIGNED_URL_TTL_SEC = ATTACHMENT_SIGNED_URL_TTL_SEC;
+
+export type GetOrFetchNoteAttachmentSignedUrlResult =
+  | { ok: true; signedUrl: string }
+  | { ok: false; error: string };
+
+/**
+ * Returns a still-valid signed URL from the in-memory cache when possible,
+ * otherwise creates one via Supabase Storage and stores it in the cache.
+ */
+export async function getOrFetchNoteAttachmentSignedUrl(
+  attachmentId: string,
+  storagePath: string,
+): Promise<GetOrFetchNoteAttachmentSignedUrlResult> {
+  const cached = getValidNoteAttachmentSignedUrlCacheEntry(
+    attachmentId,
+    storagePath,
+  );
+  if (cached) {
+    return { ok: true, signedUrl: cached.signedUrl };
+  }
+
+  const client = getBrowserClient();
+  const { data, error } = await client.storage
+    .from(NOTE_PDFS_BUCKET)
+    .createSignedUrl(storagePath, ATTACHMENT_SIGNED_URL_TTL_SEC);
+
+  if (error || !data?.signedUrl) {
+    return {
+      ok: false,
+      error: error?.message ?? 'Could not create signed URL',
+    };
+  }
+
+  setCachedNoteAttachmentSignedUrl(
+    attachmentId,
+    storagePath,
+    data.signedUrl,
+    ATTACHMENT_SIGNED_URL_TTL_SEC,
+  );
+  return { ok: true, signedUrl: data.signedUrl };
+}
 
 export const PDF_MAX_BYTES = 25 * 1024 * 1024;
 export const IMAGE_MAX_BYTES = PDF_MAX_BYTES;

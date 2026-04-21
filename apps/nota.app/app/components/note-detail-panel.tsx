@@ -27,6 +27,10 @@ import {
 } from '../context/notes-data-context';
 import { useSpaSession } from '../context/spa-session-context';
 import { ATTACHMENT_SIGNED_URL_TTL_SEC } from '../lib/pdf-attachment-client';
+import {
+  getValidNoteAttachmentSignedUrlCacheEntry,
+  setCachedNoteAttachmentSignedUrl,
+} from '../lib/note-attachment-signed-url-cache';
 import { useStickyDocTitle } from '../context/sticky-doc-title';
 import { useNotaPreferencesStore } from '../stores/nota-preferences';
 import { postSearchIndexNote } from '../lib/nota-server-client';
@@ -256,18 +260,53 @@ export function NoteDetailPanel({ noteId }: { noteId: string }): React.ReactNode
 
   useEffect(() => {
     let cancelled = false;
-    setBannerSignedUrl(null);
     if (bannerRefreshTimerRef.current) {
       clearTimeout(bannerRefreshTimerRef.current);
       bannerRefreshTimerRef.current = null;
     }
-    if (!bannerAttachment) return;
 
-    const storagePath = bannerAttachment.storage_path;
+    if (!bannerAttachmentId) {
+      setBannerSignedUrl(null);
+      return;
+    }
+
+    const pathFromRow = bannerAttachment?.storage_path ?? null;
+    const entry = pathFromRow
+      ? getValidNoteAttachmentSignedUrlCacheEntry(
+          bannerAttachmentId,
+          pathFromRow,
+        )
+      : getValidNoteAttachmentSignedUrlCacheEntry(
+          bannerAttachmentId,
+          undefined,
+        );
+
+    const storagePath = pathFromRow ?? entry?.storagePath ?? null;
+
+    if (entry) {
+      setBannerSignedUrl(entry.signedUrl);
+    } else {
+      setBannerSignedUrl(null);
+    }
+
+    if (!storagePath) {
+      return () => {
+        cancelled = true;
+        if (bannerRefreshTimerRef.current) {
+          clearTimeout(bannerRefreshTimerRef.current);
+          bannerRefreshTimerRef.current = null;
+        }
+      };
+    }
 
     const scheduleRefresh = () => {
-      if (bannerRefreshTimerRef.current) clearTimeout(bannerRefreshTimerRef.current);
-      const ms = Math.max(5_000, Math.floor(ATTACHMENT_SIGNED_URL_TTL_SEC * 0.85 * 1000));
+      if (bannerRefreshTimerRef.current) {
+        clearTimeout(bannerRefreshTimerRef.current);
+      }
+      const ms = Math.max(
+        5_000,
+        Math.floor(ATTACHMENT_SIGNED_URL_TTL_SEC * 0.85 * 1000),
+      );
       bannerRefreshTimerRef.current = setTimeout(() => void fetchUrl(), ms);
     };
 
@@ -281,11 +320,21 @@ export function NoteDetailPanel({ noteId }: { noteId: string }): React.ReactNode
         setBannerSignedUrl(null);
         return;
       }
+      setCachedNoteAttachmentSignedUrl(
+        bannerAttachmentId,
+        storagePath,
+        data.signedUrl,
+        ATTACHMENT_SIGNED_URL_TTL_SEC,
+      );
       setBannerSignedUrl(data.signedUrl);
       scheduleRefresh();
     }
 
-    void fetchUrl();
+    if (entry) {
+      scheduleRefresh();
+    } else {
+      void fetchUrl();
+    }
 
     return () => {
       cancelled = true;
@@ -294,7 +343,7 @@ export function NoteDetailPanel({ noteId }: { noteId: string }): React.ReactNode
         bannerRefreshTimerRef.current = null;
       }
     };
-  }, [bannerAttachment?.id, bannerAttachment?.storage_path]);
+  }, [bannerAttachmentId, bannerAttachment?.storage_path]);
 
   // Paint the banner as a viewport-fixed background on <main>. Using
   // background-attachment:fixed sidesteps the containing-block issue caused

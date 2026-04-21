@@ -22,8 +22,8 @@ import { pdfPreviewSrc } from '@/lib/pdf-preview-url';
 import { cn } from '@/lib/utils';
 import { getBrowserClient } from '../../lib/supabase/browser';
 import {
-  ATTACHMENT_SIGNED_URL_TTL_SEC,
   downloadBlobFromSignedUrl,
+  getOrFetchNoteAttachmentSignedUrl,
 } from '../../lib/pdf-attachment-client';
 import {
   NOTE_PDFS_BUCKET,
@@ -189,19 +189,16 @@ function NotePdfNodeView(props: NodeViewProps) {
     previewDialogRef.current?.showModal();
 
     try {
-      const client = getBrowserClient();
-      const { data, error } = await client.storage
-        .from(NOTE_PDFS_BUCKET)
-        .createSignedUrl(
-          attachment.storage_path,
-          ATTACHMENT_SIGNED_URL_TTL_SEC,
-        );
+      const result = await getOrFetchNoteAttachmentSignedUrl(
+        attachment.id,
+        attachment.storage_path,
+      );
 
-      if (error || !data?.signedUrl) {
-        throw new Error(error?.message ?? 'Could not open preview');
+      if (!result.ok) {
+        throw new Error(result.error);
       }
 
-      setPreview({ filename: attachment.filename, url: data.signedUrl });
+      setPreview({ filename: attachment.filename, url: result.signedUrl });
     } catch (e) {
       setActionError(
         e instanceof Error ? e.message : 'Could not open preview',
@@ -229,19 +226,16 @@ function NotePdfNodeView(props: NodeViewProps) {
     if (!attachment) return;
     setActionError(null);
     try {
-      const client = getBrowserClient();
-      const { data, error } = await client.storage
-        .from(NOTE_PDFS_BUCKET)
-        .createSignedUrl(
-          attachment.storage_path,
-          ATTACHMENT_SIGNED_URL_TTL_SEC,
-        );
+      const result = await getOrFetchNoteAttachmentSignedUrl(
+        attachment.id,
+        attachment.storage_path,
+      );
 
-      if (error || !data?.signedUrl) {
-        throw new Error(error?.message ?? 'Could not download');
+      if (!result.ok) {
+        throw new Error(result.error);
       }
 
-      await downloadBlobFromSignedUrl(data.signedUrl, attachment.filename);
+      await downloadBlobFromSignedUrl(result.signedUrl, attachment.filename);
     } catch (e) {
       setActionError(e instanceof Error ? e.message : 'Download failed');
     }

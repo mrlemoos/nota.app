@@ -29,6 +29,7 @@ import {
 } from '../lib/nota-pro-entitled-session';
 import { setAppHash } from '../lib/app-navigation';
 import { runWelcomeNoteSeedIfNeeded } from '../lib/welcome-note-seed';
+import { clearNoteAttachmentSignedUrlCache } from '../lib/note-attachment-signed-url-cache';
 import { useSpaSession } from './spa-session-context';
 
 export type RefreshNotesListOptions = {
@@ -141,6 +142,7 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     didRetryEmptyVaultAfterWelcomeSeededRef.current = false;
     refreshChainRef.current = Promise.resolve(undefined);
+    clearNoteAttachmentSignedUrlCache();
   }, [userId]);
 
   const refreshNotesList = useCallback(

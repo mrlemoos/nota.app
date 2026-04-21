@@ -9,9 +9,11 @@ import { Button } from '@/components/ui/button';
 import { SimpleTooltip, TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { getBrowserClient } from '../../lib/supabase/browser';
+import { getValidNoteAttachmentSignedUrlCacheEntry } from '../../lib/note-attachment-signed-url-cache';
 import {
   ATTACHMENT_SIGNED_URL_TTL_SEC,
   downloadBlobFromSignedUrl,
+  getOrFetchNoteAttachmentSignedUrl,
 } from '../../lib/pdf-attachment-client';
 import {
   NOTE_PDFS_BUCKET,
@@ -47,15 +49,29 @@ function NoteImageNodeView(props: NodeViewProps) {
 
   useEffect(() => {
     clearRefreshTimer();
-    setSignedUrl(null);
     setLoadError(null);
 
-    if (!storagePath) {
-      return;
+    let cancelled = false;
+
+    if (!attachmentId || !storagePath) {
+      setSignedUrl(null);
+      return () => {
+        cancelled = true;
+        clearRefreshTimer();
+      };
     }
 
-    const signedStoragePath = storagePath;
-    let cancelled = false;
+    const entry = getValidNoteAttachmentSignedUrlCacheEntry(
+      attachmentId,
+      storagePath,
+    );
+
+    if (entry) {
+      setSignedUrl(entry.signedUrl);
+      setLoadError(null);
+    } else {
+      setSignedUrl(null);
+    }
 
     const scheduleNextRefresh = () => {
       clearRefreshTimer();
@@ -69,34 +85,35 @@ function NoteImageNodeView(props: NodeViewProps) {
     };
 
     async function fetchUrl() {
-      const client = getBrowserClient();
-      const { data, error } = await client.storage
-        .from(NOTE_PDFS_BUCKET)
-        .createSignedUrl(
-          signedStoragePath,
-          ATTACHMENT_SIGNED_URL_TTL_SEC,
-        );
+      const result = await getOrFetchNoteAttachmentSignedUrl(
+        attachmentId,
+        storagePath,
+      );
 
       if (cancelled) return;
 
-      if (error || !data?.signedUrl) {
-        setLoadError(error?.message ?? 'Could not load image');
+      if (!result.ok) {
+        setLoadError(result.error ?? 'Could not load image');
         setSignedUrl(null);
         return;
       }
 
       setLoadError(null);
-      setSignedUrl(data.signedUrl);
+      setSignedUrl(result.signedUrl);
       scheduleNextRefresh();
     }
 
-    void fetchUrl();
+    if (entry) {
+      scheduleNextRefresh();
+    } else {
+      void fetchUrl();
+    }
 
     return () => {
       cancelled = true;
       clearRefreshTimer();
     };
-  }, [storagePath, clearRefreshTimer]);
+  }, [attachmentId, storagePath, clearRefreshTimer]);
 
   const handleOpenTab = useCallback(() => {
     if (!signedUrl) return;
