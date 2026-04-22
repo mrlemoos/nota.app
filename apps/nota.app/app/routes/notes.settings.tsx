@@ -26,6 +26,12 @@ export default function NotesSettings(): JSX.Element {
   const setShowNoteBacklinks = useNotaPreferencesStore(
     (s) => s.setShowNoteBacklinks,
   );
+  const semanticSearchEnabled = useNotaPreferencesStore(
+    (s) => s.semanticSearchEnabled,
+  );
+  const setSemanticSearchEnabled = useNotaPreferencesStore(
+    (s) => s.setSemanticSearchEnabled,
+  );
   const [modDLabel, setModDLabel] = useState('⌘D');
   const [historyBackLabel, setHistoryBackLabel] = useState('⌘[');
   const [historyForwardLabel, setHistoryForwardLabel] = useState('⌘]');
@@ -146,6 +152,42 @@ export default function NotesSettings(): JSX.Element {
             Lists other notes that link to the note you have open.
           </p>
         </section>
+
+        {notaProEntitled ? (
+          <section className="space-y-3">
+            <h2 className="text-sm font-medium text-foreground">Search</h2>
+            <label
+              htmlFor="nota-semantic-search-enabled"
+              className={cn(
+                'flex cursor-pointer select-none items-start gap-3 rounded-lg border border-border/60 bg-muted/20 px-4 py-3',
+              )}
+            >
+              <input
+                id="nota-semantic-search-enabled"
+                type="checkbox"
+                checked={semanticSearchEnabled}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setSemanticSearchEnabled(checked);
+                  submitUserPreferencesPatch(
+                    { semantic_search_enabled: checked },
+                    user?.id,
+                    setUserPreferencesInState,
+                    notaProEntitled,
+                  );
+                }}
+                className="mt-0.5 size-4 shrink-0 rounded border border-input accent-primary"
+              />
+              <span className="text-sm leading-snug text-muted-foreground">
+                Enable Semantic Search in ⌘K
+              </span>
+            </label>
+            <p className="text-sm text-muted-foreground">
+              Reorders notes by meaning as you type. Turn off to use text
+              matching only.
+            </p>
+          </section>
+        ) : null}
 
         {user ? <NotaProSettingsSection /> : null}
 

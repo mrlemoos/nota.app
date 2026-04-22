@@ -130,11 +130,15 @@ export function CommandPalette(): JSX.Element {
   const [openingTodaysNote, setOpeningTodaysNote] = useState(false);
   const [startingAudioNote, setStartingAudioNote] = useState(false);
 
+  const semanticSearchUserPref = useNotaPreferencesStore(
+    (s) => s.semanticSearchEnabled,
+  );
   const notaServerUrl =
     typeof import.meta.env.VITE_NOTA_SERVER_API_URL === 'string'
       ? import.meta.env.VITE_NOTA_SERVER_API_URL.trim()
       : '';
-  const semanticSearchEnabled = notaProEntitled && notaServerUrl.length > 0;
+  const semanticSearchEnabled =
+    notaProEntitled && notaServerUrl.length > 0 && semanticSearchUserPref;
 
   const handleSemanticOrderedIds = useCallback(
     (ids: string[] | null) => {

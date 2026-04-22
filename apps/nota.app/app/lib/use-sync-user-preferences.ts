@@ -35,7 +35,9 @@ export function useSyncUserPreferences(
       hydratedLoaderRef.current.open_todays_note_shortcut ===
         userPreferencesFromServer.open_todays_note_shortcut &&
       hydratedLoaderRef.current.show_note_backlinks ===
-        userPreferencesFromServer.show_note_backlinks
+        userPreferencesFromServer.show_note_backlinks &&
+      hydratedLoaderRef.current.semantic_search_enabled ===
+        userPreferencesFromServer.semantic_search_enabled
     ) {
       return;
     }
@@ -52,6 +54,7 @@ export function useSyncUserPreferences(
         preferencesPendingSync,
         openTodaysNoteShortcut,
         showNoteBacklinks,
+        semanticSearchEnabled,
       } = useNotaPreferencesStore.getState();
       if (!preferencesPendingSync) {
         return;
@@ -62,6 +65,7 @@ export function useSyncUserPreferences(
           const row = await upsertUserPreferences(client, userId, {
             open_todays_note_shortcut: openTodaysNoteShortcut,
             show_note_backlinks: showNoteBacklinks,
+            semantic_search_enabled: semanticSearchEnabled,
           });
           markPreferencesSynced(row);
           onServerRowCommitted?.(row);
@@ -84,7 +88,7 @@ export function useSyncUserPreferences(
 
 export type UserPreferencesSyncPatch = Pick<
   UserPreferences,
-  'open_todays_note_shortcut' | 'show_note_backlinks'
+  'open_todays_note_shortcut' | 'show_note_backlinks' | 'semantic_search_enabled'
 >;
 
 /**

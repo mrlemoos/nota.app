@@ -5,6 +5,7 @@ import type { UserPreferences } from '~/types/database.types';
 interface NotaPreferencesState {
   openTodaysNoteShortcut: boolean;
   showNoteBacklinks: boolean;
+  semanticSearchEnabled: boolean;
   /** Local toggle not yet persisted to Supabase (or last attempt failed while offline). */
   preferencesPendingSync: boolean;
   lastServerUpdatedAt: string | null;
@@ -13,6 +14,7 @@ interface NotaPreferencesState {
 
   setOpenTodaysNoteShortcut: (value: boolean, options?: { pendingSync?: boolean }) => void;
   setShowNoteBacklinks: (value: boolean, options?: { pendingSync?: boolean }) => void;
+  setSemanticSearchEnabled: (value: boolean, options?: { pendingSync?: boolean }) => void;
   hydratePreferencesFromServer: (prefs: UserPreferences) => void;
   markPreferencesSynced: (prefs: UserPreferences) => void;
   setDailyNoteForLocalDate: (dateKey: string, noteId: string) => void;
@@ -24,6 +26,7 @@ export const useNotaPreferencesStore = create<NotaPreferencesState>()(
     (set, get) => ({
       openTodaysNoteShortcut: false,
       showNoteBacklinks: true,
+      semanticSearchEnabled: true,
       preferencesPendingSync: false,
       lastServerUpdatedAt: null,
       dailyNoteIdByLocalDate: {},
@@ -42,6 +45,13 @@ export const useNotaPreferencesStore = create<NotaPreferencesState>()(
             options?.pendingSync !== undefined ? options.pendingSync : true,
         }),
 
+      setSemanticSearchEnabled: (value, options) =>
+        set({
+          semanticSearchEnabled: value,
+          preferencesPendingSync:
+            options?.pendingSync !== undefined ? options.pendingSync : true,
+        }),
+
       hydratePreferencesFromServer: (prefs) => {
         if (get().preferencesPendingSync) {
           return;
@@ -49,6 +59,7 @@ export const useNotaPreferencesStore = create<NotaPreferencesState>()(
         set({
           openTodaysNoteShortcut: prefs.open_todays_note_shortcut,
           showNoteBacklinks: prefs.show_note_backlinks,
+          semanticSearchEnabled: prefs.semantic_search_enabled,
           lastServerUpdatedAt: prefs.updated_at,
         });
       },
@@ -57,6 +68,7 @@ export const useNotaPreferencesStore = create<NotaPreferencesState>()(
         set({
           openTodaysNoteShortcut: prefs.open_todays_note_shortcut,
           showNoteBacklinks: prefs.show_note_backlinks,
+          semanticSearchEnabled: prefs.semantic_search_enabled,
           preferencesPendingSync: false,
           lastServerUpdatedAt: prefs.updated_at,
         }),
@@ -78,6 +90,7 @@ export const useNotaPreferencesStore = create<NotaPreferencesState>()(
       partialize: (state) => ({
         openTodaysNoteShortcut: state.openTodaysNoteShortcut,
         showNoteBacklinks: state.showNoteBacklinks,
+        semanticSearchEnabled: state.semanticSearchEnabled,
         preferencesPendingSync: state.preferencesPendingSync,
         lastServerUpdatedAt: state.lastServerUpdatedAt,
         dailyNoteIdByLocalDate: state.dailyNoteIdByLocalDate,

@@ -171,6 +171,7 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
       user_id: userId,
       open_todays_note_shortcut: false,
       show_note_backlinks: true,
+      semantic_search_enabled: true,
       welcome_seeded: false,
       updated_at: new Date(0).toISOString(),
     });
