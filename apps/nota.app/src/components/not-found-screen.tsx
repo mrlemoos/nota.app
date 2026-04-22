@@ -6,7 +6,7 @@ import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { hashForScreen } from '@/lib/app-navigation';
 
-export function SpaNotFound({
+export function NotFoundScreen({
   signedIn,
 }: {
   signedIn: boolean;
@@ -17,8 +17,8 @@ export function SpaNotFound({
 
   return (
     <main
-      id="spa-not-found"
-      aria-labelledby="spa-not-found-title"
+      id="not-found"
+      aria-labelledby="not-found-title"
       className={cn(
         'relative isolate flex min-h-0 flex-1 h-dvh flex-col overflow-y-auto items-center justify-center',
         'px-4 py-10 pb-[max(2.5rem,env(safe-area-inset-bottom))]',
@@ -76,7 +76,7 @@ export function SpaNotFound({
           </div>
 
           <h1
-            id="spa-not-found-title"
+            id="not-found-title"
             className={cn(
               'text-balance text-center font-serif text-3xl font-normal tracking-normal',
               'text-foreground sm:text-[2rem] sm:leading-snug',

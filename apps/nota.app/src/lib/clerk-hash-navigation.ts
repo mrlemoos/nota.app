@@ -1,4 +1,4 @@
-import { NOTA_SPA_HISTORY_EVENT, replaceAppHash } from './app-navigation';
+import { NOTA_HASH_HISTORY_EVENT, replaceAppHash } from './app-navigation';
 
 /**
  * Clerk path/hash mode uses `/sign-in` and `/sign-up`. The SPA hash must stay on those
@@ -399,14 +399,14 @@ export function repairClerkAuthLocationHash(): void {
 }
 
 if (typeof window !== 'undefined') {
-  window.addEventListener(NOTA_SPA_HISTORY_EVENT, () => {
+  window.addEventListener(NOTA_HASH_HISTORY_EVENT, () => {
     queueMicrotask(() => {
       repairClerkAuthLocationHash();
     });
   });
   /**
    * Clerk hash routing may assign `location.hash` directly; that fires `hashchange` but not
-   * `history.pushState` / `replaceState`, so `NOTA_SPA_HISTORY_EVENT` alone misses it.
+   * `history.pushState` / `replaceState`, so `NOTA_HASH_HISTORY_EVENT` alone misses it.
    */
   window.addEventListener(
     'hashchange',

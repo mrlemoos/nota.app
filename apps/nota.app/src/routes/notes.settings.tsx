@@ -2,7 +2,7 @@ import { UserButton } from '@clerk/react';
 import { useLayoutEffect, useState, type JSX } from 'react';
 import { cn } from '@/lib/utils';
 import { ThemeMenu } from '../components/theme-menu';
-import { useRootLoaderData } from '../context/spa-session-context';
+import { useRootLoaderData } from '../context/session-context';
 import {
   useNotesDataActions,
   useNotesDataMeta,

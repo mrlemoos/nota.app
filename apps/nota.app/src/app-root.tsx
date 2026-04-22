@@ -1,19 +1,19 @@
 import { useEffect, useLayoutEffect, type JSX, type ReactNode } from 'react';
 import { LandingPage } from './components/landing-page';
-import { NotesSpaShell } from './components/notes-spa-shell';
+import { NotesShell } from './components/notes-shell';
 import Login from './routes/login';
 import Signup from './routes/signup';
-import { useSpaSession } from './context/spa-session-context';
+import { useAppSession } from './context/session-context';
 import { NotesDataProvider } from './context/notes-data-context';
 import { SignedInCommandPalette } from './signed-in-command-palette';
 import { useAppNavigationScreen } from './hooks/use-app-navigation-screen';
 import { ElectronWindowDragBand } from './components/electron-window-drag-band';
-import { SpaNotFound } from './components/spa-not-found';
+import { NotFoundScreen } from './components/not-found-screen';
 import { replaceAppHash, syncAppNavigation } from './lib/app-navigation';
 import { repairClerkAuthLocationHash } from './lib/clerk-hash-navigation';
 import { cn } from './lib/utils';
 
-function SpaAuthPanel({
+function AppShellPanel({
   active,
   panelId,
   children,
@@ -61,8 +61,8 @@ function redirectAuthShell(
   }
 }
 
-export function SpaApp(): JSX.Element {
-  const { user, loading } = useSpaSession();
+export function NotaApp(): JSX.Element {
+  const { user, loading } = useAppSession();
   const screen = useAppNavigationScreen();
   const kind = screen.kind;
 
@@ -133,10 +133,10 @@ export function SpaApp(): JSX.Element {
           </button>
         </div>
       ) : null}
-      <SpaAuthPanel active={notFoundActive} panelId="spa-screen-not-found">
-        <SpaNotFound signedIn={Boolean(user)} />
-      </SpaAuthPanel>
-      <SpaAuthPanel active={landingActive} panelId="spa-screen-landing">
+      <AppShellPanel active={notFoundActive} panelId="screen-not-found">
+        <NotFoundScreen signedIn={Boolean(user)} />
+      </AppShellPanel>
+      <AppShellPanel active={landingActive} panelId="screen-landing">
         {user ? (
           <div className="flex min-h-0 flex-1 h-dvh items-center justify-center bg-background text-muted-foreground text-sm">
             Loading…
@@ -144,19 +144,19 @@ export function SpaApp(): JSX.Element {
         ) : (
           <LandingPage />
         )}
-      </SpaAuthPanel>
-      <SpaAuthPanel active={loginActive} panelId="spa-screen-login">
+      </AppShellPanel>
+      <AppShellPanel active={loginActive} panelId="screen-login">
         <Login />
-      </SpaAuthPanel>
-      <SpaAuthPanel active={signupActive} panelId="spa-screen-signup">
+      </AppShellPanel>
+      <AppShellPanel active={signupActive} panelId="screen-signup">
         <Signup />
-      </SpaAuthPanel>
-      <SpaAuthPanel active={notesActive} panelId="spa-screen-notes">
+      </AppShellPanel>
+      <AppShellPanel active={notesActive} panelId="screen-notes">
         <NotesDataProvider>
           <SignedInCommandPalette />
-          <NotesSpaShell />
+          <NotesShell />
         </NotesDataProvider>
-      </SpaAuthPanel>
+      </AppShellPanel>
     </div>
   );
 }

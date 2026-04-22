@@ -90,7 +90,7 @@ After fixing secrets, **push a new `v*` tag** or run **Release Electron (macOS)*
 
 ### Packaged app: “Missing Supabase environment variables”
 
-That message comes from [`apps/nota.app/app/lib/supabase/browser.ts`](../nota.app/app/lib/supabase/browser.ts): the **Vite build** inlined empty `VITE_SUPABASE_*` strings. GitHub Actions does not inject secrets at runtime on the user’s machine.
+That message comes from [`apps/nota.app/src/lib/supabase/browser.ts`](../nota.app/src/lib/supabase/browser.ts): the **Vite build** inlined empty `VITE_SUPABASE_*` strings. GitHub Actions does not inject secrets at runtime on the user’s machine.
 
 1. Add **`VITE_SUPABASE_URL`** and **`VITE_SUPABASE_ANON_KEY`** under **Production** environment secrets (or **repository** secrets), with those exact names — this workflow reads `${{ secrets.* }}` only.
 2. If the URL lives under **Variables**, either duplicate it into **Secrets** or change the workflow to use `${{ vars.VITE_SUPABASE_URL }}` for that key.

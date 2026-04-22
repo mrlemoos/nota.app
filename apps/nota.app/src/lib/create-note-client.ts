@@ -4,7 +4,7 @@ import { createNote } from '../models/notes';
 import { setAppHash } from './app-navigation';
 import type { Note } from '~/types/database.types';
 
-export async function spaCreateNote(options: {
+export async function clientCreateNote(options: {
   userId: string;
   insertNoteAtFront: (n: Note) => void;
   refreshNotesList: (options?: { silent?: boolean }) => Promise<void>;

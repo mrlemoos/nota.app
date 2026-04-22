@@ -1,7 +1,7 @@
 // Runs before Vitest tests
 import { vi } from 'vitest';
-import { setClerkAccessTokenGetter } from './app/lib/clerk-token-ref';
-import { setSupabaseClerkGetToken } from './app/lib/supabase/browser';
+import { setClerkAccessTokenGetter } from './src/lib/clerk-token-ref';
+import { setSupabaseClerkGetToken } from './src/lib/supabase/browser';
 
 // TipTap `@tiptap/extension-emoji` pulls `is-emoji-supported`, which probes canvas; jsdom
 // otherwise logs "Not implemented: HTMLCanvasElement.prototype.getContext".

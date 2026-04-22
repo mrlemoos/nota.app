@@ -8,7 +8,7 @@ import {
 import { deleteNote } from '../models/notes';
 import { setAppHash } from './app-navigation';
 
-export async function spaDeleteNoteById(
+export async function clientDeleteNoteById(
   noteId: string,
   options: {
     userId: string;

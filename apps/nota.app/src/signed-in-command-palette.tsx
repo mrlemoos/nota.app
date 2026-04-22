@@ -1,5 +1,5 @@
 import { CommandPalette } from './components/command-palette';
-import { useRootLoaderData } from './context/spa-session-context';
+import { useRootLoaderData } from './context/session-context';
 import { useOptionalNotesDataMeta } from './context/notes-data-context';
 
 export function SignedInCommandPalette() {

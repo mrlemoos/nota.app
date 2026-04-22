@@ -18,7 +18,7 @@ export default defineConfig({
         '@': path.resolve(__dirname, 'src'),
         '@nota/note-doc-plain-text': path.resolve(
           __dirname,
-          '../nota.app/app/lib/note-doc-plain-text.ts',
+          '../nota.app/src/lib/note-doc-plain-text.ts',
         ),
       },
     },

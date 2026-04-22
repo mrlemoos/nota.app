@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { spaDeleteNoteById } from './spa-delete-note';
+import { clientDeleteNoteById } from './delete-note-client';
 
 import { isLikelyOnline, markPendingDelete } from './notes-offline';
 import { deleteNote } from '../models/notes';
@@ -30,7 +30,7 @@ vi.mock('./app-navigation', () => ({
   setAppHash: vi.fn(),
 }));
 
-describe('spaDeleteNoteById', () => {
+describe('clientDeleteNoteById', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -47,7 +47,7 @@ describe('spaDeleteNoteById', () => {
     };
 
     // Act
-    await spaDeleteNoteById(noteId, args);
+    await clientDeleteNoteById(noteId, args);
 
     // Assert
     expect(deleteNote).not.toHaveBeenCalled();
@@ -67,7 +67,7 @@ describe('spaDeleteNoteById', () => {
     };
 
     // Act
-    await spaDeleteNoteById(noteId, args);
+    await clientDeleteNoteById(noteId, args);
 
     // Assert
     expect(deleteNote).not.toHaveBeenCalled();
@@ -87,7 +87,7 @@ describe('spaDeleteNoteById', () => {
     };
 
     // Act
-    await spaDeleteNoteById(noteId, args);
+    await clientDeleteNoteById(noteId, args);
 
     // Assert
     expect(deleteNote).toHaveBeenCalled();

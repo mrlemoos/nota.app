@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { spaCreateNote } from './spa-create-note';
+import { clientCreateNote } from './create-note-client';
 
 import { createLocalOnlyNote, isLikelyOnline } from './notes-offline';
 import { createNote } from '../models/notes';
@@ -37,7 +37,7 @@ vi.mock('./app-navigation', () => ({
   setAppHash: vi.fn(),
 }));
 
-describe('spaCreateNote', () => {
+describe('clientCreateNote', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -53,7 +53,7 @@ describe('spaCreateNote', () => {
     };
 
     // Act
-    await spaCreateNote(args);
+    await clientCreateNote(args);
 
     // Assert
     expect(createNote).not.toHaveBeenCalled();
@@ -72,7 +72,7 @@ describe('spaCreateNote', () => {
     };
 
     // Act
-    await spaCreateNote(args);
+    await clientCreateNote(args);
 
     // Assert
     expect(createNote).toHaveBeenCalled();
@@ -91,7 +91,7 @@ describe('spaCreateNote', () => {
     };
 
     // Act
-    await spaCreateNote(args);
+    await clientCreateNote(args);
 
     // Assert
     expect(createNote).not.toHaveBeenCalled();
@@ -109,7 +109,7 @@ describe('spaCreateNote', () => {
     };
 
     // Act
-    await spaCreateNote(args);
+    await clientCreateNote(args);
 
     // Assert
     expect(createNote).not.toHaveBeenCalled();

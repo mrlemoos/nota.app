@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { NotesSpaShell } from './notes-spa-shell';
+import { NotesShell } from './notes-shell';
 
 vi.mock('./electron-menubar-bridge', () => ({
   ElectronMenubarBridge: (): null => null,
@@ -71,7 +71,7 @@ vi.mock('../lib/use-is-electron', () => ({
   useIsElectron: () => false,
 }));
 
-vi.mock('../context/spa-session-context', () => ({
+vi.mock('../context/session-context', () => ({
   useRootLoaderData: () => ({
     user: { id: 'user-1', email: 'test@example.com' },
   }),
@@ -111,13 +111,13 @@ vi.mock('../hooks/use-audio-note-pending-drain', () => ({
   useAudioNotePendingDrain: (): void => {},
 }));
 
-describe('NotesSpaShell', () => {
+describe('NotesShell', () => {
   it('caps the notes sidebar width on first paint so long titles do not expand the column', () => {
     // Arrange
     window.history.replaceState(null, '', '#/notes');
 
     // Act
-    const { container } = render(<NotesSpaShell />);
+    const { container } = render(<NotesShell />);
 
     // Assert
     const aside = container.querySelector('aside');

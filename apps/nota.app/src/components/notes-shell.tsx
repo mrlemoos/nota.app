@@ -35,7 +35,7 @@ import {
   usePrefersReducedMotion,
 } from '@/lib/nota-motion';
 import { useNotesSidebarStore } from '../stores/notes-sidebar';
-import { useRootLoaderData } from '../context/spa-session-context';
+import { useRootLoaderData } from '../context/session-context';
 import { useNotesData } from '../context/notes-data-context';
 import { useAppNavigationScreen } from '../hooks/use-app-navigation-screen';
 import {
@@ -44,8 +44,8 @@ import {
   type NotesShellPanel,
 } from '../lib/app-navigation';
 import { noteHashHref, NoteDetailPanel } from './note-detail-panel';
-import { spaCreateNote } from '../lib/spa-create-note';
-import { spaDeleteNoteById } from '../lib/spa-delete-note';
+import { clientCreateNote } from '../lib/create-note-client';
+import { clientDeleteNoteById } from '../lib/delete-note-client';
 import { AudioToNoteDock } from './audio-to-note-dock';
 import { ElectronMenubarBridge } from './electron-menubar-bridge';
 import { StudyRecordingUploadWarningBanner } from './study-recording-upload-warning-banner';
@@ -55,7 +55,7 @@ import {
   NotesIndexPanel,
   ShellPanel,
   SidebarToggle,
-} from './notes-spa-shell-parts';
+} from './notes-shell-parts';
 
 const NotesGraphRoute = lazy(async () => import('../routes/notes.graph'));
 const NotesSettingsRoute = lazy(async () => import('../routes/notes.settings'));
@@ -63,7 +63,7 @@ const NotesShortcutsRoute = lazy(
   async () => import('../routes/notes.shortcuts'),
 );
 
-export function NotesSpaShell(): JSX.Element {
+export function NotesShell(): JSX.Element {
   const screen = useAppNavigationScreen();
   const panel: NotesShellPanel =
     screen.kind === 'notes' ? screen.panel : 'list';
@@ -180,7 +180,7 @@ export function NotesSpaShell(): JSX.Element {
     if (!user?.id) {
       return;
     }
-    void spaCreateNote({
+    void clientCreateNote({
       userId: user.id,
       insertNoteAtFront,
       refreshNotesList,
@@ -377,7 +377,7 @@ export function NotesSpaShell(): JSX.Element {
                                     ) {
                                       return;
                                     }
-                                    void spaDeleteNoteById(note.id, {
+                                    void clientDeleteNoteById(note.id, {
                                       userId: user?.id ?? '',
                                       removeNoteFromList,
                                       refreshNotesList,

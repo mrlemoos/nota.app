@@ -25,7 +25,7 @@ import {
   useNotesDataMeta,
   useNotesDataVault,
 } from '../context/notes-data-context';
-import { useSpaSession } from '../context/spa-session-context';
+import { useAppSession } from '../context/session-context';
 import { ATTACHMENT_SIGNED_URL_TTL_SEC } from '../lib/pdf-attachment-client';
 import {
   getValidNoteAttachmentSignedUrlCacheEntry,
@@ -39,7 +39,7 @@ export function NoteDetailPanel({ noteId }: { noteId: string }): React.ReactNode
   const { notes } = useNotesDataVault();
   const { notaProEntitled, loading: vaultLoading } = useNotesDataMeta();
   const { patchNoteInList } = useNotesDataActions();
-  const { user } = useSpaSession();
+  const { user } = useAppSession();
   const { scrollRootRef } = useStickyDocTitle();
   const showNoteBacklinks = useNotaPreferencesStore((s) => s.showNoteBacklinks);
   const [note, setNote] = useState<Note | null>(null);

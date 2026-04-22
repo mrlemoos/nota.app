@@ -12,12 +12,12 @@ import '@fontsource/geist-sans/latin.css';
 import '../styles.css';
 import { bootstrapAppNavigation } from './lib/app-navigation';
 import { DeferredPostHogRoot } from './components/deferred-posthog-root';
-import { SpaErrorBoundary } from './components/spa-error-boundary';
+import { AppErrorBoundary } from './components/app-error-boundary';
 import { ThemeProvider } from './components/theme-provider';
 import { ClerkSupabaseBridge } from './context/clerk-supabase-bridge';
 import { NoteEditorCommandsProvider } from './context/note-editor-commands';
 import { StickyDocTitleProvider } from './context/sticky-doc-title';
-import { SpaSessionProvider } from './context/spa-session-context';
+import { AppSessionProvider } from './context/session-context';
 import {
   clerkFullNotesUrl,
   clerkFullSignInUrl,
@@ -27,7 +27,7 @@ import {
   repairClerkAuthLocationHash,
 } from './lib/clerk-hash-navigation';
 import { ClerkSsoCallbackRoute } from './components/clerk-sso-callback-route';
-import { SpaApp } from './spa-app';
+import { NotaApp } from './app-root';
 
 const POSTHOG_PROJECT_TOKEN = import.meta.env.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN;
 
@@ -87,15 +87,15 @@ createRoot(rootEl).render(
         <ClerkSupabaseBridge>
           <ClerkSsoCallbackRoute />
           <ThemeProvider defaultTheme="system" storageKey="nota-ui-theme">
-            <SpaSessionProvider>
+            <AppSessionProvider>
               <StickyDocTitleProvider>
                 <NoteEditorCommandsProvider>
-                  <SpaErrorBoundary>
-                    <SpaApp />
-                  </SpaErrorBoundary>
+                  <AppErrorBoundary>
+                    <NotaApp />
+                  </AppErrorBoundary>
                 </NoteEditorCommandsProvider>
               </StickyDocTitleProvider>
-            </SpaSessionProvider>
+            </AppSessionProvider>
           </ThemeProvider>
         </ClerkSupabaseBridge>
       </DeferredPostHogRoot>

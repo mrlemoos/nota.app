@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useRootLoaderData } from '../context/spa-session-context';
+import { useRootLoaderData } from '../context/session-context';
 import { useNotesData } from '../context/notes-data-context';
 import { startStudyNotesFromRecording } from '../lib/audio-to-note-start';
 import { createNoteFromMenubarClipboard } from '../lib/electron-clipboard-note';

@@ -4,7 +4,7 @@ type Props = { children: ReactNode };
 
 type State = { error: Error | null };
 
-export class SpaErrorBoundary extends Component<Props, State> {
+export class AppErrorBoundary extends Component<Props, State> {
   override state: State = { error: null };
 
   static getDerivedStateFromError(error: Error): State {
@@ -12,7 +12,7 @@ export class SpaErrorBoundary extends Component<Props, State> {
   }
 
   override componentDidCatch(error: Error, info: ErrorInfo): void {
-    console.error('SpaErrorBoundary', error, info.componentStack);
+    console.error('AppErrorBoundary', error, info.componentStack);
   }
 
   override render(): ReactNode {

@@ -12,7 +12,7 @@ import { TipTapEditor } from './tiptap-editor';
 import { useStickyDocTitle } from '../context/sticky-doc-title';
 import { persistedDisplayTitle } from '../lib/note-title';
 import { getBrowserClient } from '../lib/supabase/browser';
-import { useRootLoaderData } from '../context/spa-session-context';
+import { useRootLoaderData } from '../context/session-context';
 import { useNotesDataMeta } from '../context/notes-data-context';
 import { mergeUpdatedNoteLocalContent } from '../lib/note-updated-content-merge';
 import {

@@ -10,7 +10,7 @@ export default [
     rules: {},
   },
   {
-    files: ['app/**/*.ts', 'app/**/*.tsx'],
+    files: ['src/**/*.ts', 'src/**/*.tsx'],
     rules: {
       'no-restricted-imports': [
         'error',

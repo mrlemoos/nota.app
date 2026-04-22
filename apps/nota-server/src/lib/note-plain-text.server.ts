@@ -1,4 +1,4 @@
-/** Mirrors apps/nota.app/app/lib/note-doc-plain-text.ts for TipTap JSON `doc`. */
+/** Mirrors `apps/nota.app/src/lib/note-doc-plain-text.ts` for TipTap JSON `doc`. */
 
 export function extractPlainTextFromDocJson(input: unknown): string {
   const parts: string[] = [];

@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { LandingPage } from './components/landing-page';
 
-describe('SPA shell', () => {
+describe('App shell', () => {
   it('renders the marketing landing call to action', () => {
     // Arrange
     // (LandingPage has no props)

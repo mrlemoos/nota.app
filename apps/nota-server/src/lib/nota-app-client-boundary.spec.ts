@@ -4,7 +4,7 @@ import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const clientAppDir = join(__dirname, '../../../nota.app/app');
+const clientAppDir = join(__dirname, '../../../nota.app/src');
 
 function collectSourceFiles(dir: string, acc: string[] = []): string[] {
   for (const name of readdirSync(dir)) {

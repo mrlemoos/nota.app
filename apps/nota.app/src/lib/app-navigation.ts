@@ -4,7 +4,7 @@
  */
 
 /** Fired after `history.pushState` / `replaceState` (same tick as `scheduleNavigationSync`). */
-export const NOTA_SPA_HISTORY_EVENT = 'nota:spa-history' as const;
+export const NOTA_HASH_HISTORY_EVENT = 'nota:hash-history' as const;
 
 export type NotesShellPanel =
   | 'list'
@@ -262,7 +262,7 @@ export function bootstrapAppNavigation(): void {
   /**
    * `history.pushState` / `replaceState` do not fire `hashchange` and do not fire `popstate`.
    * Clerk (and other code) updates the URL this way, which left React on a stale `kind` while
-   * every `SpaAuthPanel` was `hidden` — `#root` collapsed to zero height and Electron showed a
+   * every `AppShellPanel` was `hidden` — `#root` collapsed to zero height and Electron showed a
    * blank grey window (transparent shell).
    */
   const patchKey = '__notaHistoryNavigationPatched';
@@ -282,7 +282,7 @@ export function bootstrapAppNavigation(): void {
       ) {
         original(data, unused, url);
         scheduleNavigationSync();
-        window.dispatchEvent(new Event(NOTA_SPA_HISTORY_EVENT));
+        window.dispatchEvent(new Event(NOTA_HASH_HISTORY_EVENT));
       } as History[typeof key];
     };
     patchHistoryNavigation('pushState');

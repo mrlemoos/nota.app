@@ -7,7 +7,7 @@ import {
 } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useRootLoaderData } from '../context/spa-session-context';
+import { useRootLoaderData } from '../context/session-context';
 import { useNotesDataActions } from '../context/notes-data-context';
 import { postAudioToNoteStream } from '../lib/audio-to-note-client';
 import { applyAudioNoteStudyResult } from '../lib/audio-to-note-apply';

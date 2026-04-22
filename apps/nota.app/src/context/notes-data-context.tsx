@@ -30,7 +30,7 @@ import {
 import { setAppHash } from '../lib/app-navigation';
 import { runWelcomeNoteSeedIfNeeded } from '../lib/welcome-note-seed';
 import { clearNoteAttachmentSignedUrlCache } from '../lib/note-attachment-signed-url-cache';
-import { useSpaSession } from './spa-session-context';
+import { useAppSession } from './session-context';
 
 export type RefreshNotesListOptions = {
   /**
@@ -126,7 +126,7 @@ async function waitForClerkBridge(maxMs = 600): Promise<void> {
 }
 
 export function NotesDataProvider({ children }: { children: ReactNode }) {
-  const { user } = useSpaSession();
+  const { user } = useAppSession();
   const userId = user?.id;
 
   const [notaProEntitled, setNotaProEntitled] = useState(false);

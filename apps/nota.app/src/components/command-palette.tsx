@@ -30,14 +30,14 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { cn } from '@/lib/utils';
 import { notaKbdFooterClass, notaKbdHintClass } from '@/lib/nota-kbd-styles';
 import { useNoteEditorCommands } from '../context/note-editor-commands';
-import { useRootLoaderData } from '../context/spa-session-context';
+import { useRootLoaderData } from '../context/session-context';
 import { useNotesData } from '../context/notes-data-context';
 import { useAppNavigationScreen } from '../hooks/use-app-navigation-screen';
 import { openTodaysNoteClient } from '../lib/open-todays-note';
 import { navigateFromLegacyPath, setAppHash } from '../lib/app-navigation';
 import { useClerk } from '@clerk/react';
-import { spaCreateNote } from '../lib/spa-create-note';
-import { spaDeleteNoteById } from '../lib/spa-delete-note';
+import { clientCreateNote } from '../lib/create-note-client';
+import { clientDeleteNoteById } from '../lib/delete-note-client';
 import {
   startStudyNotesAppendToOpenNote,
   startStudyNotesFromRecording,
@@ -309,7 +309,7 @@ export function CommandPalette(): JSX.Element {
         setBusyAction('create');
         void (async () => {
           try {
-            await spaCreateNote({
+            await clientCreateNote({
               userId: user?.id ?? '',
               insertNoteAtFront,
               refreshNotesList,
@@ -407,7 +407,7 @@ export function CommandPalette(): JSX.Element {
                         setBusyAction('create');
                         void (async () => {
                           try {
-                            await spaCreateNote({
+                            await clientCreateNote({
                               userId: user?.id ?? '',
                               insertNoteAtFront,
                               refreshNotesList,
@@ -789,7 +789,7 @@ export function CommandPalette(): JSX.Element {
                         setBusyAction('delete');
                         void (async () => {
                           try {
-                            await spaDeleteNoteById(activeNoteId, {
+                            await clientDeleteNoteById(activeNoteId, {
                               userId: user?.id ?? '',
                               removeNoteFromList,
                               refreshNotesList,

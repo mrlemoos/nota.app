@@ -7,23 +7,23 @@ import {
 } from 'react';
 
 /** Minimal session shape for components that previously used Supabase `User`. */
-export type SpaUser = {
+export type AppUser = {
   id: string;
   email: string | null;
 };
 
-export type SpaSessionContextValue = {
-  user: SpaUser | null;
+export type AppSessionContextValue = {
+  user: AppUser | null;
   loading: boolean;
 };
 
-const SpaSessionContext = createContext<SpaSessionContextValue | null>(null);
+const AppSessionContext = createContext<AppSessionContextValue | null>(null);
 
-export function SpaSessionProvider({ children }: { children: ReactNode }) {
+export function AppSessionProvider({ children }: { children: ReactNode }) {
   const { isLoaded, isSignedIn, userId } = useAuth();
   const { user } = useUser();
 
-  const value = useMemo((): SpaSessionContextValue => {
+  const value = useMemo((): AppSessionContextValue => {
     if (!isLoaded) {
       return { user: null, loading: true };
     }
@@ -41,21 +41,21 @@ export function SpaSessionProvider({ children }: { children: ReactNode }) {
   }, [isLoaded, isSignedIn, userId, user]);
 
   return (
-    <SpaSessionContext.Provider value={value}>
+    <AppSessionContext.Provider value={value}>
       {children}
-    </SpaSessionContext.Provider>
+    </AppSessionContext.Provider>
   );
 }
 
-export function useSpaSession(): SpaSessionContextValue {
-  const v = useContext(SpaSessionContext);
+export function useAppSession(): AppSessionContextValue {
+  const v = useContext(AppSessionContext);
   if (!v) {
-    throw new Error('SpaSessionProvider is required');
+    throw new Error('AppSessionProvider is required');
   }
   return v;
 }
 
-export function useRootLoaderData(): { user: SpaUser | null } {
-  const { user } = useSpaSession();
+export function useRootLoaderData(): { user: AppUser | null } {
+  const { user } = useAppSession();
   return { user };
 }

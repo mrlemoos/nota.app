@@ -6,7 +6,7 @@ import type { Plugin } from 'vite';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
-const appDir = path.join(fileURLToPath(new URL('.', import.meta.url)), 'app');
+const srcDir = path.join(fileURLToPath(new URL('.', import.meta.url)), 'src');
 const viteStubsDir = path.join(import.meta.dirname, 'vite-stubs');
 
 function notaDesktopArtifactsPlugin(appRoot: string): Plugin {
@@ -52,8 +52,8 @@ export default defineConfig(({ mode }) => {
       dedupe: ['@clerk/shared'],
       alias: [
         // App imports use `@/` and `~/`.
-        { find: '~', replacement: appDir },
-        { find: '@', replacement: appDir },
+        { find: '~', replacement: srcDir },
+        { find: '@', replacement: srcDir },
         // `@clerk/elements` imports Next.js router hooks; Nota is Vite + hash SPA only.
         {
           find: 'next/navigation',
@@ -121,7 +121,7 @@ export default defineConfig(({ mode }) => {
       watch: false,
       globals: true,
       environment: 'jsdom',
-      include: ['app/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+      include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
       setupFiles: ['./vitest.setup.ts'],
       reporters: ['default'],
       coverage: {

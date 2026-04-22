@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useRootLoaderData } from '../context/spa-session-context';
+import { useRootLoaderData } from '../context/session-context';
 import {
   useNotesDataActions,
   useNotesDataMeta,
