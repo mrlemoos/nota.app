@@ -11,6 +11,7 @@ import TableRow from '@tiptap/extension-table-row';
 import TaskItem from '@tiptap/extension-task-item';
 import TaskList from '@tiptap/extension-task-list';
 import Emoji from '@tiptap/extension-emoji';
+import Highlight from '@tiptap/extension-highlight';
 import { NotaCodeBlock } from './tiptap/nota-code-block';
 import {
   useCallback,
@@ -225,6 +226,9 @@ export function TipTapEditor({
           target: '_blank',
           rel: 'noopener noreferrer',
         },
+      }),
+      Highlight.configure({
+        HTMLAttributes: { class: 'nota-text-highlight' },
       }),
       Emoji.configure({
         enableEmoticons: false,

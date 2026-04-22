@@ -477,6 +477,19 @@
   font-style: italic;
 }
 
+.tiptap-editor .ProseMirror mark.nota-text-highlight {
+  background-color: color-mix(in oklch, var(--primary) 22%, var(--muted));
+  color: inherit;
+  border-radius: 0.125rem;
+  padding: 0 0.05em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.dark .tiptap-editor .ProseMirror mark.nota-text-highlight {
+  background-color: color-mix(in oklch, var(--primary) 28%, transparent);
+}
+
 .tiptap-editor .ProseMirror span[data-type='emoji'] {
   display: inline;
 }

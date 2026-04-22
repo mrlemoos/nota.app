@@ -179,6 +179,11 @@ export const NOTA_SHORTCUT_SECTIONS: ShortcutCatalogSection[] = [
         keysOther: 'Ctrl+I',
       },
       {
+        description: 'Highlight',
+        keysApple: '⇧⌘H',
+        keysOther: 'Ctrl+Shift+H',
+      },
+      {
         description: 'Strikethrough',
         keysApple: '⇧⌘S',
         keysOther: 'Ctrl+Shift+S',
