@@ -18,16 +18,18 @@ function createEditorWithNotaCodeBlock(content: JSONContent) {
 describe('NotaCodeBlock', () => {
   it('stores javascript block with text in JSON', () => {
     // Arrange
-    const editor = createEditorWithNotaCodeBlock({
+    const language = 'javascript';
+    const editorContent: JSONContent = {
       type: 'doc',
       content: [
         {
           type: 'codeBlock',
-          attrs: { language: 'javascript' },
+          attrs: { language },
           content: [{ type: 'text', text: 'const x = 1;\n' }],
         },
       ],
-    });
+    };
+    const editor = createEditorWithNotaCodeBlock(editorContent);
 
     // Act
     const doc = editor.getJSON() as {
@@ -48,17 +50,19 @@ describe('NotaCodeBlock', () => {
 
   it('stores mermaid block with diagram source in JSON', () => {
     // Arrange
+    const language = 'mermaid';
     const source = 'graph TD\n  A --> B';
-    const editor = createEditorWithNotaCodeBlock({
+    const editorContent: JSONContent = {
       type: 'doc',
       content: [
         {
           type: 'codeBlock',
-          attrs: { language: 'mermaid' },
+          attrs: { language },
           content: [{ type: 'text', text: source }],
         },
       ],
-    });
+    };
+    const editor = createEditorWithNotaCodeBlock(editorContent);
 
     // Act
     const doc = editor.getJSON() as {

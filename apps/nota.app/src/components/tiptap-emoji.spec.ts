@@ -36,9 +36,10 @@ describe('TipTap emoji', () => {
   it('setEmoji inserts an emoji node in JSON', () => {
     // Arrange
     const editor = createEditorWithEmoji();
+    const emojiName = 'smile';
 
     // Act
-    editor.chain().focus().setEmoji('smile').run();
+    editor.chain().focus().setEmoji(emojiName).run();
     const types = collectTypes(editor.getJSON());
 
     // Assert
@@ -50,11 +51,13 @@ describe('TipTap emoji', () => {
   it('round-trips a document containing an emoji node through setContent', () => {
     // Arrange
     const editor = createEditorWithEmoji();
-    editor.chain().focus().setEmoji('smile').run();
+    const emojiName = 'smile';
+    const parseAsHtml = false;
+    editor.chain().focus().setEmoji(emojiName).run();
     const snapshot = editor.getJSON();
 
     // Act
-    editor.commands.setContent(snapshot, false);
+    editor.commands.setContent(snapshot, parseAsHtml);
     const after = collectTypes(editor.getJSON());
 
     // Assert

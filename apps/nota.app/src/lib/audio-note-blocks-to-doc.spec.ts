@@ -7,6 +7,7 @@ import {
 
 describe('studyNotesResultToTiptapDoc', () => {
   it('builds heading, paragraph, and bullet list', () => {
+    // Arrange
     const input: AudioNoteStudyResult = {
       title: 'Lecture 1',
       blocks: [
@@ -18,10 +19,14 @@ describe('studyNotesResultToTiptapDoc', () => {
         },
       ],
     };
+
+    // Act
     const doc = studyNotesResultToTiptapDoc(input) as {
       type: string;
       content: Array<Record<string, unknown>>;
     };
+
+    // Assert
     expect(doc.type).toBe('doc');
     expect(doc.content).toHaveLength(3);
     expect(doc.content[0]).toMatchObject({
@@ -33,27 +38,39 @@ describe('studyNotesResultToTiptapDoc', () => {
   });
 
   it('returns empty paragraph when blocks are empty', () => {
-    const doc = studyNotesResultToTiptapDoc({
+    // Arrange
+    const input: AudioNoteStudyResult = {
       title: 'T',
       blocks: [],
-    }) as { content: unknown[] };
+    };
+
+    // Act
+    const doc = studyNotesResultToTiptapDoc(input) as { content: unknown[] };
+
+    // Assert
     expect(doc.content).toHaveLength(1);
     expect(doc.content[0]).toMatchObject({ type: 'paragraph', content: [] });
   });
 
   it('prepends noteAudio when recording attachment is provided', () => {
-    const doc = studyNotesResultToTiptapDoc(
-      {
-        title: 'T',
-        blocks: [{ type: 'paragraph', text: 'Body' }],
+    // Arrange
+    const input: AudioNoteStudyResult = {
+      title: 'T',
+      blocks: [{ type: 'paragraph', text: 'Body' }],
+    };
+    const options = {
+      recording: {
+        attachmentId: '00000000-0000-4000-8000-000000000001',
+        filename: 'recording.webm',
       },
-      {
-        recording: {
-          attachmentId: '00000000-0000-4000-8000-000000000001',
-          filename: 'recording.webm',
-        },
-      },
-    ) as { content: Array<Record<string, unknown>> };
+    };
+
+    // Act
+    const doc = studyNotesResultToTiptapDoc(input, options) as {
+      content: Array<Record<string, unknown>>;
+    };
+
+    // Assert
     expect(doc.content[0]).toMatchObject({
       type: 'noteAudio',
       attrs: {

@@ -65,19 +65,39 @@ describe('parseAppNavFromLocation', () => {
   });
 
   it('hashForScreen maps notFound to canonical #/404', () => {
+    // Arrange
+    const screen = { kind: 'notFound' as const };
+    const expectedHash = '#/404';
+
     // Act
-    const href = hashForScreen({ kind: 'notFound' });
+    const href = hashForScreen(screen);
 
     // Assert
-    expect(href).toBe('#/404');
+    expect(href).toBe(expectedHash);
   });
 
   it('hashForScreen maps login to Clerk hash #/sign-in', () => {
-    expect(hashForScreen({ kind: 'login' })).toBe('#/sign-in');
+    // Arrange
+    const screen = { kind: 'login' as const };
+    const expectedHash = '#/sign-in';
+
+    // Act
+    const result = hashForScreen(screen);
+
+    // Assert
+    expect(result).toBe(expectedHash);
   });
 
   it('hashForScreen maps signup to Clerk hash #/sign-up', () => {
-    expect(hashForScreen({ kind: 'signup' })).toBe('#/sign-up');
+    // Arrange
+    const screen = { kind: 'signup' as const };
+    const expectedHash = '#/sign-up';
+
+    // Act
+    const result = hashForScreen(screen);
+
+    // Assert
+    expect(result).toBe(expectedHash);
   });
 
   it('returns login when hash is #/login', () => {
@@ -196,33 +216,63 @@ describe('parseAppNavFromLocation', () => {
   });
 
   it('returns login when hash uses Clerk hyphenated #/sign-in', () => {
-    stubWindowHash('#/sign-in');
+    // Arrange
+    const hash = '#/sign-in';
+    stubWindowHash(hash);
 
-    expect(parseAppNavFromLocation()).toEqual({ kind: 'login' });
+    // Act
+    const result = parseAppNavFromLocation();
+
+    // Assert
+    expect(result).toEqual({ kind: 'login' });
   });
 
   it('returns login for #/sign-in/verify-email-code', () => {
-    stubWindowHash('#/sign-in/verify-email-code');
+    // Arrange
+    const hash = '#/sign-in/verify-email-code';
+    stubWindowHash(hash);
 
-    expect(parseAppNavFromLocation()).toEqual({ kind: 'login' });
+    // Act
+    const result = parseAppNavFromLocation();
+
+    // Assert
+    expect(result).toEqual({ kind: 'login' });
   });
 
   it('returns signup when hash uses Clerk hyphenated #/sign-up', () => {
-    stubWindowHash('#/sign-up');
+    // Arrange
+    const hash = '#/sign-up';
+    stubWindowHash(hash);
 
-    expect(parseAppNavFromLocation()).toEqual({ kind: 'signup' });
+    // Act
+    const result = parseAppNavFromLocation();
+
+    // Assert
+    expect(result).toEqual({ kind: 'signup' });
   });
 
   it('returns signup for #/sign-up/verify-email-address', () => {
-    stubWindowHash('#/sign-up/verify-email-address');
+    // Arrange
+    const hash = '#/sign-up/verify-email-address';
+    stubWindowHash(hash);
 
-    expect(parseAppNavFromLocation()).toEqual({ kind: 'signup' });
+    // Act
+    const result = parseAppNavFromLocation();
+
+    // Assert
+    expect(result).toEqual({ kind: 'signup' });
   });
 
   it('returns signup when hash has query after #/sign-up', () => {
-    stubWindowHash('#/sign-up?redirect_url=%2F');
+    // Arrange
+    const hash = '#/sign-up?redirect_url=%2F';
+    stubWindowHash(hash);
 
-    expect(parseAppNavFromLocation()).toEqual({ kind: 'signup' });
+    // Act
+    const result = parseAppNavFromLocation();
+
+    // Assert
+    expect(result).toEqual({ kind: 'signup' });
   });
 
   it('returns notFound when note path has invalid uuid', () => {

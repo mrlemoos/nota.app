@@ -17,18 +17,6 @@ describe('fetchNoteRowAndAttachmentsParallel', () => {
     const listNoteAttachments = vi.fn(() => Promise.resolve([]));
 
     const getNote = vi.fn(() => getNoteDeferred);
-
-    // Act
-    const resultPromise = fetchNoteRowAndAttachmentsParallel(client, noteId, {
-      getNote,
-      listNoteAttachments,
-    });
-
-    // Assert
-    expect(listNoteAttachments).toHaveBeenCalledWith(client, noteId);
-    expect(getNote).toHaveBeenCalledWith(client, noteId);
-
-    // Arrange
     const row: Note = {
       id: noteId,
       user_id: 'u1',
@@ -40,6 +28,16 @@ describe('fetchNoteRowAndAttachmentsParallel', () => {
       is_deadline: false,
       editor_settings: {},
     } as Note;
+
+    // Act
+    const resultPromise = fetchNoteRowAndAttachmentsParallel(client, noteId, {
+      getNote,
+      listNoteAttachments,
+    });
+
+    // Assert
+    expect(listNoteAttachments).toHaveBeenCalledWith(client, noteId);
+    expect(getNote).toHaveBeenCalledWith(client, noteId);
 
     // Act
     resolveGet(row);

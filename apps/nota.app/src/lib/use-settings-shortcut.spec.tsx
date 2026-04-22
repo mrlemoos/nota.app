@@ -26,13 +26,10 @@ describe('useSettingsShortcut', () => {
   it('navigates to settings when Mod+comma is pressed', () => {
     // Arrange
     render(<Harness userId="user-1" />);
+    const keyEvent = { key: ',', metaKey: true, bubbles: true };
 
     // Act
-    fireEvent.keyDown(document, {
-      key: ',',
-      metaKey: true,
-      bubbles: true,
-    });
+    fireEvent.keyDown(document, keyEvent);
 
     // Assert
     expect(vi.mocked(setAppHash)).toHaveBeenCalledTimes(1);
@@ -46,13 +43,10 @@ describe('useSettingsShortcut', () => {
   it('navigates to settings when Ctrl+comma is pressed', () => {
     // Arrange
     render(<Harness userId="user-1" />);
+    const keyEvent = { key: ',', ctrlKey: true, bubbles: true };
 
     // Act
-    fireEvent.keyDown(document, {
-      key: ',',
-      ctrlKey: true,
-      bubbles: true,
-    });
+    fireEvent.keyDown(document, keyEvent);
 
     // Assert
     expect(vi.mocked(setAppHash)).toHaveBeenCalledWith({
@@ -65,13 +59,10 @@ describe('useSettingsShortcut', () => {
   it('does nothing without a signed-in user', () => {
     // Arrange
     render(<Harness userId={undefined} />);
+    const keyEvent = { key: ',', metaKey: true, bubbles: true };
 
     // Act
-    fireEvent.keyDown(document, {
-      key: ',',
-      metaKey: true,
-      bubbles: true,
-    });
+    fireEvent.keyDown(document, keyEvent);
 
     // Assert
     expect(vi.mocked(setAppHash)).not.toHaveBeenCalled();
@@ -80,13 +71,10 @@ describe('useSettingsShortcut', () => {
   it('does nothing when the shortcut hook is disabled', () => {
     // Arrange
     render(<Harness userId="user-1" enabled={false} />);
+    const keyEvent = { key: ',', metaKey: true, bubbles: true };
 
     // Act
-    fireEvent.keyDown(document, {
-      key: ',',
-      metaKey: true,
-      bubbles: true,
-    });
+    fireEvent.keyDown(document, keyEvent);
 
     // Assert
     expect(vi.mocked(setAppHash)).not.toHaveBeenCalled();
@@ -106,13 +94,10 @@ describe('useSettingsShortcut', () => {
       '[data-testid="palette-input"]',
     ) as HTMLInputElement;
     input.focus();
+    const keyEvent = { key: ',', metaKey: true, bubbles: true };
 
     // Act
-    fireEvent.keyDown(input, {
-      key: ',',
-      metaKey: true,
-      bubbles: true,
-    });
+    fireEvent.keyDown(input, keyEvent);
 
     // Assert
     expect(vi.mocked(setAppHash)).not.toHaveBeenCalled();

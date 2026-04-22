@@ -40,12 +40,13 @@ describe('TipTap table', () => {
   it('insertTable produces table and tableCell nodes in JSON', () => {
     // Arrange
     const editor = createEditorWithTable();
+    const tableConfig = { rows: 2, cols: 2, withHeaderRow: true };
 
     // Act
     editor
       .chain()
       .focus()
-      .insertTable({ rows: 2, cols: 2, withHeaderRow: true })
+      .insertTable(tableConfig)
       .run();
     const types = collectTypes(editor.getJSON());
 
@@ -59,15 +60,17 @@ describe('TipTap table', () => {
   it('round-trips table document JSON through setContent', () => {
     // Arrange
     const editor = createEditorWithTable();
+    const tableConfig = { rows: 2, cols: 2, withHeaderRow: false };
+    const parseAsHtml = false;
     editor
       .chain()
       .focus()
-      .insertTable({ rows: 2, cols: 2, withHeaderRow: false })
+      .insertTable(tableConfig)
       .run();
     const snapshot = editor.getJSON();
 
     // Act
-    editor.commands.setContent(snapshot, false);
+    editor.commands.setContent(snapshot, parseAsHtml);
     const after = collectTypes(editor.getJSON());
 
     // Assert

@@ -23,12 +23,12 @@ describe('app-load-url', () => {
 
   it('resolveMainWindowLoadUrl uses local Vite port in dev and hosted URL when packaged', () => {
     // Arrange
-    const isDevTrue = true;
-    const isDevFalse = false;
+    const isDevelopment = true;
+    const isProduction = false;
 
     // Act
-    const devUrl = resolveMainWindowLoadUrl(isDevTrue);
-    const prodUrl = resolveMainWindowLoadUrl(isDevFalse);
+    const devUrl = resolveMainWindowLoadUrl(isDevelopment);
+    const prodUrl = resolveMainWindowLoadUrl(isProduction);
 
     // Assert
     expect(devUrl).toBe(`http://localhost:${DEV_PORT}`);
@@ -37,12 +37,12 @@ describe('app-load-url', () => {
 
   it('ssoCallbackBaseUrl matches load URL host without trailing slash for packaged', () => {
     // Arrange
-    const isDevTrue = true;
-    const isDevFalse = false;
+    const isDevelopment = true;
+    const isProduction = false;
 
     // Act
-    const devBase = ssoCallbackBaseUrl(isDevTrue);
-    const prodBase = ssoCallbackBaseUrl(isDevFalse);
+    const devBase = ssoCallbackBaseUrl(isDevelopment);
+    const prodBase = ssoCallbackBaseUrl(isProduction);
 
     // Assert
     expect(devBase).toBe(`http://localhost:${DEV_PORT}`);

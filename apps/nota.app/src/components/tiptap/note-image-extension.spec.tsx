@@ -43,16 +43,20 @@ describe('NoteImageNodeView', () => {
   it('keeps the signed-in image toolbar classes for hover and focus-within', () => {
     // Arrange
     const attId = 'att-1';
-    const att = baseAttachment(attId, 'photo.png');
+    const noteId = 'note-1';
+    const userId = 'user-1';
+    const filename = 'photo.png';
+    const isSelected = false;
+    const att = baseAttachment(attId, filename);
     const ctx: NotePdfDocContextValue = {
-      noteId: 'note-1',
-      userId: 'user-1',
+      noteId,
+      userId,
       attachmentsById: new Map([[attId, att]]),
       revalidate: () => {},
     };
     const props = {
-      node: { attrs: { attachmentId: attId, filename: 'photo.png' } },
-      selected: false,
+      node: { attrs: { attachmentId: attId, filename } },
+      selected: isSelected,
       deleteNode: vi.fn(),
     } as unknown as NodeViewProps;
 
@@ -71,16 +75,20 @@ describe('NoteImageNodeView', () => {
   it('left-aligns the loaded image and does not use full card chrome on the block', async () => {
     // Arrange
     const attId = 'att-2';
-    const att = baseAttachment(attId, 'wide.png');
+    const noteId = 'note-1';
+    const userId = 'user-1';
+    const filename = 'wide.png';
+    const isSelected = false;
+    const att = baseAttachment(attId, filename);
     const ctx: NotePdfDocContextValue = {
-      noteId: 'note-1',
-      userId: 'user-1',
+      noteId,
+      userId,
       attachmentsById: new Map([[attId, att]]),
       revalidate: () => {},
     };
     const props = {
-      node: { attrs: { attachmentId: attId, filename: 'wide.png' } },
-      selected: false,
+      node: { attrs: { attachmentId: attId, filename } },
+      selected: isSelected,
       deleteNode: vi.fn(),
     } as unknown as NodeViewProps;
 
@@ -106,18 +114,22 @@ describe('NoteImageNodeView', () => {
   it('centre-aligns the image row when align is centre', async () => {
     // Arrange
     const attId = 'att-centre';
-    const att = baseAttachment(attId, 'pic.png');
+    const noteId = 'note-1';
+    const userId = 'user-1';
+    const filename = 'pic.png';
+    const isSelected = false;
+    const att = baseAttachment(attId, filename);
     const ctx: NotePdfDocContextValue = {
-      noteId: 'note-1',
-      userId: 'user-1',
+      noteId,
+      userId,
       attachmentsById: new Map([[attId, att]]),
       revalidate: () => {},
     };
     const props = {
       node: {
-        attrs: { attachmentId: attId, filename: 'pic.png', align: 'center' },
+        attrs: { attachmentId: attId, filename, align: 'center' },
       },
-      selected: false,
+      selected: isSelected,
       deleteNode: vi.fn(),
     } as unknown as NodeViewProps;
 
@@ -134,18 +146,22 @@ describe('NoteImageNodeView', () => {
   it('right-aligns the image row when align is right', async () => {
     // Arrange
     const attId = 'att-right';
-    const att = baseAttachment(attId, 'pic.png');
+    const noteId = 'note-1';
+    const userId = 'user-1';
+    const filename = 'pic.png';
+    const isSelected = false;
+    const att = baseAttachment(attId, filename);
     const ctx: NotePdfDocContextValue = {
-      noteId: 'note-1',
-      userId: 'user-1',
+      noteId,
+      userId,
       attachmentsById: new Map([[attId, att]]),
       revalidate: () => {},
     };
     const props = {
       node: {
-        attrs: { attachmentId: attId, filename: 'pic.png', align: 'right' },
+        attrs: { attachmentId: attId, filename, align: 'right' },
       },
-      selected: false,
+      selected: isSelected,
       deleteNode: vi.fn(),
     } as unknown as NodeViewProps;
 
@@ -161,15 +177,20 @@ describe('NoteImageNodeView', () => {
 
   it('always shows missing-file controls (not hover-gated)', () => {
     // Arrange
+    const noteId = 'note-1';
+    const userId = 'user-1';
+    const attachmentId = 'unknown';
+    const filename = 'gone.png';
+    const isSelected = false;
     const ctx: NotePdfDocContextValue = {
-      noteId: 'note-1',
-      userId: 'user-1',
+      noteId,
+      userId,
       attachmentsById: new Map(),
       revalidate: () => {},
     };
     const props = {
-      node: { attrs: { attachmentId: 'unknown', filename: 'gone.png' } },
-      selected: false,
+      node: { attrs: { attachmentId, filename } },
+      selected: isSelected,
       deleteNode: vi.fn(),
     } as unknown as NodeViewProps;
 

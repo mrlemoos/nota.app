@@ -4,7 +4,7 @@ import { isShellPathnameAllowed } from './pathname-policy';
 describe('isShellPathnameAllowed', () => {
   it('allows the SPA shell and static prefixes', () => {
     // Arrange
-    const paths = [
+    const allowedPaths = [
       '/',
       '/index.html',
       '/favicon.svg',
@@ -15,7 +15,7 @@ describe('isShellPathnameAllowed', () => {
     ];
 
     // Act
-    const results = paths.map((p) => isShellPathnameAllowed(p));
+    const results = allowedPaths.map((p) => isShellPathnameAllowed(p));
 
     // Assert
     expect(results.every(Boolean)).toBe(true);
@@ -23,10 +23,10 @@ describe('isShellPathnameAllowed', () => {
 
   it('rejects unknown pathnames', () => {
     // Arrange
-    const paths = ['/typo', '/blog/post', '/api'];
+    const rejectedPaths = ['/typo', '/blog/post', '/api'];
 
     // Act
-    const results = paths.map((p) => isShellPathnameAllowed(p));
+    const results = rejectedPaths.map((p) => isShellPathnameAllowed(p));
 
     // Assert
     expect(results.every((allowed) => !allowed)).toBe(true);

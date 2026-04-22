@@ -35,11 +35,14 @@ describe('NotaSmilieReplacer', () => {
 
   it('replaces :-) with emoji when the gate is enabled', async () => {
     // Arrange
-    setNotaSmilieReplacerEnabled(true);
+    const gateEnabled = true;
+    setNotaSmilieReplacerEnabled(gateEnabled);
     const editor = createEditorWithSmilieReplacer();
+    const smilieText = ':-) ';
+    const insertOptions = { applyInputRules: true };
 
     // Act
-    editor.chain().focus('end').insertContent(':-) ', { applyInputRules: true }).run();
+    editor.chain().focus('end').insertContent(smilieText, insertOptions).run();
     await flushInputRuleMacrotask();
     const text = editor.getText();
 
@@ -50,11 +53,14 @@ describe('NotaSmilieReplacer', () => {
 
   it('does not replace when the gate is disabled', async () => {
     // Arrange
-    setNotaSmilieReplacerEnabled(false);
+    const gateEnabled = false;
+    setNotaSmilieReplacerEnabled(gateEnabled);
     const editor = createEditorWithSmilieReplacer();
+    const smilieText = ':-) ';
+    const insertOptions = { applyInputRules: true };
 
     // Act
-    editor.chain().focus('end').insertContent(':-) ', { applyInputRules: true }).run();
+    editor.chain().focus('end').insertContent(smilieText, insertOptions).run();
     await flushInputRuleMacrotask();
     const text = editor.getText();
 

@@ -114,7 +114,8 @@ vi.mock('../hooks/use-audio-note-pending-drain', () => ({
 describe('NotesShell', () => {
   it('caps the notes sidebar width on first paint so long titles do not expand the column', () => {
     // Arrange
-    window.history.replaceState(null, '', '#/notes');
+    const navigationHash = '#/notes';
+    window.history.replaceState(null, '', navigationHash);
 
     // Act
     const { container } = render(<NotesShell />);

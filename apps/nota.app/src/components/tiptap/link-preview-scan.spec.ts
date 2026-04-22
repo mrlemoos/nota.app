@@ -35,15 +35,16 @@ describe('convertLinkOnlyParagraphs', () => {
     const editor = createTestEditor('<p></p>');
     const previewType = editor.schema.nodes.linkPreview;
     expect(previewType).toBeTruthy();
-
-    // Act
-    const node = previewType?.create({
+    const attrs = {
       href: 'https://example.com/p',
       linkText: 'Hello',
       title: '',
       description: '',
       image: '',
-    });
+    };
+
+    // Act
+    const node = previewType?.create(attrs);
 
     // Assert
     expect(node?.attrs['href']).toBe('https://example.com/p');
@@ -52,7 +53,7 @@ describe('convertLinkOnlyParagraphs', () => {
 
   it('does not promote a link-only paragraph when skipLinkPreview is set', () => {
     // Arrange
-    const editor = createTestEditor({
+    const doc: JSONContent = {
       type: 'doc',
       content: [
         {
@@ -77,7 +78,8 @@ describe('convertLinkOnlyParagraphs', () => {
           ],
         },
       ],
-    });
+    };
+    const editor = createTestEditor(doc);
     const before = editor.getJSON();
 
     // Act
@@ -90,9 +92,10 @@ describe('convertLinkOnlyParagraphs', () => {
   });
 
   it('does not promote a link-only paragraph when href is an internal note path', () => {
+    // Arrange
     const noteId = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
     const href = `/notes/${noteId}`;
-    const editor = createTestEditor({
+    const doc: JSONContent = {
       type: 'doc',
       content: [
         {
@@ -117,11 +120,14 @@ describe('convertLinkOnlyParagraphs', () => {
           ],
         },
       ],
-    });
+    };
+    const editor = createTestEditor(doc);
     const before = editor.getJSON();
 
+    // Act
     convertLinkOnlyParagraphs(editor);
 
+    // Assert
     expect(editor.getJSON()).toEqual(before);
     editor.destroy();
   });
@@ -159,7 +165,7 @@ describe('convertLinkOnlyParagraphs', () => {
 describe('revertLinkPreviewToParagraph', () => {
   it('replaces linkPreview with a paragraph link using linkText and skipLinkPreview', () => {
     // Arrange
-    const editor = createTestEditor({
+    const doc: JSONContent = {
       type: 'doc',
       content: [
         {
@@ -173,7 +179,8 @@ describe('revertLinkPreviewToParagraph', () => {
           },
         },
       ],
-    });
+    };
+    const editor = createTestEditor(doc);
     let previewPos = -1;
     editor.state.doc.descendants((node, pos) => {
       if (node.type.name === 'linkPreview') {
@@ -189,7 +196,7 @@ describe('revertLinkPreviewToParagraph', () => {
 
     // Assert
     expect(ok).toBe(true);
-    const doc = editor.getJSON() as {
+    const resultDoc = editor.getJSON() as {
       content?: Array<{
         type: string;
         content?: Array<{
@@ -199,7 +206,7 @@ describe('revertLinkPreviewToParagraph', () => {
         }>;
       }>;
     };
-    const p = doc.content?.[0];
+    const p = resultDoc.content?.[0];
     expect(p?.type).toBe('paragraph');
     expect(p?.content?.[0]?.text).toBe('My label');
     expect(p?.content?.[0]?.marks?.[0]?.type).toBe('link');
@@ -211,7 +218,7 @@ describe('revertLinkPreviewToParagraph', () => {
 
   it('uses href as visible text when linkText is empty', () => {
     // Arrange
-    const editor = createTestEditor({
+    const doc: JSONContent = {
       type: 'doc',
       content: [
         {
@@ -225,7 +232,8 @@ describe('revertLinkPreviewToParagraph', () => {
           },
         },
       ],
-    });
+    };
+    const editor = createTestEditor(doc);
     let previewPos = -1;
     editor.state.doc.descendants((node, pos) => {
       if (node.type.name === 'linkPreview') {
@@ -239,12 +247,12 @@ describe('revertLinkPreviewToParagraph', () => {
     revertLinkPreviewToParagraph(editor, () => previewPos);
 
     // Assert
-    const doc = editor.getJSON() as {
+    const resultDoc = editor.getJSON() as {
       content?: Array<{
         content?: Array<{ text?: string }>;
       }>;
     };
-    expect(doc.content?.[0]?.content?.[0]?.text).toBe('https://example.com/y');
+    expect(resultDoc.content?.[0]?.content?.[0]?.text).toBe('https://example.com/y');
 
     editor.destroy();
   });

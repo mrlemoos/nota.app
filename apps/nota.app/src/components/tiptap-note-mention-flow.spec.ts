@@ -106,7 +106,7 @@ describe('tiptap-note-mention-flow', () => {
   describe('insertNoteLinkAtMentionRange', () => {
     it('inserts an internal note link for the given range', () => {
       // Arrange
-      const editor = createEditorWithNotaLink({
+      const docContent: JSONContent = {
         type: 'doc',
         content: [
           {
@@ -114,7 +114,8 @@ describe('tiptap-note-mention-flow', () => {
             content: [{ type: 'text', text: 'Hi @me' }],
           },
         ],
-      });
+      };
+      const editor = createEditorWithNotaLink(docContent);
       try {
         editor.commands.setTextSelection(editor.state.doc.content.size - 1);
 
@@ -142,7 +143,8 @@ describe('tiptap-note-mention-flow', () => {
   describe('tryConfirmNoteMention', () => {
     it('returns false when attachments are disabled', () => {
       // Arrange
-      const editor = createEditorWithNotaLink('<p>x</p>');
+      const initialContent = '<p>x</p>';
+      const editor = createEditorWithNotaLink(initialContent);
       try {
         const setMention = vi.fn();
         const refs = buildRefs({ canInsert: false });
@@ -161,7 +163,8 @@ describe('tiptap-note-mention-flow', () => {
 
     it('returns false when there is no @ mention trigger', () => {
       // Arrange
-      const editor = createEditorWithNotaLink('<p>no mention here</p>');
+      const initialContent = '<p>no mention here</p>';
+      const editor = createEditorWithNotaLink(initialContent);
       try {
         editor.commands.setTextSelection(editor.state.doc.content.size - 1);
         const setMention = vi.fn();
@@ -180,7 +183,8 @@ describe('tiptap-note-mention-flow', () => {
 
     it('returns false when the filtered candidate list is empty', () => {
       // Arrange
-      const editor = createEditorWithNotaLink('<p>Hello @me</p>');
+      const initialContent = '<p>Hello @me</p>';
+      const editor = createEditorWithNotaLink(initialContent);
       try {
         editor.commands.setTextSelection(editor.state.doc.content.size - 1);
         const setMention = vi.fn();
@@ -199,7 +203,8 @@ describe('tiptap-note-mention-flow', () => {
 
     it('returns false and does not clear mention when insert fails (no link mark)', () => {
       // Arrange
-      const editor = createEditorStarterKitOnly('<p>Hello @me</p>');
+      const initialContent = '<p>Hello @me</p>';
+      const editor = createEditorStarterKitOnly(initialContent);
       try {
         editor.commands.setTextSelection(editor.state.doc.content.size - 1);
         const setMention = vi.fn();
@@ -218,7 +223,8 @@ describe('tiptap-note-mention-flow', () => {
 
     it('clears mention state when insert succeeds', () => {
       // Arrange
-      const editor = createEditorWithNotaLink('<p>Hello @me</p>');
+      const initialContent = '<p>Hello @me</p>';
+      const editor = createEditorWithNotaLink(initialContent);
       try {
         editor.commands.setTextSelection(editor.state.doc.content.size - 1);
         const setMention = vi.fn();

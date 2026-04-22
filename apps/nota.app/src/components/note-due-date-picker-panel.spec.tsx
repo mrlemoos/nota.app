@@ -156,14 +156,18 @@ describe('NoteDueDatePickerPanel', () => {
     // Arrange
     const onSave = vi.fn().mockResolvedValue(undefined);
     const localMidnight = new Date(2031, 2, 15, 0, 0, 0, 0);
+    const draftKey = '0-10';
+    const initialNaturalLanguageText = 'next Friday';
+    const persistedDueAt = localMidnight.toISOString();
+    const persistedIsDeadline = false;
 
     // Act
     render(
       <NoteDueDatePickerPanel
-        draftKey="0-10"
-        initialNaturalLanguageText="next Friday"
-        persistedDueAt={localMidnight.toISOString()}
-        persistedIsDeadline={false}
+        draftKey={draftKey}
+        initialNaturalLanguageText={initialNaturalLanguageText}
+        persistedDueAt={persistedDueAt}
+        persistedIsDeadline={persistedIsDeadline}
         onSave={onSave}
       />,
     );
@@ -176,15 +180,19 @@ describe('NoteDueDatePickerPanel', () => {
   it('does not nest a form inside a parent form', () => {
     // Arrange
     const onSave = vi.fn().mockResolvedValue(undefined);
+    const draftKey = '0-0';
+    const initialNaturalLanguageText = '';
+    const persistedDueAt = null;
+    const persistedIsDeadline = false;
 
     // Act
     const { container } = render(
       <form data-testid="outer-form">
         <NoteDueDatePickerPanel
-          draftKey="0-0"
-          initialNaturalLanguageText=""
-          persistedDueAt={null}
-          persistedIsDeadline={false}
+          draftKey={draftKey}
+          initialNaturalLanguageText={initialNaturalLanguageText}
+          persistedDueAt={persistedDueAt}
+          persistedIsDeadline={persistedIsDeadline}
           onSave={onSave}
         />
       </form>,

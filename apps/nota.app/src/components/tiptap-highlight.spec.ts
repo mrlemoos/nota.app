@@ -23,7 +23,7 @@ describe('TipTap highlight', () => {
   it('toggleHighlight adds highlight mark to selected text in JSON', () => {
     // Arrange
     const editor = createEditorWithHighlight();
-    editor.commands.setContent({
+    const testContent = {
       type: 'doc',
       content: [
         {
@@ -31,7 +31,8 @@ describe('TipTap highlight', () => {
           content: [{ type: 'text', text: 'Hello' }],
         },
       ],
-    });
+    };
+    editor.commands.setContent(testContent);
 
     // Act
     editor.chain().focus().selectAll().toggleHighlight().run();
@@ -47,17 +48,19 @@ describe('TipTap highlight', () => {
   it('round-trips highlight document JSON through setContent', () => {
     // Arrange
     const editor = createEditorWithHighlight();
-    editor.commands.setContent({
+    const testContent = {
       type: 'doc',
       content: [
         { type: 'paragraph', content: [{ type: 'text', text: 'Hi' }] },
       ],
-    });
+    };
+    const parseAsHtml = false;
+    editor.commands.setContent(testContent);
     editor.chain().focus().selectAll().toggleHighlight().run();
     const snapshot = editor.getJSON();
 
     // Act
-    editor.commands.setContent(snapshot, false);
+    editor.commands.setContent(snapshot, parseAsHtml);
 
     // Assert
     expect(JSON.stringify(editor.getJSON())).toContain('"type":"highlight"');

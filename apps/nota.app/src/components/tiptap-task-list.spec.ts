@@ -53,11 +53,12 @@ describe('TipTap task list', () => {
   it('round-trips task list document JSON through setContent', () => {
     // Arrange
     const editor = createEditorWithTaskList();
+    const parseAsHtml = false;
     editor.chain().focus().toggleTaskList().run();
     const snapshot = editor.getJSON();
 
     // Act
-    editor.commands.setContent(snapshot, false);
+    editor.commands.setContent(snapshot, parseAsHtml);
     const after = collectTypes(editor.getJSON());
 
     // Assert
