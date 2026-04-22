@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useId,
   useState,
   type JSX,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -35,38 +36,67 @@ function startOfLocalDay(d: Date): Date {
   return next;
 }
 
-function defaultTimeWhenEnablingDateOnly(d: Date): Date {
-  const next = new Date(d);
-  if (
-    next.getHours() === 0 &&
-    next.getMinutes() === 0 &&
-    next.getSeconds() === 0 &&
-    next.getMilliseconds() === 0
-  ) {
-    next.setHours(9, 0, 0, 0);
-  }
-  return next;
+/** True when the instant is exactly local midnight (saved date-only due_at round-trips as this). */
+export function dueInstantIsLocalStartOfDay(d: Date): boolean {
+  return (
+    d.getHours() === 0 &&
+    d.getMinutes() === 0 &&
+    d.getSeconds() === 0 &&
+    d.getMilliseconds() === 0
+  );
 }
 
-/** Keeps the ProseMirror selection when clicking bubble controls (not text fields). */
+/**
+ * Whether the time row should start checked: default true for NL-only workflow;
+ * false when persisted due is local midnight (date-only); true when any non-zero local time.
+ */
+export function initialIncludeTimeFromPersisted(persistedDueAt: string | null): boolean {
+  if (!persistedDueAt) {
+    return true;
+  }
+  const d = new Date(persistedDueAt);
+  if (Number.isNaN(d.getTime())) {
+    return true;
+  }
+  return !dueInstantIsLocalStartOfDay(d);
+}
+
+/** DayPicker days/nav, shadcn buttons, checkbox rows (label+span), links, etc. */
+export function isInteractiveBubbleTarget(el: Element): boolean {
+  if (el instanceof HTMLElement) {
+    if (el.tagName === 'TEXTAREA' || el.isContentEditable) {
+      return true;
+    }
+    if (el.tagName === 'INPUT') {
+      const type = (el as HTMLInputElement).type;
+      if (
+        type === 'text' ||
+        type === 'search' ||
+        type === 'time' ||
+        type === 'checkbox'
+      ) {
+        return true;
+      }
+    }
+  }
+  return Boolean(
+    el.closest('button') ||
+      el.closest('[role="button"]') ||
+      el.closest('[role="gridcell"]') ||
+      el.closest('label') ||
+      el.closest('a[href]') ||
+      el.closest('select'),
+  );
+}
+
+/** Keeps the ProseMirror selection when clicking bubble chrome (not interactive controls). */
 export function keepBubbleSelectionUnlessTextField(e: ReactMouseEvent) {
   const t = e.target;
-  if (!(t instanceof HTMLElement)) {
+  if (!(t instanceof Element)) {
     return;
   }
-  if (t.tagName === 'TEXTAREA' || t.isContentEditable) {
+  if (isInteractiveBubbleTarget(t)) {
     return;
-  }
-  if (t.tagName === 'INPUT') {
-    const type = (t as HTMLInputElement).type;
-    if (
-      type === 'text' ||
-      type === 'search' ||
-      type === 'time' ||
-      type === 'checkbox'
-    ) {
-      return;
-    }
   }
   e.preventDefault();
   e.stopPropagation();
@@ -96,6 +126,8 @@ export function NoteDueDatePickerPanel({
   disabled,
   onSave,
 }: NoteDueDatePickerPanelProps): JSX.Element {
+  const includeTimeCheckboxId = useId();
+  const deadlineCheckboxId = useId();
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [draftDeadline, setDraftDeadline] = useState(false);
   const [includeTime, setIncludeTime] = useState(true);
@@ -106,14 +138,31 @@ export function NoteDueDatePickerPanel({
   useEffect(() => {
     const ref = new Date();
     const trimmed = initialNaturalLanguageText.trim();
+    const parsedNl = firstDateFromText(initialNaturalLanguageText, ref);
     setNlInput(initialNaturalLanguageText);
-    setIncludeTime(true);
-    const parsed = firstDateFromText(initialNaturalLanguageText, ref);
-    setSelectedDate(parsed);
+
+    let nextSelected: Date | null = null;
+    let nextIncludeTime = true;
+
+    if (persistedDueAt) {
+      const fromPersisted = new Date(persistedDueAt);
+      if (!Number.isNaN(fromPersisted.getTime())) {
+        nextSelected = fromPersisted;
+        nextIncludeTime = initialIncludeTimeFromPersisted(persistedDueAt);
+      }
+    }
+
+    if (!nextSelected) {
+      nextSelected = parsedNl;
+      nextIncludeTime = true;
+    }
+
+    setSelectedDate(nextSelected);
+    setIncludeTime(nextIncludeTime);
     setDraftDeadline(Boolean(persistedIsDeadline && persistedDueAt));
     if (!trimmed) {
       setNlError(null);
-    } else if (!parsed) {
+    } else if (!parsedNl) {
       setNlError('Could not parse a date from that text.');
     } else {
       setNlError(null);
@@ -223,8 +272,9 @@ export function NoteDueDatePickerPanel({
         />
       </div>
 
-      <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm">
+      <div className="mt-2 flex items-center gap-2 text-sm">
         <input
+          id={includeTimeCheckboxId}
           type="checkbox"
           checked={includeTime}
           disabled={!selectedDate || saving || disabled}
@@ -233,14 +283,17 @@ export function NoteDueDatePickerPanel({
             setIncludeTime(on);
             if (!on) {
               setSelectedDate((d) => (d ? startOfLocalDay(d) : d));
-            } else {
-              setSelectedDate((d) => (d ? defaultTimeWhenEnablingDateOnly(d) : d));
             }
           }}
-          className="size-3.5 rounded border-input accent-primary"
+          className="size-3.5 cursor-pointer rounded border-input accent-primary"
         />
-        <span>Include time</span>
-      </label>
+        <label
+          htmlFor={includeTimeCheckboxId}
+          className="cursor-pointer select-none"
+        >
+          Include time
+        </label>
+      </div>
 
       {includeTime ? (
         <div className="mt-2">
@@ -262,16 +315,19 @@ export function NoteDueDatePickerPanel({
         </div>
       ) : null}
 
-      <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm">
+      <div className="mt-3 flex items-center gap-2 text-sm">
         <input
+          id={deadlineCheckboxId}
           type="checkbox"
           checked={draftDeadline}
           disabled={!selectedDate || saving || disabled}
           onChange={(e) => setDraftDeadline(e.target.checked)}
-          className="size-3.5 rounded border-input accent-primary"
+          className="size-3.5 cursor-pointer rounded border-input accent-primary"
         />
-        <span
+        <label
+          htmlFor={deadlineCheckboxId}
           className={cn(
+            'cursor-pointer select-none',
             draftDeadline &&
               selectedDate &&
               selectedDate.getTime() < now.getTime() &&
@@ -279,8 +335,8 @@ export function NoteDueDatePickerPanel({
           )}
         >
           Deadline
-        </span>
-      </label>
+        </label>
+      </div>
 
       <div className="mt-4 flex flex-wrap justify-end gap-2">
         <Button

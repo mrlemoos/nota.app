@@ -64,6 +64,7 @@ export function NoteDueDateBubbleMenu({
     <BubbleMenu
       editor={editor}
       pluginKey="notaDueDateBubble"
+      updateDelay={0}
       shouldShow={({ editor: ed }) => {
         if (ed.isActive('table')) {
           return false;
