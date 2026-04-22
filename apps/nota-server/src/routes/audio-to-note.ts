@@ -1,12 +1,15 @@
 import type { Request, Response } from 'express';
 import { getUserIdFromBearer } from '../auth.ts';
 import { getServerNotaProEntitled } from '../lib/clerk-billing.server.ts';
+import { isAllowedAudioUploadMime } from '../lib/audio-upload.server.ts';
 import {
   buildStudyNotesSystemPrompt,
   fallbackStudyNotesFromTranscript,
   parseStudyNotesJson,
+  sanitizeAudioToNoteTextField,
   transcribeAudioWithXai,
   streamXaiChatCompletion,
+  transcriptUserMessage,
   type StudyNotesResult,
 } from '../lib/xai-audio-note.server.ts';
 
@@ -19,23 +22,6 @@ function bearerWebRequest(req: Request): globalThis.Request {
 function sseWrite(res: Response, event: string, data: unknown): void {
   res.write(`event: ${event}\n`);
   res.write(`data: ${JSON.stringify(data)}\n\n`);
-}
-
-const ALLOWED_MIME = new Set([
-  'audio/webm',
-  'audio/mp4',
-  'audio/mpeg',
-  'audio/wav',
-  'audio/x-m4a',
-  'audio/mp3',
-  'video/webm',
-]);
-
-function mimeOk(m: string | undefined): boolean {
-  if (!m) {
-    return false;
-  }
-  return ALLOWED_MIME.has(m.toLowerCase()) || m.toLowerCase().startsWith('audio/');
 }
 
 /**
@@ -65,14 +51,22 @@ export async function audioToNoteHandler(req: Request, res: Response): Promise<v
     return;
   }
 
-  if (!mimeOk(file.mimetype)) {
+  if (!isAllowedAudioUploadMime(file.mimetype)) {
     res.status(400).json({ error: `Unsupported audio type: ${file.mimetype ?? 'unknown'}` });
     return;
   }
 
-  const locale = typeof req.body?.locale === 'string' ? req.body.locale : undefined;
+  const localeRaw =
+    typeof req.body?.locale === 'string'
+      ? sanitizeAudioToNoteTextField(req.body.locale, { maxChars: 32 })
+      : undefined;
+  const locale = localeRaw && localeRaw.length > 0 ? localeRaw : undefined;
+  const courseNameRaw =
+    typeof req.body?.courseName === 'string'
+      ? sanitizeAudioToNoteTextField(req.body.courseName, { maxChars: 200 })
+      : undefined;
   const courseName =
-    typeof req.body?.courseName === 'string' ? req.body.courseName : undefined;
+    courseNameRaw && courseNameRaw.length > 0 ? courseNameRaw : undefined;
 
   res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
   res.setHeader('Cache-Control', 'no-cache, no-transform');
@@ -90,7 +84,7 @@ export async function audioToNoteHandler(req: Request, res: Response): Promise<v
     sseWrite(res, 'transcript', { text: transcript, duration });
 
     const system = buildStudyNotesSystemPrompt(courseName);
-    const user = `Transcript:\n\n${transcript}`;
+    const user = transcriptUserMessage(transcript);
 
     let notesResult: StudyNotesResult;
     try {

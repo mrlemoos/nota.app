@@ -1,8 +1,11 @@
 import { describe, expect, test } from 'bun:test';
 import {
+  buildStudyNotesSystemPrompt,
   fallbackStudyNotesFromTranscript,
   parseStudyNotesJson,
+  sanitizeAudioToNoteTextField,
   studyNotesResultSchema,
+  transcriptUserMessage,
 } from './xai-audio-note.server.ts';
 
 describe('parseStudyNotesJson', () => {
@@ -29,5 +32,29 @@ describe('fallbackStudyNotesFromTranscript', () => {
       type: 'paragraph',
       text: '(Empty transcript)',
     });
+  });
+});
+
+describe('sanitizeAudioToNoteTextField', () => {
+  test('strips NUL and caps length', () => {
+    expect(sanitizeAudioToNoteTextField('a\u0000b', { maxChars: 99 })).toBe('ab');
+    expect(sanitizeAudioToNoteTextField('abcdef', { maxChars: 3 })).toBe('abc');
+  });
+});
+
+describe('transcriptUserMessage', () => {
+  test('wraps transcript with delimiters', () => {
+    const m = transcriptUserMessage('hello');
+    expect(m).toContain('<<<NOTA_TRANSCRIPT>>>');
+    expect(m).toContain('<<<END_NOTA_TRANSCRIPT>>>');
+    expect(m).toContain('hello');
+  });
+});
+
+describe('buildStudyNotesSystemPrompt', () => {
+  test('embeds sanitised course name only', () => {
+    const p = buildStudyNotesSystemPrompt('Thermo\u0007');
+    expect(p).toContain('Thermo');
+    expect(p).not.toContain('\u0007');
   });
 });

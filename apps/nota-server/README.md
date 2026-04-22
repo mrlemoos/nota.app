@@ -36,7 +36,7 @@ If **`NOTA_SERVER_CORS_ORIGINS` is unset**, the server allows `http://127.0.0.1:
 
 **Wildcard `*`:** Set **`NOTA_SERVER_CORS_ORIGINS=*`** to allow **any** browser `Origin` (implemented with `cors` **`origin: true`**, so the response echoes the request origin). A lone `*` is **not** treated as a string to match against the `Origin` header (that would never match real clients such as `http://127.0.0.1:4378`). For production, prefer an explicit comma-separated list so only your web app and desktop shell can call the API.
 
-When **`NODE_ENV=production`**, the process logs a **warning** if `NOTA_SERVER_CORS_ORIGINS=*` is in effect, so operators notice permissive CORS in production.
+When **`NODE_ENV=production`**, the process **refuses to start** if `NOTA_SERVER_CORS_ORIGINS=*` (reflect-any Origin) is in effect, unless **`NOTA_SERVER_ALLOW_INSECURE_CORS=1`** is set. Prefer an explicit comma-separated allowlist. Outside production, a **warning** is still logged when `*` is used so local setups remember to tighten CORS before shipping.
 
 ## Clerk Billing vs marketing
 
@@ -57,13 +57,24 @@ This calls Clerk’s Billing API (`getPlanList` for `user` payers) and checks pu
 
 ## Auth
 
-Clients send `Authorization: Bearer <Clerk session JWT>`. The server validates it with **`@clerk/backend`** `verifyToken` using **`CLERK_SECRET_KEY`**.
+Clients send `Authorization: Bearer <Clerk session JWT>`. The server validates it with **`@clerk/backend`** `verifyToken` using **`CLERK_SECRET_KEY`**, **`clockSkewInMs`** (default **5000**, override with **`NOTA_SERVER_CLERK_CLOCK_SKEW_MS`**), and optional **`authorizedParties`** from **`NOTA_SERVER_CLERK_AUTHORIZED_PARTIES`** (comma-separated origins, e.g. `https://app.nota.example,http://localhost:4200`) to match the session token’s **`azp`**.
+
+## Operations and dependency hygiene
+
+- Run **`npm audit`** at the monorepo root after dependency bumps; triage **high** / **critical** advisories before release.
+- [`.github/dependabot.yml`](../../.github/dependabot.yml) already schedules weekly npm updates — review those PRs for security fixes.
+
+## Error responses (semantic search)
+
+By default, **5xx** JSON from semantic search routes omits internal **`detail`** strings in **production** so clients do not see raw Supabase or embedding errors. Set **`NOTA_SERVER_DEBUG_ERRORS=1`** locally (or in a staging environment) to include `detail` for debugging.
 
 ## Audio-to-note (xAI)
 
-- **Endpoint:** `POST /api/audio-to-note` — `multipart/form-data` with field **`audio`** (recorded audio; typical browser types include `audio/webm` or `video/webm`). Optional text fields: **`locale`** (language hint for STT), **`courseName`** (context for study-note generation).
+- **Endpoint:** `POST /api/audio-to-note` — `multipart/form-data` with field **`audio`** (recorded audio; typical browser types include `audio/webm` or `video/webm`). Optional text fields: **`locale`** (language hint for STT; capped and sanitised), **`courseName`** (context for study-note generation; capped and sanitised).
+- **Upload limits:** **`audio`** is capped at **40 MiB** (multer); disallowed MIME types are rejected before STT. **`413`** is returned when the file exceeds the cap.
 - **Response:** `text/event-stream` (SSE). Events include `transcript` (after xAI **`POST /v1/stt`**), `notes_delta` (streaming Grok tokens), and `notes_done` (parsed JSON blocks for the client to turn into TipTap). Requires **`XAI_API_KEY`** on the server and a **Nota Pro** subscription (same entitlement check as link previews).
 - **Model:** Grok chat model defaults to **`grok-3`**; override with **`XAI_CHAT_MODEL`** if needed.
+- **Trust boundary:** Transcripts and optional fields are **user-provided**. The server wraps the transcript in delimiters and validates model output with Zod; treat generated study notes as **assistive** output that may still reflect prompt-injection attempts—do not treat the model as a security boundary.
 
 ## Deploy (Railway)
 
@@ -79,5 +90,6 @@ Set **`CLERK_SECRET_KEY`**, **`XAI_API_KEY`** (for audio-to-note), **`SUPABASE_U
 ## Semantic search (Nota Pro)
 
 - **Endpoints:** `POST /api/semantic-search`, `POST /api/search/index-note`, `POST /api/search/reindex-all` — same Bearer JWT and Nota Pro gate as other Pro routes.
+- **Rate limits (in-memory, per user id):** semantic search **60/minute**; index-note **40/minute**; reindex-all **1/two minutes**. **`429`** when exceeded (horizontally scaled deployments should add an edge limiter or shared store if needed).
 - **Embeddings:** Implemented as **`POST {NOTA_SEMANTIC_EMBEDDINGS_API_BASE}/embeddings`** with an OpenAI-style JSON body (`model`, `input`). Defaults target **OpenAI** (`text-embedding-3-small`, 1536 dimensions); override base URL and model for any compatible provider.
 - **Storage:** Rows in Supabase **`note_semantic_index`** — apply migration **`0012_note_semantic_index.sql`** and keep **`vector(N)`** aligned with **`NOTA_SEMANTIC_EMBEDDINGS_DIMENSIONS`**.

@@ -127,6 +127,17 @@ function queueOrDeliverSsoFromNotaProtocol(protocolUrl: string): void {
  * Clerk `signIn.sso` assigns `window.location` to the hosted OAuth URL. In Electron, Apple / passkey
  * flows must run in the **system browser**; intercept main-window navigations to HTTPS IdP/Clerk OAuth.
  */
+function isClerkRelatedHttpsHost(hostname: string): boolean {
+  const h = hostname.toLowerCase();
+  return (
+    h.endsWith('.clerk.accounts.dev') ||
+    h.endsWith('.clerk.accounts.com') ||
+    h === 'clerk.com' ||
+    h.endsWith('.clerk.com') ||
+    h === 'clerk.nota.mrlemoos.dev'
+  );
+}
+
 function shouldOpenHttpsNavigationInSystemBrowser(url: string): boolean {
   if (shouldOpenStripeHostedPageInSystemBrowser(url)) {
     return true;
@@ -136,16 +147,13 @@ function shouldOpenHttpsNavigationInSystemBrowser(url: string): boolean {
     if (u.protocol !== 'https:') {
       return false;
     }
-    const h = u.hostname;
+    const h = u.hostname.toLowerCase();
     return (
       h === 'appleid.apple.com' ||
       h === 'id.apple.com' ||
       h === 'accounts.google.com' ||
       h === 'github.com' ||
-      h.endsWith('.clerk.accounts.dev') ||
-      h.endsWith('.clerk.accounts.com') ||
-      (h.includes('clerk') &&
-        (h.includes('accounts') || u.pathname.includes('oauth')))
+      isClerkRelatedHttpsHost(h)
     );
   } catch {
     return false;

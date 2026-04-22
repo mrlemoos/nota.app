@@ -2,12 +2,18 @@ import { z } from 'zod';
 
 import { getUserIdFromBearer } from '../auth.ts';
 import { getServerNotaProEntitled } from '../lib/clerk-billing.server.ts';
+import { notaServerExposeErrorDetails } from '../lib/nota-server-error-detail.server.ts';
 import {
   reindexAllSemanticNotes,
   semanticSearchNotes,
   upsertSemanticIndexForNote,
 } from '../lib/semantic-search-ops.server.ts';
 import { requireServiceSupabase } from '../lib/supabase-service.server.ts';
+import {
+  rateLimitIndexNotePost,
+  rateLimitReindexAllPost,
+  rateLimitSemanticSearchPost,
+} from '../lib/user-rate-limit.server.ts';
 
 const searchBodySchema = z.object({
   query: z.string().max(4000),
@@ -25,6 +31,17 @@ function isConfigurationError(message: string): boolean {
   );
 }
 
+function jsonError(
+  base: Record<string, unknown>,
+  detail: string | undefined,
+  status: number,
+): Response {
+  if (detail && notaServerExposeErrorDetails()) {
+    return Response.json({ ...base, detail }, { status });
+  }
+  return Response.json(base, { status });
+}
+
 export async function semanticSearchPostHandler(request: Request): Promise<Response> {
   if (request.method !== 'POST') {
     return new Response('Method Not Allowed', { status: 405 });
@@ -37,6 +54,10 @@ export async function semanticSearchPostHandler(request: Request): Promise<Respo
 
   if (!(await getServerNotaProEntitled(userId))) {
     return Response.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  if (!rateLimitSemanticSearchPost(userId)) {
+    return Response.json({ error: 'Too many requests' }, { status: 429 });
   }
 
   let bodyJson: unknown;
@@ -62,19 +83,14 @@ export async function semanticSearchPostHandler(request: Request): Promise<Respo
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     if (isConfigurationError(msg)) {
-      return Response.json(
-        {
-          error: 'Semantic search is not configured on the server.',
-          detail: msg,
-        },
-        { status: 503 },
+      return jsonError(
+        { error: 'Semantic search is not configured on the server.' },
+        msg,
+        503,
       );
     }
     console.error('[semantic-search]', e);
-    return Response.json(
-      { error: 'Semantic search failed', detail: msg },
-      { status: 500 },
-    );
+    return jsonError({ error: 'Semantic search failed' }, msg, 500);
   }
 }
 
@@ -90,6 +106,10 @@ export async function indexNotePostHandler(request: Request): Promise<Response> 
 
   if (!(await getServerNotaProEntitled(userId))) {
     return Response.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  if (!rateLimitIndexNotePost(userId)) {
+    return Response.json({ error: 'Too many requests' }, { status: 429 });
   }
 
   let bodyJson: unknown;
@@ -115,19 +135,17 @@ export async function indexNotePostHandler(request: Request): Promise<Response> 
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     if (isConfigurationError(msg)) {
-      return Response.json(
-        {
-          error: 'Semantic index is not configured on the server.',
-          detail: msg,
-        },
-        { status: 503 },
+      return jsonError(
+        { error: 'Semantic index is not configured on the server.' },
+        msg,
+        503,
       );
     }
     if (msg.includes('Note not found')) {
       return Response.json({ error: 'Not found' }, { status: 404 });
     }
     console.error('[index-note]', e);
-    return Response.json({ error: 'Index update failed', detail: msg }, { status: 500 });
+    return jsonError({ error: 'Index update failed' }, msg, 500);
   }
 }
 
@@ -145,6 +163,10 @@ export async function reindexAllPostHandler(request: Request): Promise<Response>
     return Response.json({ error: 'Forbidden' }, { status: 403 });
   }
 
+  if (!rateLimitReindexAllPost(userId)) {
+    return Response.json({ error: 'Too many requests' }, { status: 429 });
+  }
+
   try {
     const supabase = requireServiceSupabase();
     const { indexed } = await reindexAllSemanticNotes({ supabase, userId });
@@ -152,15 +174,13 @@ export async function reindexAllPostHandler(request: Request): Promise<Response>
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     if (isConfigurationError(msg)) {
-      return Response.json(
-        {
-          error: 'Semantic index is not configured on the server.',
-          detail: msg,
-        },
-        { status: 503 },
+      return jsonError(
+        { error: 'Semantic index is not configured on the server.' },
+        msg,
+        503,
       );
     }
     console.error('[reindex-all]', e);
-    return Response.json({ error: 'Reindex failed', detail: msg }, { status: 500 });
+    return jsonError({ error: 'Reindex failed' }, msg, 500);
   }
 }

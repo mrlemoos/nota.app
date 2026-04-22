@@ -2,6 +2,10 @@ import cors from 'cors';
 import express from 'express';
 import multer from 'multer';
 import {
+  AUDIO_UPLOAD_MAX_BYTES,
+  isAllowedAudioUploadMime,
+} from './lib/audio-upload.server.ts';
+import {
   expressToWebRequest,
   expressToWebRequestWithJsonBody,
   sendWebResponse,
@@ -46,26 +50,41 @@ function getCorsOriginOption(): boolean | string[] {
   return explicit;
 }
 
+const corsOriginOption = getCorsOriginOption();
+
+if (
+  process.env.NODE_ENV === 'production' &&
+  corsOriginOption === true &&
+  !process.env.NOTA_SERVER_ALLOW_INSECURE_CORS?.trim()
+) {
+  throw new Error(
+    '[nota-server] Refusing to start with NOTA_SERVER_CORS_ORIGINS=* in production (reflects any Origin). Set an explicit comma-separated allowlist, or set NOTA_SERVER_ALLOW_INSECURE_CORS=1 to override (not recommended).',
+  );
+}
+
+if (corsOriginOption === true && process.env.NODE_ENV === 'production') {
+  console.warn(
+    '[nota-server] NOTA_SERVER_ALLOW_INSECURE_CORS is set; CORS reflects any browser Origin.',
+  );
+}
+
+if (corsOriginOption === true && process.env.NODE_ENV !== 'production') {
+  console.warn(
+    '[nota-server] NOTA_SERVER_CORS_ORIGINS=* reflects any browser Origin. Prefer an explicit comma-separated list in production.',
+  );
+}
+
 const app = express();
 app.disable('x-powered-by');
 app.use(express.json({ limit: '32kb' }));
 
 const audioUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 500 * 1024 * 1024 },
+  limits: { fileSize: AUDIO_UPLOAD_MAX_BYTES },
   fileFilter: (_req, file, cb) => {
-    const m = file.mimetype.toLowerCase();
-    const ok = m.startsWith('audio/') || m === 'video/webm';
-    cb(null, ok);
+    cb(null, isAllowedAudioUploadMime(file.mimetype));
   },
 });
-
-const corsOriginOption = getCorsOriginOption();
-if (corsOriginOption === true && process.env.NODE_ENV === 'production') {
-  console.warn(
-    '[nota-server] NOTA_SERVER_CORS_ORIGINS=* reflects any browser Origin. Prefer an explicit comma-separated list in production.',
-  );
-}
 
 const corsMw = cors({
   origin: corsOriginOption,
@@ -154,9 +173,18 @@ app.use(
     _next: express.NextFunction,
   ) => {
     console.error('[nota-server]', err);
-    if (!res.headersSent) {
-      res.status(500).json({ error: 'Internal server error' });
+    if (res.headersSent) {
+      return;
     }
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        res.status(413).json({ error: 'Audio file too large' });
+        return;
+      }
+      res.status(400).json({ error: 'Upload failed' });
+      return;
+    }
+    res.status(500).json({ error: 'Internal server error' });
   },
 );
 
