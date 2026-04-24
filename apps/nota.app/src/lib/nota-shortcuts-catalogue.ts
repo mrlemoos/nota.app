@@ -84,6 +84,13 @@ export const NOTA_SHORTCUT_SECTIONS: ShortcutCatalogSection[] = [
         keysOther: 'Space',
       },
       {
+        description: 'Move note: multi-select on the pick-note step',
+        detail:
+          'When the search field is empty, highlight a note and press Space to show checkboxes; Space toggles each note. Then choose “Choose folder for N notes…” and pick a destination.',
+        keysApple: 'Space, Enter',
+        keysOther: 'Space, Enter',
+      },
+      {
         description: 'Open today’s note',
         detail: 'When the shortcut is enabled in Settings.',
         keysApple: '⌘D',

@@ -25,6 +25,7 @@ import {
   Sun01Icon,
   TableIcon,
   TaskDaily01Icon,
+  Tick01Icon,
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { cn } from '@/lib/utils';
@@ -39,6 +40,10 @@ import { useClerk } from '@clerk/react';
 import { clientCreateNote } from '../lib/create-note-client';
 import { clientDeleteNoteById } from '../lib/delete-note-client';
 import { clientMoveNoteToFolder } from '../lib/move-note-folder-client';
+import {
+  parseMovePickNoteId,
+  toggleIdInSet,
+} from '../lib/move-pick-helpers';
 import type { Folder } from '~/types/database.types';
 import { FolderCreateDialog } from './folder-create-dialog';
 import { FolderDeleteDialog } from './folder-delete-dialog';
@@ -167,7 +172,11 @@ export function CommandPalette(): JSX.Element {
   const [moveFlow, setMoveFlow] = useState<'idle' | 'pickNote' | 'pickFolder'>(
     'idle',
   );
-  const [moveNoteId, setMoveNoteId] = useState<string | null>(null);
+  const [moveTargetNoteIds, setMoveTargetNoteIds] = useState<string[]>([]);
+  const [moveMultiSelectActive, setMoveMultiSelectActive] = useState(false);
+  const [moveSelectedNoteIds, setMoveSelectedNoteIds] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [deleteFolderPickerOpen, setDeleteFolderPickerOpen] = useState(false);
 
   const semanticSearchUserPref = useNotaPreferencesStore(
@@ -198,11 +207,20 @@ export function CommandPalette(): JSX.Element {
       setNewNoteFolderPickerOpen(false);
       setPaletteValue('');
       setMoveFlow('idle');
-      setMoveNoteId(null);
+      setMoveTargetNoteIds([]);
+      setMoveMultiSelectActive(false);
+      setMoveSelectedNoteIds(new Set());
       setFolderDeleteTarget(null);
       setDeleteFolderPickerOpen(false);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (moveFlow === 'pickFolder') {
+      setMoveMultiSelectActive(false);
+      setMoveSelectedNoteIds(new Set());
+    }
+  }, [moveFlow]);
 
   const notesForOpenPalette = useMemo(() => {
     if (semanticOrderedIds === null) {
@@ -212,6 +230,17 @@ export function CommandPalette(): JSX.Element {
       .map((id) => notes.find((n) => n.id === id))
       .filter((n): n is (typeof notes)[number] => Boolean(n));
   }, [notes, semanticOrderedIds]);
+
+  const moveCommandGroupHeading = useMemo(() => {
+    if (moveFlow === 'pickNote') {
+      return moveMultiSelectActive
+        ? 'Move notes — pick notes'
+        : 'Move note — pick note';
+    }
+    return moveTargetNoteIds.length > 1
+      ? `Move ${moveTargetNoteIds.length} notes — destination`
+      : 'Move note — destination';
+  }, [moveFlow, moveMultiSelectActive, moveTargetNoteIds.length]);
 
   const commandFilter = useCallback(
     (value: string, search: string, keywords?: string[]) => {
@@ -331,6 +360,10 @@ export function CommandPalette(): JSX.Element {
 
   const paletteValueRef = useRef('');
   paletteValueRef.current = paletteValue;
+  const moveFlowRef = useRef(moveFlow);
+  moveFlowRef.current = moveFlow;
+  const moveMultiSelectActiveRef = useRef(moveMultiSelectActive);
+  moveMultiSelectActiveRef.current = moveMultiSelectActive;
   const newNotePickerOpenRef = useRef(false);
   newNotePickerOpenRef.current = newNoteFolderPickerOpen;
 
@@ -405,14 +438,30 @@ export function CommandPalette(): JSX.Element {
       if (input && t instanceof Node && (input === t || input.contains(t))) {
         return;
       }
+      if (
+        moveFlowRef.current === 'pickNote' &&
+        !commandInputRef.current?.value.trim()
+      ) {
+        const noteId = parseMovePickNoteId(paletteValueRef.current);
+        if (noteId) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (!moveMultiSelectActiveRef.current) {
+            setMoveMultiSelectActive(true);
+          }
+          setMoveSelectedNoteIds((prev) => toggleIdInSet(prev, noteId));
+          return;
+        }
+      }
       e.preventDefault();
       input?.focus();
     }
   });
 
   useEffect(() => {
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
+    document.addEventListener('keydown', onKeyDown, { capture: true });
+    return () =>
+      document.removeEventListener('keydown', onKeyDown, { capture: true });
   }, [onKeyDown]);
 
   return (
@@ -475,53 +524,114 @@ export function CommandPalette(): JSX.Element {
               <Command.List className={commandListClassName}>
                 {notaProEntitled && moveFlow !== 'idle' ? (
                   <Command.Group
-                    heading={moveFlow === 'pickNote' ? 'Move note — pick note' : 'Move note — destination'}
+                    heading={moveCommandGroupHeading}
                     className={groupHeadingClassName}
                   >
                     {moveFlow === 'pickNote'
-                      ? notesForOpenPalette.map((n) => (
-                          <Command.Item
-                            key={`move-pick-${n.id}`}
-                            value={`move-pick:${n.id}`}
-                            keywords={['move', 'folder', n.title]}
-                            onSelect={() => {
-                              setMoveNoteId(n.id);
-                              setMoveFlow('pickFolder');
-                            }}
-                            className={cn(
-                              commandItemRowClass,
-                              'group text-foreground',
-                              'aria-selected:bg-accent aria-selected:text-accent-foreground',
-                            )}
-                          >
-                            <span className="min-w-0 flex-1 truncate">
-                              {n.title || 'Untitled Note'}
-                            </span>
-                          </Command.Item>
-                        ))
+                      ? notesForOpenPalette.map((n) => {
+                          const selected = moveSelectedNoteIds.has(n.id);
+                          return (
+                            <Command.Item
+                              key={`move-pick-${n.id}`}
+                              value={`move-pick:${n.id}`}
+                              keywords={['move', 'folder', n.title]}
+                              onSelect={() => {
+                                if (moveMultiSelectActive) {
+                                  setMoveSelectedNoteIds((prev) =>
+                                    toggleIdInSet(prev, n.id),
+                                  );
+                                  return;
+                                }
+                                setMoveTargetNoteIds([n.id]);
+                                setMoveFlow('pickFolder');
+                              }}
+                              aria-checked={
+                                moveMultiSelectActive ? selected : undefined
+                              }
+                              className={cn(
+                                commandItemRowClass,
+                                'group text-foreground',
+                                'aria-selected:bg-accent aria-selected:text-accent-foreground',
+                              )}
+                            >
+                              {moveMultiSelectActive ? (
+                                <span
+                                  aria-hidden
+                                  className={cn(
+                                    'inline-flex size-4 shrink-0 items-center justify-center rounded border border-border text-muted-foreground',
+                                    selected &&
+                                      'border-primary bg-primary text-primary-foreground',
+                                  )}
+                                >
+                                  {selected ? (
+                                    <HugeiconsIcon icon={Tick01Icon} size={12} />
+                                  ) : null}
+                                </span>
+                              ) : null}
+                              <span className="min-w-0 flex-1 truncate">
+                                {n.title || 'Untitled Note'}
+                              </span>
+                            </Command.Item>
+                          );
+                        })
                       : null}
-                    {moveFlow === 'pickFolder' && moveNoteId ? (
+                    {moveFlow === 'pickNote' && moveMultiSelectActive ? (
+                      <Command.Item
+                        value="move-pick-continue"
+                        disabled={moveSelectedNoteIds.size === 0}
+                        keywords={[
+                          'continue',
+                          'choose',
+                          'folder',
+                          'destination',
+                          'next',
+                        ]}
+                        onSelect={() => {
+                          setMoveTargetNoteIds(
+                            Array.from(moveSelectedNoteIds),
+                          );
+                          setMoveFlow('pickFolder');
+                        }}
+                        className={cn(
+                          commandItemRowClass,
+                          'group text-foreground',
+                          'aria-selected:bg-accent aria-selected:text-accent-foreground',
+                          'aria-disabled:pointer-events-none aria-disabled:opacity-50',
+                        )}
+                      >
+                        <span className="min-w-0 flex-1">
+                          {moveSelectedNoteIds.size === 0
+                            ? 'Choose folder for selected notes…'
+                            : `Choose folder for ${moveSelectedNoteIds.size} note${moveSelectedNoteIds.size === 1 ? '' : 's'}…`}
+                        </span>
+                      </Command.Item>
+                    ) : null}
+                    {moveFlow === 'pickFolder' && moveTargetNoteIds.length > 0 ? (
                       <>
                         <Command.Item
                           value="move-to:root"
                           keywords={['root', 'default', 'move']}
                           onSelect={() => {
-                            const nid = moveNoteId;
-                            const note = notes.find((x) => x.id === nid);
-                            void clientMoveNoteToFolder({
-                              noteId: nid,
-                              targetFolderId: null,
-                              previousFolderId: note?.folder_id ?? null,
-                              userId: user?.id ?? '',
-                              notaProEntitled,
-                              userPreferences,
-                              patchNoteInList,
-                              removeFolderFromList,
-                              refreshNotesList,
-                            });
-                            setMoveFlow('idle');
-                            setMoveNoteId(null);
-                            closePalette();
+                            const ids = [...moveTargetNoteIds];
+                            void (async () => {
+                              for (const nid of ids) {
+                                const note = notes.find((x) => x.id === nid);
+                                await clientMoveNoteToFolder({
+                                  noteId: nid,
+                                  targetFolderId: null,
+                                  previousFolderId: note?.folder_id ?? null,
+                                  userId: user?.id ?? '',
+                                  notaProEntitled,
+                                  userPreferences,
+                                  patchNoteInList,
+                                  removeFolderFromList,
+                                  refreshNotesList,
+                                });
+                              }
+                              setMoveFlow('idle');
+                              setMoveTargetNoteIds([]);
+                              closePalette();
+                            })();
                           }}
                           className={cn(
                             commandItemRowClass,
@@ -537,22 +647,26 @@ export function CommandPalette(): JSX.Element {
                             value={`move-to:${f.id}`}
                             keywords={['move', f.name]}
                             onSelect={() => {
-                              const nid = moveNoteId;
-                              const note = notes.find((x) => x.id === nid);
-                              void clientMoveNoteToFolder({
-                                noteId: nid,
-                                targetFolderId: f.id,
-                                previousFolderId: note?.folder_id ?? null,
-                                userId: user?.id ?? '',
-                                notaProEntitled,
-                                userPreferences,
-                                patchNoteInList,
-                                removeFolderFromList,
-                                refreshNotesList,
-                              });
-                              setMoveFlow('idle');
-                              setMoveNoteId(null);
-                              closePalette();
+                              const ids = [...moveTargetNoteIds];
+                              void (async () => {
+                                for (const nid of ids) {
+                                  const note = notes.find((x) => x.id === nid);
+                                  await clientMoveNoteToFolder({
+                                    noteId: nid,
+                                    targetFolderId: f.id,
+                                    previousFolderId: note?.folder_id ?? null,
+                                    userId: user?.id ?? '',
+                                    notaProEntitled,
+                                    userPreferences,
+                                    patchNoteInList,
+                                    removeFolderFromList,
+                                    refreshNotesList,
+                                  });
+                                }
+                                setMoveFlow('idle');
+                                setMoveTargetNoteIds([]);
+                                closePalette();
+                              })();
                             }}
                             className={cn(
                               commandItemRowClass,
@@ -570,7 +684,9 @@ export function CommandPalette(): JSX.Element {
                       keywords={['cancel', 'back']}
                       onSelect={() => {
                         setMoveFlow('idle');
-                        setMoveNoteId(null);
+                        setMoveTargetNoteIds([]);
+                        setMoveMultiSelectActive(false);
+                        setMoveSelectedNoteIds(new Set());
                       }}
                       className={cn(
                         commandItemRowClass,
@@ -652,6 +768,9 @@ export function CommandPalette(): JSX.Element {
                       disabled={notesForOpenPalette.length === 0}
                       keywords={['move note', 'folder', 'organise']}
                       onSelect={() => {
+                        setMoveMultiSelectActive(false);
+                        setMoveSelectedNoteIds(new Set());
+                        setMoveTargetNoteIds([]);
                         setMoveFlow('pickNote');
                       }}
                       className={cn(
