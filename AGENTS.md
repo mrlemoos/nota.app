@@ -47,7 +47,8 @@ Must use [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## Testing
 
-- Vitest [`vitest.setup.ts`](apps/nota.app/vitest.setup.ts); colocate `*.spec.ts(x)` under `src/`. AAA + `// Arrange|Act|Assert`—[`.cursor/rules/aaa-testing-pattern.mdc`](.cursor/rules/aaa-testing-pattern.mdc). Bun [`og-preview.server.spec.ts`](apps/nota-server/src/lib/og-preview.server.spec.ts).
+- **Unit tests** use **Arrange–Act–Assert (AAA)**; mark sections with `// Arrange|Act|Assert`—[`.cursor/rules/aaa-testing-pattern.mdc`](.cursor/rules/aaa-testing-pattern.mdc). Vitest [`vitest.setup.ts`](apps/nota.app/vitest.setup.ts); colocate `*.spec.ts(x)` under `src/`. Bun [`og-preview.server.spec.ts`](apps/nota-server/src/lib/og-preview.server.spec.ts).
+- **End-to-end tests** use **Given–When–Then**: **Given** the initial context, **When** the user or system performs the action, **Then** assert the expected outcome (structure scenarios and steps accordingly).
 
 ## Learned User Preferences
 
