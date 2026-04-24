@@ -9,16 +9,18 @@ import {
 } from './todays-note';
 import { useNotaPreferencesStore } from '../stores/nota-preferences';
 
-export async function openTodaysNoteClient(options: {
-  notes: Pick<Note, 'id'>[];
+/**
+ * Opens or creates the user's **root** daily note for the local calendar day
+ * (same mapping rules as Mod+D). Returns the note id, or `null` if not entitled.
+ */
+export async function ensureTodaysRootNoteId(options: {
+  notes: Pick<Note, 'id' | 'folder_id'>[];
   userId: string;
-  navigate: (to: string) => void;
-  revalidate: () => void;
   notaProEntitled: boolean;
-}): Promise<void> {
-  const { notes, userId, navigate, revalidate, notaProEntitled } = options;
+}): Promise<string | null> {
+  const { notes, userId, notaProEntitled } = options;
   if (!notaProEntitled) {
-    return;
+    return null;
   }
   const at = new Date();
   const dateKey = localDateKey(at);
@@ -35,8 +37,7 @@ export async function openTodaysNoteClient(options: {
     dateKey,
   );
   if (existingId) {
-    navigate(`/notes/${existingId}`);
-    return;
+    return existingId;
   }
 
   clearDailyNoteForLocalDate(dateKey);
@@ -45,16 +46,33 @@ export async function openTodaysNoteClient(options: {
   if (isLikelyOnline()) {
     try {
       const client = getBrowserClient();
-      const row = await createNote(client, userId, title);
+      const row = await createNote(client, userId, title, undefined, {
+        folder_id: null,
+      });
       createdId = row.id;
     } catch {
-      createdId = await createLocalOnlyNote(userId, title);
+      createdId = await createLocalOnlyNote(userId, title, undefined, null);
     }
   } else {
-    createdId = await createLocalOnlyNote(userId, title);
+    createdId = await createLocalOnlyNote(userId, title, undefined, null);
   }
 
   setDailyNoteForLocalDate(dateKey, createdId);
-  navigate(`/notes/${createdId}`);
+  return createdId;
+}
+
+export async function openTodaysNoteClient(options: {
+  notes: Pick<Note, 'id' | 'folder_id'>[];
+  userId: string;
+  navigate: (to: string) => void;
+  revalidate: () => void;
+  notaProEntitled: boolean;
+}): Promise<void> {
+  const { navigate, revalidate, ...rest } = options;
+  const id = await ensureTodaysRootNoteId(rest);
+  if (!id) {
+    return;
+  }
+  navigate(`/notes/${id}`);
   revalidate();
 }

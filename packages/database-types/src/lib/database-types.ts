@@ -21,6 +21,7 @@ export interface Database {
           is_deadline: boolean;
           editor_settings: Json;
           banner_attachment_id: string | null;
+          folder_id: string | null;
         };
         Insert: {
           id?: string;
@@ -33,6 +34,7 @@ export interface Database {
           is_deadline?: boolean;
           editor_settings?: Json;
           banner_attachment_id?: string | null;
+          folder_id?: string | null;
         };
         Update: {
           id?: string;
@@ -45,6 +47,38 @@ export interface Database {
           is_deadline?: boolean;
           editor_settings?: Json;
           banner_attachment_id?: string | null;
+          folder_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'notes_folder_id_fkey';
+            columns: ['folder_id'];
+            referencedRelation: 'folders';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      folders: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          created_at?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };
@@ -146,6 +180,7 @@ export interface Database {
           emoji_replacer_enabled: boolean;
           updated_at: string;
           welcome_seeded: boolean;
+          delete_empty_folders: boolean;
         };
         Insert: {
           user_id: string;
@@ -155,6 +190,7 @@ export interface Database {
           emoji_replacer_enabled?: boolean;
           updated_at?: string;
           welcome_seeded?: boolean;
+          delete_empty_folders?: boolean;
         };
         Update: {
           user_id?: string;
@@ -164,6 +200,7 @@ export interface Database {
           emoji_replacer_enabled?: boolean;
           updated_at?: string;
           welcome_seeded?: boolean;
+          delete_empty_folders?: boolean;
         };
         Relationships: [];
       };
@@ -200,3 +237,7 @@ export type NoteAttachmentInsert = Insertable<'note_attachments'>;
 export type UserPreferences = Tables<'user_preferences'>;
 export type UserPreferencesInsert = Insertable<'user_preferences'>;
 export type UserPreferencesUpdate = Updatable<'user_preferences'>;
+
+export type Folder = Tables<'folders'>;
+export type FolderInsert = Insertable<'folders'>;
+export type FolderUpdate = Updatable<'folders'>;

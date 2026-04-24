@@ -22,5 +22,6 @@ describe('getUserPreferences', () => {
 
     // Assert
     expect(prefs.show_note_backlinks).toBe(true);
+    expect(prefs.delete_empty_folders).toBe(true);
   });
 });

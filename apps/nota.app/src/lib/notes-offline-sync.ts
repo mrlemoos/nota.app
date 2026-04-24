@@ -86,6 +86,7 @@ async function drainNotesOutboxInner(userId: string): Promise<boolean> {
               due_at: stored.due_at,
               is_deadline: stored.is_deadline,
               editor_settings: stored.editor_settings,
+              folder_id: stored.folder_id ?? null,
             },
           );
           await markNoteSyncedFromServer(userId, created);
@@ -96,6 +97,7 @@ async function drainNotesOutboxInner(userId: string): Promise<boolean> {
             due_at: stored.due_at,
             is_deadline: stored.is_deadline,
             editor_settings: stored.editor_settings,
+            folder_id: stored.folder_id ?? null,
           });
           await markNoteSyncedFromServer(userId, updated);
         }

@@ -5,6 +5,7 @@ import { isLikelyOnline, markPendingDelete } from './notes-offline';
 import { deleteNote } from '../models/notes';
 
 const removeNoteFromList = vi.fn();
+const removeFolderFromList = vi.fn();
 const refreshNotesList = vi.fn();
 
 vi.mock('./supabase/browser', () => ({
@@ -30,6 +31,10 @@ vi.mock('./app-navigation', () => ({
   setAppHash: vi.fn(),
 }));
 
+vi.mock('./maybe-prune-empty-folder', () => ({
+  maybePruneEmptyFolder: vi.fn(() => Promise.resolve()),
+}));
+
 describe('clientDeleteNoteById', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -42,8 +47,11 @@ describe('clientDeleteNoteById', () => {
     const args = {
       userId: 'u1',
       removeNoteFromList,
+      removeFolderFromList,
       refreshNotesList,
       notaProEntitled: false,
+      noteFolderId: null,
+      userPreferences: null,
     };
 
     // Act
@@ -62,8 +70,11 @@ describe('clientDeleteNoteById', () => {
     const args = {
       userId: 'u1',
       removeNoteFromList,
+      removeFolderFromList,
       refreshNotesList,
       notaProEntitled: true,
+      noteFolderId: null,
+      userPreferences: null,
     };
 
     // Act
@@ -82,8 +93,11 @@ describe('clientDeleteNoteById', () => {
     const args = {
       userId: 'u1',
       removeNoteFromList,
+      removeFolderFromList,
       refreshNotesList,
       notaProEntitled: true,
+      noteFolderId: null,
+      userPreferences: null,
     };
 
     // Act

@@ -14,7 +14,7 @@ import { hashForScreen } from '../lib/app-navigation';
 
 export default function NotesSettings(): JSX.Element {
   const { user } = useRootLoaderData();
-  const { notaProEntitled } = useNotesDataMeta();
+  const { notaProEntitled, userPreferences } = useNotesDataMeta();
   const { setUserPreferencesInState } = useNotesDataActions();
   const openTodaysNoteShortcut = useNotaPreferencesStore(
     (s) => s.openTodaysNoteShortcut,
@@ -156,6 +156,35 @@ export default function NotesSettings(): JSX.Element {
           </label>
           <p className="text-sm text-muted-foreground">
             Lists other notes that link to the note you have open.
+          </p>
+          <label
+            htmlFor="nota-delete-empty-folders"
+            className={cn(
+              'mt-3 flex cursor-pointer select-none items-start gap-3 rounded-lg border border-border/60 bg-muted/20 px-4 py-3',
+            )}
+          >
+            <input
+              id="nota-delete-empty-folders"
+              type="checkbox"
+              checked={userPreferences?.delete_empty_folders !== false}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                submitUserPreferencesPatch(
+                  { delete_empty_folders: checked },
+                  user?.id,
+                  setUserPreferencesInState,
+                  notaProEntitled,
+                );
+              }}
+              className="mt-0.5 size-4 shrink-0 rounded border border-input accent-primary"
+            />
+            <span className="text-sm leading-snug text-muted-foreground">
+              Delete folder when it has no notes
+            </span>
+          </label>
+          <p className="text-sm text-muted-foreground">
+            After you move or delete the last note in a folder, remove the empty
+            folder automatically.
           </p>
           <label
             htmlFor="nota-emoji-replacer-enabled"

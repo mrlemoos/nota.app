@@ -20,11 +20,12 @@ export function localDateKey(d: Date): string {
 }
 
 /**
- * Returns the note id mapped to `dateKey` if that id still exists in `notes`.
- * Otherwise returns `null` (caller should drop the stale map entry).
+ * Returns the note id mapped to `dateKey` if that id still exists in `notes`
+ * as a **root** note (`folder_id` null). Otherwise returns `null` (caller should
+ * drop the stale map entry when the note moved into a folder or was deleted).
  */
 export function resolveTodaysNoteId(
-  notes: Pick<Note, 'id'>[],
+  notes: Pick<Note, 'id' | 'folder_id'>[],
   map: Record<string, string>,
   dateKey: string,
 ): string | null {
@@ -32,5 +33,5 @@ export function resolveTodaysNoteId(
   if (!id) {
     return null;
   }
-  return notes.some((n) => n.id === id) ? id : null;
+  return notes.some((n) => n.id === id && n.folder_id == null) ? id : null;
 }

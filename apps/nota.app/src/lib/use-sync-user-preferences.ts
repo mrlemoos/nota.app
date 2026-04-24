@@ -39,7 +39,9 @@ export function useSyncUserPreferences(
       hydratedLoaderRef.current.semantic_search_enabled ===
         userPreferencesFromServer.semantic_search_enabled &&
       hydratedLoaderRef.current.emoji_replacer_enabled ===
-        userPreferencesFromServer.emoji_replacer_enabled
+        userPreferencesFromServer.emoji_replacer_enabled &&
+      hydratedLoaderRef.current.delete_empty_folders ===
+        userPreferencesFromServer.delete_empty_folders
     ) {
       return;
     }
@@ -96,6 +98,7 @@ export type UserPreferencesSyncPatch = Pick<
   | 'show_note_backlinks'
   | 'semantic_search_enabled'
   | 'emoji_replacer_enabled'
+  | 'delete_empty_folders'
 >;
 
 /**

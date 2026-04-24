@@ -43,7 +43,10 @@ describe('localDateKey', () => {
 });
 
 describe('resolveTodaysNoteId', () => {
-  const notes = [{ id: 'a' }, { id: 'b' }];
+  const notes = [
+    { id: 'a', folder_id: null as string | null },
+    { id: 'b', folder_id: null as string | null },
+  ];
 
   it('returns null when there is no mapping', () => {
     // Arrange
@@ -57,7 +60,7 @@ describe('resolveTodaysNoteId', () => {
     expect(id).toBeNull();
   });
 
-  it('returns the id when the note exists', () => {
+  it('returns the id when the note exists at root', () => {
     // Arrange
     const mapping = { '2025-03-26': 'b' };
     const dateKey = '2025-03-26';
@@ -76,6 +79,22 @@ describe('resolveTodaysNoteId', () => {
 
     // Act
     const id = resolveTodaysNoteId(notes, mapping, dateKey);
+
+    // Assert
+    expect(id).toBeNull();
+  });
+
+  it('returns null when the mapped note is inside a folder', () => {
+    // Arrange
+    const inFolder = [
+      { id: 'a', folder_id: null as string | null },
+      { id: 'b', folder_id: 'f1' as string | null },
+    ];
+    const mapping = { '2025-03-26': 'b' };
+    const dateKey = '2025-03-26';
+
+    // Act
+    const id = resolveTodaysNoteId(inFolder, mapping, dateKey);
 
     // Assert
     expect(id).toBeNull();

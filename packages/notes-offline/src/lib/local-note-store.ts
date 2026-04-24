@@ -52,6 +52,7 @@ export async function saveLocalNoteDraft(
     is_deadline?: boolean;
     editor_settings?: Json;
     banner_attachment_id?: string | null;
+    folder_id?: string | null;
   },
   options: { pendingCreate?: boolean } = {},
 ): Promise<void> {
@@ -88,6 +89,10 @@ export async function saveLocalNoteDraft(
       patch.banner_attachment_id !== undefined
         ? patch.banner_attachment_id
         : (existing?.banner_attachment_id ?? null),
+    folder_id:
+      patch.folder_id !== undefined
+        ? patch.folder_id
+        : (existing?.folder_id ?? null),
     dirty: true,
     pending_create: options.pendingCreate ?? existing?.pending_create ?? false,
     pending_delete: false,
@@ -173,6 +178,8 @@ export async function markPendingDelete(
       due_at: null,
       is_deadline: false,
       editor_settings: {} as Json,
+      banner_attachment_id: null,
+      folder_id: null,
       dirty: true,
       pending_create: false,
       pending_delete: true,
@@ -187,6 +194,7 @@ export async function createLocalOnlyNote(
   userId: string,
   title = 'Untitled Note',
   content: Json = DEFAULT_NOTE_CONTENT,
+  folderId: string | null = null,
 ): Promise<string> {
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
@@ -202,6 +210,8 @@ export async function createLocalOnlyNote(
     due_at: null,
     is_deadline: false,
     editor_settings: {} as Json,
+    banner_attachment_id: null,
+    folder_id: folderId,
     dirty: true,
     pending_create: true,
     pending_delete: false,

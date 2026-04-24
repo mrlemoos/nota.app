@@ -26,6 +26,7 @@ export async function getUserPreferences(
     semantic_search_enabled: true,
     emoji_replacer_enabled: true,
     welcome_seeded: false,
+    delete_empty_folders: true,
     updated_at: new Date(0).toISOString(),
   };
 }
@@ -39,6 +40,7 @@ export async function upsertUserPreferences(
     semantic_search_enabled?: boolean;
     emoji_replacer_enabled?: boolean;
     welcome_seeded?: boolean;
+    delete_empty_folders?: boolean;
   },
 ): Promise<UserPreferences> {
   const current = await getUserPreferences(client, userId);
@@ -64,6 +66,10 @@ export async function upsertUserPreferences(
       patch.welcome_seeded !== undefined
         ? patch.welcome_seeded
         : current.welcome_seeded,
+    delete_empty_folders:
+      patch.delete_empty_folders !== undefined
+        ? patch.delete_empty_folders
+        : current.delete_empty_folders,
   };
 
   const { data, error } = await client

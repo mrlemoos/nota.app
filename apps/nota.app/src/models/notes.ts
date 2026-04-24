@@ -53,6 +53,7 @@ export async function createNote(
     due_at?: string | null;
     is_deadline?: boolean;
     editor_settings?: Json;
+    folder_id?: string | null;
   },
 ) {
   const note: NoteInsert = {
@@ -67,6 +68,7 @@ export async function createNote(
     ...(options?.editor_settings !== undefined
       ? { editor_settings: options.editor_settings }
       : {}),
+    ...(options?.folder_id !== undefined ? { folder_id: options.folder_id } : {}),
   };
 
   const { data, error } = await client
@@ -99,6 +101,37 @@ export async function updateNote(
   }
 
   return data;
+}
+
+export async function listNoteIdsInFolder(
+  client: TypedSupabaseClient,
+  folderId: string,
+): Promise<string[]> {
+  const { data, error } = await client
+    .from('notes')
+    .select('id')
+    .eq('folder_id', folderId);
+
+  if (error) {
+    throw new Error(`Failed to list notes in folder: ${error.message}`);
+  }
+
+  return (data ?? []).map((r) => r.id);
+}
+
+export async function moveAllNotesBetweenFolders(
+  client: TypedSupabaseClient,
+  fromFolderId: string,
+  toFolderId: string | null,
+): Promise<void> {
+  const { error } = await client
+    .from('notes')
+    .update({ folder_id: toFolderId })
+    .eq('folder_id', fromFolderId);
+
+  if (error) {
+    throw new Error(`Failed to move notes between folders: ${error.message}`);
+  }
 }
 
 export async function deleteNote(client: TypedSupabaseClient, id: string) {

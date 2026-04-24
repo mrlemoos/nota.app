@@ -5,7 +5,7 @@ import { navigateFromLegacyPath } from './app-navigation';
 import { useOptionalNotesDataActions } from '../context/notes-data-context';
 
 export function useTodaysNoteShortcut(
-  notes: Pick<Note, 'id'>[],
+  notes: Pick<Note, 'id' | 'folder_id'>[],
   userId: string | undefined,
   enabled: boolean,
   notaProEntitled: boolean,

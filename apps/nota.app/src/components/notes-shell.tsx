@@ -2,6 +2,7 @@ import {
   useEffect,
   useLayoutEffect,
   useRef,
+  useState,
   lazy,
   Suspense,
   type JSX,
@@ -13,7 +14,7 @@ import {
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Button } from '@/components/ui/button';
-import { SimpleTooltip, TooltipProvider } from '@/components/ui/tooltip';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { ELECTRON_WINDOW_NO_DRAG_CLASS } from '@/lib/electron-window-chrome';
 import { cn } from '@/lib/utils';
 import { useStickyDocTitle } from '../context/sticky-doc-title';
@@ -25,7 +26,6 @@ import { useSettingsShortcut } from '../lib/use-settings-shortcut';
 import { useTodaysNoteShortcut } from '../lib/use-todays-note-shortcut';
 import { useSyncUserPreferences } from '../lib/use-sync-user-preferences';
 import { useNotaPreferencesStore } from '../stores/nota-preferences';
-import type { Note } from '~/types/database.types';
 import {
   gsap,
   NOTA_MOTION_EASE_IN_OUT,
@@ -43,9 +43,10 @@ import {
   replaceAppHash,
   type NotesShellPanel,
 } from '../lib/app-navigation';
-import { noteHashHref, NoteDetailPanel } from './note-detail-panel';
+import { NoteDetailPanel } from './note-detail-panel';
 import { clientCreateNote } from '../lib/create-note-client';
-import { clientDeleteNoteById } from '../lib/delete-note-client';
+import { FolderCreateDialog } from './folder-create-dialog';
+import { NotesSidebarList } from './notes-sidebar-list';
 import { AudioToNoteDock } from './audio-to-note-dock';
 import { ElectronMenubarBridge } from './electron-menubar-bridge';
 import { StudyRecordingUploadWarningBanner } from './study-recording-upload-warning-banner';
@@ -72,13 +73,17 @@ export function NotesShell(): JSX.Element {
 
   const {
     notes,
+    folders,
     loadError,
     userPreferences,
     notaProEntitled,
     loading,
     refreshNotesList,
     insertNoteAtFront,
+    insertFolderSorted,
+    patchNoteInList,
     removeNoteFromList,
+    removeFolderFromList,
     setUserPreferencesInState,
   } = useNotesData();
   const { open } = useNotesSidebarStore();
@@ -93,6 +98,7 @@ export function NotesShell(): JSX.Element {
   const openTodaysNoteShortcut = useNotaPreferencesStore(
     (s) => s.openTodaysNoteShortcut,
   );
+  const [folderCreateOpen, setFolderCreateOpen] = useState(false);
 
   useSyncUserPreferences(
     userPreferences,
@@ -185,6 +191,7 @@ export function NotesShell(): JSX.Element {
       insertNoteAtFront,
       refreshNotesList,
       notaProEntitled,
+      notes,
     });
   };
 
@@ -266,7 +273,32 @@ export function NotesShell(): JSX.Element {
                 <h2 className="font-serif text-lg font-semibold tracking-normal">
                   Notes
                 </h2>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="outline"
+                    aria-label="Create new folder"
+                    onClick={() => {
+                      setFolderCreateOpen(true);
+                    }}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="h-4 w-4"
+                      aria-hidden
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.25-3v8.25m0-8.25h-8.25m8.25 0h8.25"
+                      />
+                    </svg>
+                  </Button>
                   <Button
                     type="button"
                     size="icon-lg"
@@ -303,113 +335,28 @@ export function NotesShell(): JSX.Element {
               )}
 
               <nav className="min-h-0 flex-1 overflow-y-auto p-2">
-                {notes.length === 0 ? (
-                  <div className="p-4 text-center">
-                    <p className="mb-3 text-sm text-muted-foreground">
-                      No notes yet.
-                    </p>
-                    <Button
-                      type="button"
-                      variant="default"
-                      onClick={onCreateNote}
-                    >
-                      Create your first note
-                    </Button>
-                  </div>
-                ) : (
-                  <ul className="space-y-1">
-                    {notes.map((note: Note) => {
-                      const isActive =
-                        panel === 'note' && routeNoteId === note.id;
-                      const noteLabel = note.title || 'Untitled Note';
-                      return (
-                        <li key={note.id}>
-                          <div
-                            className={cn(
-                              'flex items-center gap-0 rounded-md transition-colors',
-                              isActive
-                                ? 'bg-muted'
-                                : 'text-foreground hover:bg-muted/60',
-                            )}
-                          >
-                            <a
-                              href={noteHashHref(note.id)}
-                              className={cn(
-                                'min-w-0 flex-1 px-3 py-2 text-sm transition-colors',
-                                isActive
-                                  ? 'font-medium text-foreground'
-                                  : 'text-foreground',
-                              )}
-                              aria-current={isActive ? 'page' : undefined}
-                            >
-                              <SimpleTooltip
-                                label={noteLabel}
-                                side="top"
-                                delay={750}
-                              >
-                                <div className="min-w-0 truncate font-medium">
-                                  {noteLabel}
-                                </div>
-                              </SimpleTooltip>
-                              <div className="mt-0.5 text-xs text-muted-foreground">
-                                {new Date(note.updated_at).toLocaleDateString(
-                                  undefined,
-                                  {
-                                    month: 'short',
-                                    day: 'numeric',
-                                  },
-                                )}
-                              </div>
-                            </a>
-                            <div className="shrink-0 pr-1">
-                              <SimpleTooltip label="Delete note" side="left">
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-muted-foreground hover:bg-transparent hover:text-destructive"
-                                  aria-label={`Delete note: ${noteLabel}`}
-                                  onClick={() => {
-                                    if (
-                                      !confirm(
-                                        'Are you sure you want to delete this note?',
-                                      )
-                                    ) {
-                                      return;
-                                    }
-                                    void clientDeleteNoteById(note.id, {
-                                      userId: user?.id ?? '',
-                                      removeNoteFromList,
-                                      refreshNotesList,
-                                      notaProEntitled,
-                                    });
-                                  }}
-                                >
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    strokeWidth={1.5}
-                                    stroke="currentColor"
-                                    className="h-4 w-4"
-                                    aria-hidden
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
-                                    />
-                                  </svg>
-                                </Button>
-                              </SimpleTooltip>
-                            </div>
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
+                <NotesSidebarList
+                  notes={notes}
+                  folders={folders}
+                  panel={panel}
+                  routeNoteId={routeNoteId}
+                  userId={user?.id}
+                  notaProEntitled={notaProEntitled}
+                  userPreferences={userPreferences}
+                  insertNoteAtFront={insertNoteAtFront}
+                  patchNoteInList={patchNoteInList}
+                  removeNoteFromList={removeNoteFromList}
+                  removeFolderFromList={removeFolderFromList}
+                  refreshNotesList={refreshNotesList}
+                />
               </nav>
+              <FolderCreateDialog
+                open={folderCreateOpen}
+                onOpenChange={setFolderCreateOpen}
+                userId={user?.id}
+                insertFolderSorted={insertFolderSorted}
+                refreshNotesList={refreshNotesList}
+              />
 
               {user ? (
                 <footer className="mt-auto shrink-0 border-t border-border/40 p-3">

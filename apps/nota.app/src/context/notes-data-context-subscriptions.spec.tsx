@@ -23,6 +23,11 @@ function TestNotesSlices({ children }: { children: ReactNode }) {
       content: {},
       created_at: '2020-01-01T00:00:00Z',
       updated_at: '2020-01-01T00:00:00Z',
+      due_at: null,
+      is_deadline: false,
+      editor_settings: {},
+      banner_attachment_id: null,
+      folder_id: null,
     } as Note,
   ]);
 
@@ -36,13 +41,16 @@ function TestNotesSlices({ children }: { children: ReactNode }) {
       },
       removeNoteFromList: () => {},
       insertNoteAtFront: () => {},
+      insertFolderSorted: () => {},
+      removeFolderFromList: () => {},
+      patchFolderInList: () => {},
       setUserPreferencesInState: () => {},
     }),
     [],
   );
 
   const vault: NotesDataVaultSlice = useMemo(
-    () => ({ notes: noteRows }),
+    () => ({ notes: noteRows, folders: [] }),
     [noteRows],
   );
 

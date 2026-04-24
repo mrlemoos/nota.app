@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import type { Note, UserPreferences } from '~/types/database.types';
+import type { Folder, Note, UserPreferences } from '~/types/database.types';
 import { getBrowserClient } from '../lib/supabase/browser';
 import {
   isLikelyOnline,
@@ -18,6 +18,7 @@ import {
   storedNoteToListRow,
 } from '@/lib/notes-offline';
 import { syncServerNotesToIdbInChunks } from '../lib/sync-server-notes-to-idb';
+import { listFolders } from '../models/folders';
 import { listNotes } from '../models/notes';
 import { getUserPreferences } from '../models/user-preferences';
 import { isClerkAccessTokenGetterRegistered } from '../lib/clerk-token-ref';
@@ -44,6 +45,7 @@ export type NotesDataContextValue = {
   /** Server-confirmed active subscription (Nota Pro entitlement): vault, cloud, sync. */
   notaProEntitled: boolean;
   notes: Note[];
+  folders: Folder[];
   userPreferences: UserPreferences | null;
   loadError?: string;
   loading: boolean;
@@ -51,6 +53,9 @@ export type NotesDataContextValue = {
   patchNoteInList: (id: string, patch: Partial<Note>) => void;
   removeNoteFromList: (id: string) => void;
   insertNoteAtFront: (note: Note) => void;
+  insertFolderSorted: (folder: Folder) => void;
+  removeFolderFromList: (id: string) => void;
+  patchFolderInList: (id: string, patch: Partial<Folder>) => void;
   setUserPreferencesInState: (row: UserPreferences | null) => void;
 };
 
@@ -60,10 +65,13 @@ export type NotesDataActionsSlice = Pick<
   | 'patchNoteInList'
   | 'removeNoteFromList'
   | 'insertNoteAtFront'
+  | 'insertFolderSorted'
+  | 'removeFolderFromList'
+  | 'patchFolderInList'
   | 'setUserPreferencesInState'
 >;
 
-export type NotesDataVaultSlice = Pick<NotesDataContextValue, 'notes'>;
+export type NotesDataVaultSlice = Pick<NotesDataContextValue, 'notes' | 'folders'>;
 
 export type NotesDataMetaSlice = Pick<
   NotesDataContextValue,
@@ -131,6 +139,7 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
 
   const [notaProEntitled, setNotaProEntitled] = useState(false);
   const [notes, setNotes] = useState<Note[]>([]);
+  const [folders, setFolders] = useState<Folder[]>([]);
   const [userPreferences, setUserPreferences] =
     useState<UserPreferences | null>(null);
   const welcomeSeeded = userPreferences?.welcome_seeded === true;
@@ -156,6 +165,7 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
           }
           setNotaProEntitled(false);
           setNotes([]);
+          setFolders([]);
           setUserPreferences(null);
           return;
         }
@@ -174,6 +184,7 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
       semantic_search_enabled: true,
       emoji_replacer_enabled: true,
       welcome_seeded: false,
+      delete_empty_folders: true,
       updated_at: new Date(0).toISOString(),
     });
 
@@ -184,6 +195,7 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
         .map(storedNoteToListRow)
         .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
       setNotes(merged);
+      setFolders([]);
       setUserPreferences(null);
     };
 
@@ -197,6 +209,7 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
           await bootstrapVaultFromIdb();
         } else {
           setNotes([]);
+          setFolders([]);
           setUserPreferences(null);
         }
         return;
@@ -208,6 +221,7 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
       } else {
         setNotaProEntitled(false);
         setNotes([]);
+        setFolders([]);
         setUserPreferences(null);
         setLoadError('Failed to load notes');
       }
@@ -240,6 +254,7 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
       if (!entitled) {
         setNotaProEntitled(false);
         setNotes([]);
+        setFolders([]);
         setUserPreferences(null);
         if (!silent) {
           setLoading(false);
@@ -257,6 +272,14 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
         console.error('Failed to load notes:', e);
         setLoadError('Failed to load notes');
       }
+
+      let serverFolders: Folder[] = [];
+      try {
+        serverFolders = await listFolders(client);
+      } catch (e) {
+        console.error('Failed to load folders:', e);
+      }
+      setFolders(serverFolders);
 
       let prefs: UserPreferences;
       try {
@@ -376,6 +399,36 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const insertFolderSorted = useCallback((folder: Folder) => {
+    setFolders((prev) => {
+      const next = [...prev.filter((f) => f.id !== folder.id), folder];
+      next.sort((a, b) =>
+        a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
+      );
+      return next;
+    });
+  }, []);
+
+  const removeFolderFromList = useCallback((id: string) => {
+    setFolders((prev) => prev.filter((f) => f.id !== id));
+  }, []);
+
+  const patchFolderInList = useCallback((id: string, patch: Partial<Folder>) => {
+    setFolders((prev) => {
+      const idx = prev.findIndex((f) => f.id === id);
+      if (idx === -1) {
+        return prev;
+      }
+      const merged = { ...prev[idx], ...patch };
+      const next = [...prev];
+      next[idx] = merged;
+      next.sort((a, b) =>
+        a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
+      );
+      return next;
+    });
+  }, []);
+
   const actionsValue = useMemo(
     () =>
       ({
@@ -383,6 +436,9 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
         patchNoteInList,
         removeNoteFromList,
         insertNoteAtFront,
+        insertFolderSorted,
+        removeFolderFromList,
+        patchFolderInList,
         setUserPreferencesInState: setUserPreferences,
       }) satisfies NotesDataActionsSlice,
     [
@@ -390,14 +446,18 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
       patchNoteInList,
       removeNoteFromList,
       insertNoteAtFront,
+      insertFolderSorted,
+      removeFolderFromList,
+      patchFolderInList,
     ],
   );
 
   const vaultValue = useMemo(
     (): NotesDataVaultSlice => ({
       notes,
+      folders,
     }),
-    [notes],
+    [notes, folders],
   );
 
   const metaValue = useMemo(

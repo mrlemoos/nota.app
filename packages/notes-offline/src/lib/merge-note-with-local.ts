@@ -36,6 +36,7 @@ export function mergeNoteWithLocal(
     updated_at: base.updated_at,
     due_at: base.due_at,
     is_deadline: base.is_deadline,
+    folder_id: base.folder_id ?? server.folder_id ?? null,
     editor_settings:
       (base.editor_settings as Json | undefined) ??
       server.editor_settings ??

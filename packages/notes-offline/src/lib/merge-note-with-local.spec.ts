@@ -14,6 +14,8 @@ function makeNote(overrides: Partial<Note> = {}): Note {
     due_at: null,
     is_deadline: false,
     editor_settings: {} as Json,
+    banner_attachment_id: null,
+    folder_id: null,
     ...overrides,
   };
 }
@@ -89,6 +91,24 @@ describe('mergeNoteWithLocal', () => {
 
     // Assert
     expect(merged.editor_settings).toEqual({ font: 'mono', measure: 'narrow' });
+  });
+
+  it('prefers local folder_id when local is dirty', () => {
+    // Arrange
+    const folderA = '00000000-0000-4000-8000-000000000001';
+    const folderB = '00000000-0000-4000-8000-000000000002';
+    const server = makeNote({ folder_id: folderA });
+    const local = makeStored({
+      dirty: true,
+      folder_id: folderB,
+      updated_at: '2020-01-03T00:00:00Z',
+    });
+
+    // Act
+    const merged = mergeNoteWithLocal(server, local);
+
+    // Assert
+    expect(merged.folder_id).toBe(folderB);
   });
 
   it('prefers local due_at and is_deadline when local is dirty', () => {

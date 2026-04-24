@@ -38,6 +38,10 @@ import { navigateFromLegacyPath, setAppHash } from '../lib/app-navigation';
 import { useClerk } from '@clerk/react';
 import { clientCreateNote } from '../lib/create-note-client';
 import { clientDeleteNoteById } from '../lib/delete-note-client';
+import { clientMoveNoteToFolder } from '../lib/move-note-folder-client';
+import type { Folder } from '~/types/database.types';
+import { FolderCreateDialog } from './folder-create-dialog';
+import { FolderDeleteDialog } from './folder-delete-dialog';
 import {
   startStudyNotesAppendToOpenNote,
   startStudyNotesFromRecording,
@@ -66,6 +70,23 @@ const commandListClassName = cn(
   'max-h-72 overflow-y-auto p-1',
   '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
 );
+
+function pickCreateNoteFolderId(
+  pickerOpen: boolean,
+  paletteValue: string,
+): string | undefined {
+  if (!pickerOpen) {
+    return undefined;
+  }
+  if (!paletteValue.startsWith('new-note-f:')) {
+    return undefined;
+  }
+  const tail = paletteValue.slice('new-note-f:'.length);
+  if (tail === 'root') {
+    return undefined;
+  }
+  return tail;
+}
 
 function PaletteItemIcon({
   icon,
@@ -98,10 +119,15 @@ export function CommandPalette(): JSX.Element {
       : null;
   const {
     notes,
+    folders,
     notaProEntitled,
+    userPreferences,
     refreshNotesList,
     insertNoteAtFront,
+    insertFolderSorted,
+    patchNoteInList,
     removeNoteFromList,
+    removeFolderFromList,
   } = useNotesData();
   const { user } = useRootLoaderData();
   const { signOut } = useClerk();
@@ -129,6 +155,18 @@ export function CommandPalette(): JSX.Element {
     useState('⌘]');
   const [openingTodaysNote, setOpeningTodaysNote] = useState(false);
   const [startingAudioNote, setStartingAudioNote] = useState(false);
+  const [paletteValue, setPaletteValue] = useState('');
+  const [newNoteFolderPickerOpen, setNewNoteFolderPickerOpen] =
+    useState(false);
+  const [folderCreateDlgOpen, setFolderCreateDlgOpen] = useState(false);
+  const [folderDeleteTarget, setFolderDeleteTarget] = useState<Folder | null>(
+    null,
+  );
+  const [moveFlow, setMoveFlow] = useState<'idle' | 'pickNote' | 'pickFolder'>(
+    'idle',
+  );
+  const [moveNoteId, setMoveNoteId] = useState<string | null>(null);
+  const [deleteFolderPickerOpen, setDeleteFolderPickerOpen] = useState(false);
 
   const semanticSearchUserPref = useNotaPreferencesStore(
     (s) => s.semanticSearchEnabled,
@@ -155,6 +193,12 @@ export function CommandPalette(): JSX.Element {
     if (!open) {
       setSemanticOrderedIds(null);
       setSemanticSearchLoading(false);
+      setNewNoteFolderPickerOpen(false);
+      setPaletteValue('');
+      setMoveFlow('idle');
+      setMoveNoteId(null);
+      setFolderDeleteTarget(null);
+      setDeleteFolderPickerOpen(false);
     }
   }, [open]);
 
@@ -282,6 +326,11 @@ export function CommandPalette(): JSX.Element {
     setHistoryForwardHotkeyLabel(isApple ? '⌘]' : 'Ctrl+]');
   }, []);
 
+  const paletteValueRef = useRef('');
+  paletteValueRef.current = paletteValue;
+  const newNotePickerOpenRef = useRef(false);
+  newNotePickerOpenRef.current = newNoteFolderPickerOpen;
+
   const onKeyDown = useEffectEvent((e: KeyboardEvent): void => {
     const mod = e.metaKey || e.ctrlKey;
     if (mod && (e.key === 'k' || e.key === 'K')) {
@@ -309,11 +358,17 @@ export function CommandPalette(): JSX.Element {
         setBusyAction('create');
         void (async () => {
           try {
+            const picked = pickCreateNoteFolderId(
+              newNotePickerOpenRef.current,
+              paletteValueRef.current,
+            );
             await clientCreateNote({
               userId: user?.id ?? '',
               insertNoteAtFront,
               refreshNotesList,
               notaProEntitled,
+              notes,
+              ...(picked !== undefined ? { folderId: picked } : {}),
             });
             closePalette();
           } finally {
@@ -322,6 +377,23 @@ export function CommandPalette(): JSX.Element {
         })();
       }
       return;
+    }
+
+    if (e.key === 'Tab' && notaProEntitled) {
+      if (newNotePickerOpenRef.current && e.shiftKey) {
+        e.preventDefault();
+        setNewNoteFolderPickerOpen(false);
+        return;
+      }
+      if (
+        !newNotePickerOpenRef.current &&
+        !e.shiftKey &&
+        paletteValueRef.current === 'create-note'
+      ) {
+        e.preventDefault();
+        setNewNoteFolderPickerOpen(true);
+        return;
+      }
     }
 
     if (e.key === ' ') {
@@ -341,6 +413,7 @@ export function CommandPalette(): JSX.Element {
   }, [onKeyDown]);
 
   return (
+    <>
     <Dialog.Root
       open={open}
       onOpenChange={handleDialogOpenChange}
@@ -375,6 +448,8 @@ export function CommandPalette(): JSX.Element {
               label="Command palette"
               vimBindings={false}
               filter={commandFilter}
+              value={paletteValue}
+              onValueChange={setPaletteValue}
             >
               <CommandPaletteSemanticSync
                 enabled={semanticSearchEnabled && open}
@@ -394,6 +469,210 @@ export function CommandPalette(): JSX.Element {
                 )}
               />
               <Command.List className={commandListClassName}>
+                {notaProEntitled && moveFlow !== 'idle' ? (
+                  <Command.Group
+                    heading={moveFlow === 'pickNote' ? 'Move note — pick note' : 'Move note — destination'}
+                    className={groupHeadingClassName}
+                  >
+                    {moveFlow === 'pickNote'
+                      ? notesForOpenPalette.map((n) => (
+                          <Command.Item
+                            key={`move-pick-${n.id}`}
+                            value={`move-pick:${n.id}`}
+                            keywords={['move', 'folder', n.title]}
+                            onSelect={() => {
+                              setMoveNoteId(n.id);
+                              setMoveFlow('pickFolder');
+                            }}
+                            className={cn(
+                              commandItemRowClass,
+                              'group text-foreground',
+                              'aria-selected:bg-accent aria-selected:text-accent-foreground',
+                            )}
+                          >
+                            <span className="min-w-0 flex-1 truncate">
+                              {n.title || 'Untitled Note'}
+                            </span>
+                          </Command.Item>
+                        ))
+                      : null}
+                    {moveFlow === 'pickFolder' && moveNoteId ? (
+                      <>
+                        <Command.Item
+                          value="move-to:root"
+                          keywords={['root', 'default', 'move']}
+                          onSelect={() => {
+                            const nid = moveNoteId;
+                            const note = notes.find((x) => x.id === nid);
+                            void clientMoveNoteToFolder({
+                              noteId: nid,
+                              targetFolderId: null,
+                              previousFolderId: note?.folder_id ?? null,
+                              userId: user?.id ?? '',
+                              notaProEntitled,
+                              userPreferences,
+                              patchNoteInList,
+                              removeFolderFromList,
+                              refreshNotesList,
+                            });
+                            setMoveFlow('idle');
+                            setMoveNoteId(null);
+                            closePalette();
+                          }}
+                          className={cn(
+                            commandItemRowClass,
+                            'group text-foreground',
+                            'aria-selected:bg-accent aria-selected:text-accent-foreground',
+                          )}
+                        >
+                          <span className="min-w-0 flex-1">Default (not in a folder)</span>
+                        </Command.Item>
+                        {folders.map((f) => (
+                          <Command.Item
+                            key={`move-to-${f.id}`}
+                            value={`move-to:${f.id}`}
+                            keywords={['move', f.name]}
+                            onSelect={() => {
+                              const nid = moveNoteId;
+                              const note = notes.find((x) => x.id === nid);
+                              void clientMoveNoteToFolder({
+                                noteId: nid,
+                                targetFolderId: f.id,
+                                previousFolderId: note?.folder_id ?? null,
+                                userId: user?.id ?? '',
+                                notaProEntitled,
+                                userPreferences,
+                                patchNoteInList,
+                                removeFolderFromList,
+                                refreshNotesList,
+                              });
+                              setMoveFlow('idle');
+                              setMoveNoteId(null);
+                              closePalette();
+                            }}
+                            className={cn(
+                              commandItemRowClass,
+                              'group text-foreground',
+                              'aria-selected:bg-accent aria-selected:text-accent-foreground',
+                            )}
+                          >
+                            <span className="min-w-0 flex-1 truncate">{f.name}</span>
+                          </Command.Item>
+                        ))}
+                      </>
+                    ) : null}
+                    <Command.Item
+                      value="move-cancel"
+                      keywords={['cancel', 'back']}
+                      onSelect={() => {
+                        setMoveFlow('idle');
+                        setMoveNoteId(null);
+                      }}
+                      className={cn(
+                        commandItemRowClass,
+                        'group text-muted-foreground',
+                        'aria-selected:bg-accent aria-selected:text-accent-foreground',
+                      )}
+                    >
+                      Cancel
+                    </Command.Item>
+                  </Command.Group>
+                ) : null}
+                {notaProEntitled && deleteFolderPickerOpen ? (
+                  <Command.Group
+                    heading="Delete folder — pick folder"
+                    className={groupHeadingClassName}
+                  >
+                    {folders.map((f) => (
+                      <Command.Item
+                        key={`del-pick-${f.id}`}
+                        value={`del-pick:${f.id}`}
+                        keywords={['delete', 'folder', f.name]}
+                        onSelect={() => {
+                          setFolderDeleteTarget(f);
+                          setDeleteFolderPickerOpen(false);
+                        }}
+                        className={cn(
+                          commandItemRowClass,
+                          'group text-foreground',
+                          'aria-selected:bg-accent aria-selected:text-accent-foreground',
+                        )}
+                      >
+                        <span className="min-w-0 flex-1 truncate">{f.name}</span>
+                      </Command.Item>
+                    ))}
+                    <Command.Item
+                      value="del-pick-cancel"
+                      keywords={['cancel']}
+                      onSelect={() => {
+                        setDeleteFolderPickerOpen(false);
+                      }}
+                      className={cn(
+                        commandItemRowClass,
+                        'group text-muted-foreground',
+                        'aria-selected:bg-accent aria-selected:text-accent-foreground',
+                      )}
+                    >
+                      Cancel
+                    </Command.Item>
+                  </Command.Group>
+                ) : null}
+                {notaProEntitled &&
+                folderDeleteTarget === null &&
+                moveFlow === 'idle' &&
+                !deleteFolderPickerOpen ? (
+                  <Command.Group
+                    heading="Folders"
+                    className={groupHeadingClassName}
+                  >
+                    <Command.Item
+                      value="cmd-create-folder"
+                      keywords={['folder', 'new folder', 'add folder']}
+                      onSelect={() => {
+                        setFolderCreateDlgOpen(true);
+                      }}
+                      className={cn(
+                        commandItemRowClass,
+                        'group text-foreground',
+                        'aria-selected:bg-accent aria-selected:text-accent-foreground',
+                      )}
+                    >
+                      <span className="min-w-0 flex-1">Create folder</span>
+                    </Command.Item>
+                    <Command.Item
+                      value="cmd-move-note"
+                      disabled={notesForOpenPalette.length === 0}
+                      keywords={['move note', 'folder', 'organise']}
+                      onSelect={() => {
+                        setMoveFlow('pickNote');
+                      }}
+                      className={cn(
+                        commandItemRowClass,
+                        'group text-foreground',
+                        'aria-selected:bg-accent aria-selected:text-accent-foreground',
+                        'aria-disabled:pointer-events-none aria-disabled:opacity-50',
+                      )}
+                    >
+                      <span className="min-w-0 flex-1">Move note…</span>
+                    </Command.Item>
+                    <Command.Item
+                      value="cmd-delete-folder"
+                      disabled={folders.length === 0}
+                      keywords={['delete folder', 'remove folder']}
+                      onSelect={() => {
+                        setDeleteFolderPickerOpen(true);
+                      }}
+                      className={cn(
+                        commandItemRowClass,
+                        'group text-foreground',
+                        'aria-selected:bg-accent aria-selected:text-accent-foreground',
+                        'aria-disabled:pointer-events-none aria-disabled:opacity-50',
+                      )}
+                    >
+                      <span className="min-w-0 flex-1">Delete folder…</span>
+                    </Command.Item>
+                  </Command.Group>
+                ) : null}
                 {notaProEntitled ? (
                   <Command.Group
                     heading="Notes"
@@ -401,7 +680,7 @@ export function CommandPalette(): JSX.Element {
                   >
                     <Command.Item
                       value="create-note"
-                      disabled={busy}
+                      disabled={busy || moveFlow !== 'idle'}
                       keywords={['new', 'add']}
                       onSelect={() => {
                         setBusyAction('create');
@@ -412,6 +691,7 @@ export function CommandPalette(): JSX.Element {
                               insertNoteAtFront,
                               refreshNotesList,
                               notaProEntitled,
+                              notes,
                             });
                             closePalette();
                           } finally {
@@ -439,6 +719,73 @@ export function CommandPalette(): JSX.Element {
                         {newNoteHotkeyLabel}
                       </span>
                     </Command.Item>
+                    {newNoteFolderPickerOpen ? (
+                      <Command.Group
+                        heading="Folder for new note"
+                        className={groupHeadingClassName}
+                      >
+                        <Command.Item
+                          value="new-note-f:root"
+                          keywords={['root', 'default', 'folder']}
+                          onSelect={() => {
+                            setBusyAction('create');
+                            void (async () => {
+                              try {
+                                await clientCreateNote({
+                                  userId: user?.id ?? '',
+                                  insertNoteAtFront,
+                                  refreshNotesList,
+                                  notaProEntitled,
+                                  notes,
+                                });
+                                closePalette();
+                              } finally {
+                                setBusyAction(null);
+                              }
+                            })();
+                          }}
+                          className={cn(
+                            commandItemRowClass,
+                            'group text-foreground',
+                            'aria-selected:bg-accent aria-selected:text-accent-foreground',
+                          )}
+                        >
+                          <span className="min-w-0 flex-1">Default (today)</span>
+                        </Command.Item>
+                        {folders.map((f) => (
+                          <Command.Item
+                            key={`new-note-f-${f.id}`}
+                            value={`new-note-f:${f.id}`}
+                            keywords={['folder', f.name, 'new note']}
+                            onSelect={() => {
+                              setBusyAction('create');
+                              void (async () => {
+                                try {
+                                  await clientCreateNote({
+                                    userId: user?.id ?? '',
+                                    insertNoteAtFront,
+                                    refreshNotesList,
+                                    notaProEntitled,
+                                    notes,
+                                    folderId: f.id,
+                                  });
+                                  closePalette();
+                                } finally {
+                                  setBusyAction(null);
+                                }
+                              })();
+                            }}
+                            className={cn(
+                              commandItemRowClass,
+                              'group text-foreground',
+                              'aria-selected:bg-accent aria-selected:text-accent-foreground',
+                            )}
+                          >
+                            <span className="min-w-0 flex-1 truncate">{f.name}</span>
+                          </Command.Item>
+                        ))}
+                      </Command.Group>
+                    ) : null}
                     {openTodaysNoteShortcut && user?.id ? (
                       <Command.Item
                         value="open-todays-note"
@@ -789,11 +1136,15 @@ export function CommandPalette(): JSX.Element {
                         setBusyAction('delete');
                         void (async () => {
                           try {
+                            const delNote = notes.find((x) => x.id === activeNoteId);
                             await clientDeleteNoteById(activeNoteId, {
                               userId: user?.id ?? '',
                               removeNoteFromList,
+                              removeFolderFromList,
                               refreshNotesList,
                               notaProEntitled,
+                              noteFolderId: delNote?.folder_id ?? null,
+                              userPreferences,
                             });
                             closePalette();
                           } finally {
@@ -986,5 +1337,26 @@ export function CommandPalette(): JSX.Element {
         </Dialog.Popup>
       </Dialog.Portal>
     </Dialog.Root>
+    <FolderCreateDialog
+      open={folderCreateDlgOpen}
+      onOpenChange={setFolderCreateDlgOpen}
+      userId={user?.id}
+      insertFolderSorted={insertFolderSorted}
+      refreshNotesList={refreshNotesList}
+    />
+    <FolderDeleteDialog
+      folder={folderDeleteTarget}
+      allFolders={folders}
+      open={folderDeleteTarget !== null}
+      onOpenChange={(next) => {
+        if (!next) {
+          setFolderDeleteTarget(null);
+        }
+      }}
+      removeNoteFromList={removeNoteFromList}
+      removeFolderFromList={removeFolderFromList}
+      refreshNotesList={refreshNotesList}
+    />
+    </>
   );
 }
