@@ -429,6 +429,7 @@ export function CommandPalette(): JSX.Element {
         />
         <Dialog.Popup
           data-nota-command-palette
+          inert={folderCreateDlgOpen || undefined}
           className={cn(
             'fixed top-[15%] left-1/2 z-50 w-[min(100vw-2rem,28rem)] -translate-x-1/2 outline-none',
           )}
@@ -632,6 +633,7 @@ export function CommandPalette(): JSX.Element {
                       value="cmd-create-folder"
                       keywords={['folder', 'new folder', 'add folder']}
                       onSelect={() => {
+                        closePalette();
                         setFolderCreateDlgOpen(true);
                       }}
                       className={cn(
