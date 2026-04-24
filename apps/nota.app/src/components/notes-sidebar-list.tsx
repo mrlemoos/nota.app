@@ -9,7 +9,6 @@ import type { NotesShellPanel } from '../lib/app-navigation';
 import { noteHashHref } from './note-detail-panel';
 import { clientCreateNote } from '../lib/create-note-client';
 import { clientDeleteNoteById } from '../lib/delete-note-client';
-import { clientMoveNoteToFolder } from '../lib/move-note-folder-client';
 import { buildSidebarFolderSections } from '../lib/note-sidebar-groups';
 import { FolderDeleteDialog } from './folder-delete-dialog';
 
@@ -22,7 +21,6 @@ type NotesSidebarListProps = {
   notaProEntitled: boolean;
   userPreferences: UserPreferences | null;
   insertNoteAtFront: (n: Note) => void;
-  patchNoteInList: (id: string, patch: Partial<Note>) => void;
   removeNoteFromList: (id: string) => void;
   removeFolderFromList: (id: string) => void;
   refreshNotesList: (options?: { silent?: boolean }) => Promise<void>;
@@ -33,11 +31,9 @@ function NoteRow(options: {
   isActive: boolean;
   /** Nested under a folder row in the tree. */
   nested?: boolean;
-  folders: Folder[];
   userId: string;
   notaProEntitled: boolean;
   userPreferences: UserPreferences | null;
-  patchNoteInList: (id: string, patch: Partial<Note>) => void;
   removeNoteFromList: (id: string) => void;
   removeFolderFromList: (id: string) => void;
   refreshNotesList: (options?: { silent?: boolean }) => Promise<void>;
@@ -46,17 +42,14 @@ function NoteRow(options: {
     note,
     isActive,
     nested = false,
-    folders,
     userId,
     notaProEntitled,
     userPreferences,
-    patchNoteInList,
     removeNoteFromList,
     removeFolderFromList,
     refreshNotesList,
   } = options;
   const noteLabel = note.title || 'Untitled Note';
-  const selectValue = note.folder_id ?? '';
 
   return (
     <li className="list-none">
@@ -85,44 +78,7 @@ function NoteRow(options: {
             })}
           </div>
         </a>
-        <div className="flex shrink-0 items-center gap-0 pr-1">
-          <label className="sr-only" htmlFor={`nota-move-note-${note.id}`}>
-            Move {noteLabel} to folder
-          </label>
-          <select
-            id={`nota-move-note-${note.id}`}
-            className="max-w-[7.5rem] rounded border border-transparent bg-transparent py-1 pl-1 text-xs text-muted-foreground hover:border-border"
-            value={selectValue}
-            title="Move to folder"
-            onChange={(e) => {
-              const v = e.target.value;
-              const target = v === '' ? null : v;
-              const prev = note.folder_id ?? null;
-              if (target === prev) {
-                return;
-              }
-              void clientMoveNoteToFolder({
-                noteId: note.id,
-                targetFolderId: target,
-                previousFolderId: prev,
-                userId,
-                notaProEntitled,
-                userPreferences,
-                patchNoteInList,
-                removeFolderFromList,
-                refreshNotesList,
-              });
-            }}
-          >
-            <option value="" aria-label="No folder">
-              {'\u200B'}
-            </option>
-            {folders.map((f) => (
-              <option key={f.id} value={f.id}>
-                {f.name}
-              </option>
-            ))}
-          </select>
+        <div className="shrink-0 pr-1">
           <SimpleTooltip label="Delete note" side="left">
             <Button
               type="button"
@@ -181,7 +137,6 @@ export function NotesSidebarList({
   notaProEntitled,
   userPreferences,
   insertNoteAtFront,
-  patchNoteInList,
   removeNoteFromList,
   removeFolderFromList,
   refreshNotesList,
@@ -274,11 +229,9 @@ export function NotesSidebarList({
                     note={note}
                     nested
                     isActive={panel === 'note' && routeNoteId === note.id}
-                    folders={folders}
                     userId={uid}
                     notaProEntitled={notaProEntitled}
                     userPreferences={userPreferences}
-                    patchNoteInList={patchNoteInList}
                     removeNoteFromList={removeNoteFromList}
                     removeFolderFromList={removeFolderFromList}
                     refreshNotesList={refreshNotesList}
@@ -295,11 +248,9 @@ export function NotesSidebarList({
                 key={note.id}
                 note={note}
                 isActive={panel === 'note' && routeNoteId === note.id}
-                folders={folders}
                 userId={uid}
                 notaProEntitled={notaProEntitled}
                 userPreferences={userPreferences}
-                patchNoteInList={patchNoteInList}
                 removeNoteFromList={removeNoteFromList}
                 removeFolderFromList={removeFolderFromList}
                 refreshNotesList={refreshNotesList}

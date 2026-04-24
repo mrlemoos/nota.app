@@ -81,7 +81,6 @@ export function NotesShell(): JSX.Element {
     refreshNotesList,
     insertNoteAtFront,
     insertFolderSorted,
-    patchNoteInList,
     removeNoteFromList,
     removeFolderFromList,
     setUserPreferencesInState,
@@ -344,7 +343,6 @@ export function NotesShell(): JSX.Element {
                   notaProEntitled={notaProEntitled}
                   userPreferences={userPreferences}
                   insertNoteAtFront={insertNoteAtFront}
-                  patchNoteInList={patchNoteInList}
                   removeNoteFromList={removeNoteFromList}
                   removeFolderFromList={removeFolderFromList}
                   refreshNotesList={refreshNotesList}
