@@ -153,6 +153,8 @@ export function CommandPalette(): JSX.Element {
   const [historyBackHotkeyLabel, setHistoryBackHotkeyLabel] = useState('⌘[');
   const [historyForwardHotkeyLabel, setHistoryForwardHotkeyLabel] =
     useState('⌘]');
+  const [createFolderHotkeyLabel, setCreateFolderHotkeyLabel] =
+    useState('⇧⌘N');
   const [openingTodaysNote, setOpeningTodaysNote] = useState(false);
   const [startingAudioNote, setStartingAudioNote] = useState(false);
   const [paletteValue, setPaletteValue] = useState('');
@@ -324,6 +326,7 @@ export function CommandPalette(): JSX.Element {
     setTodaysNoteHotkeyLabel(isApple ? '⌘D' : 'Ctrl+D');
     setHistoryBackHotkeyLabel(isApple ? '⌘[' : 'Ctrl+[');
     setHistoryForwardHotkeyLabel(isApple ? '⌘]' : 'Ctrl+]');
+    setCreateFolderHotkeyLabel(isApple ? '⇧⌘N' : 'Ctrl+Shift+N');
   }, []);
 
   const paletteValueRef = useRef('');
@@ -638,6 +641,9 @@ export function CommandPalette(): JSX.Element {
                       )}
                     >
                       <span className="min-w-0 flex-1">Create folder</span>
+                      <span className={notaKbdHintClass}>
+                        {createFolderHotkeyLabel}
+                      </span>
                     </Command.Item>
                     <Command.Item
                       value="cmd-move-note"
