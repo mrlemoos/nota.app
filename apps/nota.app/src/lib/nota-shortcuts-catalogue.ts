@@ -53,6 +53,13 @@ export const NOTA_SHORTCUT_SECTIONS: ShortcutCatalogSection[] = [
         keysOther: 'Ctrl+D',
         requiresTodaysNotePreference: true,
       },
+      {
+        description: 'Create new folder',
+        detail:
+          'Opens the name dialog. Some browsers reserve Ctrl+Shift+N; use the palette or sidebar if the shortcut does not fire.',
+        keysApple: '⇧⌘N',
+        keysOther: 'Ctrl+Shift+N',
+      },
     ],
   },
   {

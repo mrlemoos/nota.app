@@ -22,6 +22,7 @@ import { useIsElectron } from '../lib/use-is-electron';
 import { useNotesOfflineSync } from '../lib/use-notes-offline-sync';
 import { useNotesHistoryShortcut } from '../lib/use-notes-history-shortcut';
 import { useNotesSidebarShortcut } from '../lib/use-notes-sidebar-shortcut';
+import { useCreateFolderShortcut } from '../lib/use-create-folder-shortcut';
 import { useSettingsShortcut } from '../lib/use-settings-shortcut';
 import { useTodaysNoteShortcut } from '../lib/use-todays-note-shortcut';
 import { useSyncUserPreferences } from '../lib/use-sync-user-preferences';
@@ -114,6 +115,13 @@ export function NotesShell(): JSX.Element {
     user?.id,
     openTodaysNoteShortcut && shellReady,
     notaProEntitled,
+  );
+  useCreateFolderShortcut(
+    user?.id,
+    Boolean(user?.id && shellReady && notaProEntitled),
+    () => {
+      setFolderCreateOpen(true);
+    },
   );
 
   useNotesOfflineSync(user?.id, notaProEntitled && shellReady);
