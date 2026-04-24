@@ -13,15 +13,17 @@ import { replaceAppHash, syncAppNavigation } from './lib/app-navigation';
 import { repairClerkAuthLocationHash } from './lib/clerk-hash-navigation';
 import { cn } from './lib/utils';
 
+interface AppShellProps {
+  children: ReactNode;
+  active: boolean;
+  panelId: string;
+}
+
 function AppShellPanel({
   active,
   panelId,
   children,
-}: {
-  active: boolean;
-  panelId: string;
-  children: ReactNode;
-}): JSX.Element {
+}: AppShellProps): JSX.Element {
   return (
     <div
       id={panelId}
