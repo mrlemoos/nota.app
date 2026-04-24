@@ -11,6 +11,7 @@ import { ElectronWindowDragBand } from './components/electron-window-drag-band';
 import { NotFoundScreen } from './components/not-found-screen';
 import { replaceAppHash, syncAppNavigation } from './lib/app-navigation';
 import { repairClerkAuthLocationHash } from './lib/clerk-hash-navigation';
+import { LoadingStatus } from '@/components/ui/spinner';
 import { cn } from './lib/utils';
 
 interface AppShellProps {
@@ -101,7 +102,7 @@ export function NotaApp(): JSX.Element {
     return (
       <div className="relative flex h-dvh min-h-0 items-center justify-center bg-background text-muted-foreground text-sm">
         <ElectronWindowDragBand />
-        Loading…
+        <LoadingStatus label="Loading…" />
       </div>
     );
   }
@@ -141,7 +142,7 @@ export function NotaApp(): JSX.Element {
       <AppShellPanel active={landingActive} panelId="screen-landing">
         {user ? (
           <div className="flex min-h-0 flex-1 h-dvh items-center justify-center bg-background text-muted-foreground text-sm">
-            Loading…
+            <LoadingStatus label="Loading…" />
           </div>
         ) : (
           <LandingPage />

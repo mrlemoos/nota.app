@@ -17,6 +17,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
+import { LoadingStatus } from '@/components/ui/spinner';
 import { SimpleTooltip, TooltipProvider } from '@/components/ui/tooltip';
 import { pdfPreviewSrc } from '@/lib/pdf-preview-url';
 import { cn } from '@/lib/utils';
@@ -419,7 +420,7 @@ function NotePdfNodeView(props: NodeViewProps) {
                   <div className="min-h-[50vh] flex-1 bg-muted/30">
                     {previewLoading ? (
                       <div className="flex h-[50vh] items-center justify-center text-sm text-muted-foreground">
-                        Loading preview…
+                        <LoadingStatus label="Loading preview…" />
                       </div>
                     ) : preview ? (
                       pdfPreviewUseIframe ? (
@@ -432,7 +433,7 @@ function NotePdfNodeView(props: NodeViewProps) {
                         <Suspense
                           fallback={
                             <div className="flex h-[min(80vh,720px)] w-full items-center justify-center text-sm text-muted-foreground">
-                              Loading preview…
+                              <LoadingStatus label="Loading preview…" />
                             </div>
                           }
                         >

@@ -1,6 +1,7 @@
 import { PricingTable } from '@clerk/react';
 import { useCallback, useState, type JSX } from 'react';
 import { Button } from '@/components/ui/button';
+import { LoadingStatus } from '@/components/ui/spinner';
 import {
   useNotesDataActions,
   useNotesDataMeta,
@@ -31,9 +32,11 @@ export function NotaProSettingsSection(): JSX.Element {
         className="space-y-5 rounded-xl border border-border/60 bg-linear-to-b from-muted/25 to-muted/10 px-5 py-5 shadow-sm"
       >
         {loading ? (
-          <p className="text-sm text-muted-foreground">
-            Loading subscription status…
-          </p>
+          <LoadingStatus
+            className="justify-start text-left"
+            label="Loading subscription status…"
+            spinnerSize="sm"
+          />
         ) : (
           <div className="space-y-4">
             <p

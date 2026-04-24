@@ -14,6 +14,7 @@ import {
 } from '@tiptap/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
+import { LoadingStatus } from '@/components/ui/spinner';
 import { SimpleTooltip, TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { getBrowserClient } from '../../lib/supabase/browser';
@@ -427,7 +428,7 @@ export function NoteImageNodeView(props: NodeViewProps) {
                   />
                 ) : (
                   <div className="flex min-h-[8rem] w-full items-center justify-center text-sm text-muted-foreground">
-                    Loading image…
+                    <LoadingStatus label="Loading image…" spinnerSize="sm" />
                   </div>
                 )}
               </div>

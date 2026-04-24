@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { LoadingStatus } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import { useNotesSidebarStore } from '../stores/notes-sidebar';
 import type { JSX, ReactNode } from 'react';
@@ -11,10 +12,8 @@ export function LazyNotesRouteFallback({ label }: { label: string }): JSX.Elemen
         'flex min-h-[40vh] flex-col items-center justify-center px-4',
         'bg-background/80 text-sm text-muted-foreground',
       )}
-      role="status"
-      aria-live="polite"
     >
-      {label}
+      <LoadingStatus label={label} />
     </div>
   );
 }

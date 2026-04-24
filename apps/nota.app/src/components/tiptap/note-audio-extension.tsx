@@ -6,6 +6,7 @@ import {
 } from '@tiptap/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { LoadingStatus } from '@/components/ui/spinner';
 import { SimpleTooltip, TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { getBrowserClient } from '../../lib/supabase/browser';
@@ -224,7 +225,7 @@ function NoteAudioNodeView(props: NodeViewProps) {
                 />
               ) : (
                 <div className="flex min-h-[3rem] items-center justify-center text-sm text-muted-foreground">
-                  Loading recording…
+                  <LoadingStatus label="Loading recording…" spinnerSize="sm" />
                 </div>
               )}
             </div>

@@ -6,6 +6,7 @@ import {
 } from '@tiptap/react';
 import { useEffect, useRef, useState, type JSX } from 'react';
 import { Button } from '@/components/ui/button';
+import { NotaSpinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import { fetchOgPreviewForEditor } from '@/lib/og-preview-client';
 import { safeOgImageSrcForPreview } from '@/lib/og-image-url';
@@ -116,7 +117,7 @@ function LinkPreviewNodeView(props: NodeViewProps): JSX.Element {
           className="inline-flex size-4 shrink-0 items-center justify-center"
           aria-hidden
         >
-          <span className="size-3.5 animate-spin rounded-full border-2 border-muted-foreground/20 border-t-muted-foreground/55" />
+          <NotaSpinner size="sm" />
         </span>
       </NodeViewWrapper>
     );
