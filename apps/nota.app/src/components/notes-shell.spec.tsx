@@ -57,12 +57,21 @@ vi.mock('../context/notes-data-context', () => ({
   }),
 }));
 
+const mockNotesSidebarState = {
+  open: true,
+  setOpen: vi.fn(),
+  toggle: vi.fn(),
+  collapsedFolderIds: [] as string[],
+  toggleFolderCollapsed: vi.fn(),
+  expandFolder: vi.fn(),
+  pruneCollapsedFolderIds: vi.fn(),
+};
+
 vi.mock('../stores/notes-sidebar', () => ({
-  useNotesSidebarStore: () => ({
-    open: true,
-    setOpen: vi.fn(),
-    toggle: vi.fn(),
-  }),
+  useNotesSidebarStore: <T,>(selector?: (s: typeof mockNotesSidebarState) => T) =>
+    selector
+      ? selector(mockNotesSidebarState)
+      : (mockNotesSidebarState as unknown as T),
 }));
 
 vi.mock('../context/sticky-doc-title', () => ({
