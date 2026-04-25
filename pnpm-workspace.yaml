@@ -25,7 +25,7 @@ catalog:
   '@vitest/ui': ~4.1.0
   '@nx/eslint': 22.6.5
   '@nx/eslint-plugin': 22.6.5
-  '@nx/react': 22.6.5
+  '@nx/react': 22.7.0
   '@nx/web': 22.6.5
   '@fontsource-variable/source-serif-4': ^5.2.9
   '@fontsource/instrument-serif': ^5.2.8
