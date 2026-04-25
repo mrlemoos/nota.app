@@ -41,9 +41,9 @@ export function AppSessionProvider({ children }: AppSessionProviderProps): JSX.E
   }, [isLoaded, isSignedIn, userId, user]);
 
   return (
-    <AppSessionContext.Provider value={value}>
+    <AppSessionContext value={value}>
       {children}
-    </AppSessionContext.Provider>
+    </AppSessionContext>
   );
 }
 
