@@ -24,12 +24,14 @@
     "react-dom": "^19.0.3"
   },
   "devDependencies": {
+    "@babel/core": "^7.14.5",
+    "@babel/preset-react": "^7.14.5",
     "@eslint/js": "^9.8.0",
     "@nx/eslint": "^22.6.5",
     "@nx/eslint-plugin": "^22.6.5",
-    "@nx/js": "22.6.1",
+    "@nx/js": "22.6.5",
     "@nx/react": "^22.6.5",
-    "@nx/vite": "22.6.1",
+    "@nx/vite": "22.6.5",
     "@nx/vitest": "22.6.1",
     "@nx/web": "^22.6.5",
     "@nx/workspace": "22.6.1",
@@ -45,7 +47,8 @@
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.2.0",
     "@vitest/coverage-v8": "~4.0.0",
-    "@vitest/ui": "~4.0.0",
+    "@vitest/ui": "~4.1.0",
+    "ajv": "^8.0.0",
     "autoprefixer": "10.4.13",
     "esbuild": "^0.25.0",
     "eslint": "^9.8.0",
@@ -66,7 +69,8 @@
     "typescript": "~5.9.2",
     "typescript-eslint": "^8.40.0",
     "vite": "^7.0.0",
-    "vitest": "~4.0.0"
+    "vite-plugin-dts": "~4.5.0",
+    "vitest": "~4.1.0"
   },
   "workspaces": [
     "apps/*",

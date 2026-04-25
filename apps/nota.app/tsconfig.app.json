@@ -50,13 +50,16 @@
       "path": "../../packages/validation/tsconfig.lib.json"
     },
     {
-      "path": "../../packages/database-types/tsconfig.lib.json"
+      "path": "../../packages/notes-offline/tsconfig.lib.json"
     },
     {
       "path": "../../packages/nota-server-client/tsconfig.lib.json"
     },
     {
-      "path": "../../packages/notes-offline/tsconfig.lib.json"
+      "path": "../../packages/helper-hooks/tsconfig.lib.json"
+    },
+    {
+      "path": "../../packages/database-types/tsconfig.lib.json"
     },
     {
       "path": "../../packages/clerk-oauth-protocol/tsconfig.lib.json"

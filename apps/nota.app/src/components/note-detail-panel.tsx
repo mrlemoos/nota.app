@@ -270,16 +270,12 @@ export function NoteDetailPanel({ noteId }: { noteId: string }): React.ReactNode
       return;
     }
 
+    const bannerId = bannerAttachmentId;
+
     const pathFromRow = bannerAttachment?.storage_path ?? null;
     const entry = pathFromRow
-      ? getValidNoteAttachmentSignedUrlCacheEntry(
-          bannerAttachmentId,
-          pathFromRow,
-        )
-      : getValidNoteAttachmentSignedUrlCacheEntry(
-          bannerAttachmentId,
-          undefined,
-        );
+      ? getValidNoteAttachmentSignedUrlCacheEntry(bannerId, pathFromRow)
+      : getValidNoteAttachmentSignedUrlCacheEntry(bannerId, undefined);
 
     const storagePath = pathFromRow ?? entry?.storagePath ?? null;
 
@@ -299,6 +295,8 @@ export function NoteDetailPanel({ noteId }: { noteId: string }): React.ReactNode
       };
     }
 
+    const bannerStoragePath = storagePath;
+
     const scheduleRefresh = () => {
       if (bannerRefreshTimerRef.current) {
         clearTimeout(bannerRefreshTimerRef.current);
@@ -314,15 +312,15 @@ export function NoteDetailPanel({ noteId }: { noteId: string }): React.ReactNode
       const client = getBrowserClient();
       const { data, error } = await client.storage
         .from(NOTE_PDFS_BUCKET)
-        .createSignedUrl(storagePath, ATTACHMENT_SIGNED_URL_TTL_SEC);
+        .createSignedUrl(bannerStoragePath, ATTACHMENT_SIGNED_URL_TTL_SEC);
       if (cancelled) return;
       if (error || !data?.signedUrl) {
         setBannerSignedUrl(null);
         return;
       }
       setCachedNoteAttachmentSignedUrl(
-        bannerAttachmentId,
-        storagePath,
+        bannerId,
+        bannerStoragePath,
         data.signedUrl,
         ATTACHMENT_SIGNED_URL_TTL_SEC,
       );

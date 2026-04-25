@@ -9,6 +9,7 @@
   "dependencies": {
     "@nota.app/clerk-oauth-protocol": "*",
     "@nota.app/database-types": "*",
+    "@nota.app/helper-hooks": "*",
     "@nota.app/nota-server-client": "*",
     "@nota.app/notes-offline": "*",
     "@nota.app/validation": "*",

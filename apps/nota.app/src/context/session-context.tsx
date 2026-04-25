@@ -1,25 +1,25 @@
 import { useAuth, useUser } from '@clerk/react';
-import {
-  createContext,
-  useContext,
-  useMemo,
-  type ReactNode,
-} from 'react';
+import { useOrThrow } from '@nota.app/helper-hooks';
+import { createContext, useMemo, type ReactNode, type JSX } from 'react';
 
 /** Minimal session shape for components that previously used Supabase `User`. */
-export type AppUser = {
+export interface AppUser {
   id: string;
   email: string | null;
-};
+}
 
-export type AppSessionContextValue = {
+export interface AppSessionContextValue {
   user: AppUser | null;
   loading: boolean;
-};
+}
 
 const AppSessionContext = createContext<AppSessionContextValue | null>(null);
 
-export function AppSessionProvider({ children }: { children: ReactNode }) {
+export interface AppSessionProviderProps {
+  children: ReactNode;
+}
+
+export function AppSessionProvider({ children }: AppSessionProviderProps): JSX.Element {
   const { isLoaded, isSignedIn, userId } = useAuth();
   const { user } = useUser();
 
@@ -48,13 +48,10 @@ export function AppSessionProvider({ children }: { children: ReactNode }) {
 }
 
 export function useAppSession(): AppSessionContextValue {
-  const v = useContext(AppSessionContext);
-  if (!v) {
-    throw new Error('AppSessionProvider is required');
-  }
-  return v;
+  return useOrThrow(AppSessionContext, 'AppSessionProvider is required');
 }
 
+/** A custom hook to load a (nullable) instance of the user */
 export function useRootLoaderData(): { user: AppUser | null } {
   const { user } = useAppSession();
   return { user };

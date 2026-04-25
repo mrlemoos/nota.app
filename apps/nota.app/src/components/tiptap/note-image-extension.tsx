@@ -117,9 +117,12 @@ export function NoteImageNodeView(props: NodeViewProps) {
       };
     }
 
+    const imageAttachmentId = attachmentId;
+    const imageStoragePath = storagePath;
+
     const entry = getValidNoteAttachmentSignedUrlCacheEntry(
-      attachmentId,
-      storagePath,
+      imageAttachmentId,
+      imageStoragePath,
     );
 
     if (entry) {
@@ -142,8 +145,8 @@ export function NoteImageNodeView(props: NodeViewProps) {
 
     async function fetchUrl() {
       const result = await getOrFetchNoteAttachmentSignedUrl(
-        attachmentId,
-        storagePath,
+        imageAttachmentId,
+        imageStoragePath,
       );
 
       if (cancelled) return;

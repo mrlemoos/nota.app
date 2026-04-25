@@ -20,6 +20,9 @@
     },
     {
       "path": "./packages/notes-offline"
+    },
+    {
+      "path": "./packages/helper-hooks"
     }
   ]
 }
