@@ -4,7 +4,7 @@ import * as SignUp from '@clerk/elements/sign-up';
 import type { JSX } from 'react';
 
 import { notaButtonVariants } from '@nota.app/web-design/button';
-import { NotaLoadingStatus } from '@/components/ui/spinner';
+import { NotaLoadingStatus } from '@nota.app/web-design/spinner';
 import { cn } from '@/lib/utils';
 
 const fieldGroupClass = 'flex flex-col gap-2';

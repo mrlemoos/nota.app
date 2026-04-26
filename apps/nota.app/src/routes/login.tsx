@@ -4,7 +4,7 @@ import { AuthCardEpigraph } from '@/components/auth-card-epigraph';
 import { AuthScreenHashLink } from '@/components/auth-screen-hash-link';
 import { NotaClerkSignIn } from '@/components/nota-clerk-elements-auth';
 import { CartoonLandscape } from '@/components/cartoon-landscape';
-import { NotaLoadingStatus } from '@/components/ui/spinner';
+import { NotaLoadingStatus } from '@nota.app/web-design/spinner';
 import { cn } from '@/lib/utils';
 
 export default function Login(): JSX.Element {

@@ -3,12 +3,12 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowRight01Icon } from '@hugeicons/core-free-icons';
 import { cn } from '@/lib/utils';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-} from '@/components/ui/card';
+  NotaCard,
+  NotaCardContent,
+  NotaCardDescription,
+  NotaCardFooter,
+  NotaCardHeader,
+} from '@nota.app/web-design/card';
 import { AuthScreenHashLink } from '@/components/auth-screen-hash-link';
 import { CartoonLandscape } from '@/components/cartoon-landscape';
 import { NotaLogo } from '@/components/nota-logo';
@@ -26,12 +26,12 @@ export function LandingPage(): JSX.Element {
       </div>
 
       <div className="relative z-10 w-full max-w-md">
-        <Card
+        <NotaCard
           className={cn(
             'border-border/50 bg-background/70 shadow-lg backdrop-blur-xl ring-1 ring-border/40',
           )}
         >
-          <CardHeader className="text-center">
+          <NotaCardHeader className="text-center">
             <div className="mb-3 flex justify-center">
               <NotaLogo className="size-14" />
             </div>
@@ -41,11 +41,11 @@ export function LandingPage(): JSX.Element {
             >
               Think clearly. Write slowly.
             </h1>
-            <CardDescription className="text-pretty">
+            <NotaCardDescription className="text-pretty">
               A quiet space for your thoughts, away from the noise.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
+            </NotaCardDescription>
+          </NotaCardHeader>
+          <NotaCardContent className="flex flex-col gap-3">
             <AuthScreenHashLink
               target="login"
               variant="default"
@@ -59,8 +59,8 @@ export function LandingPage(): JSX.Element {
                 <HugeiconsIcon icon={ArrowRight01Icon} size={16} />
               </span>
             </AuthScreenHashLink>
-          </CardContent>
-          <CardFooter className="justify-center border-t border-border/40 pt-4">
+          </NotaCardContent>
+          <NotaCardFooter className="justify-center border-t border-border/40 pt-4">
             <p className="text-center text-muted-foreground text-xs/relaxed">
               New here?{' '}
               <AuthScreenHashLink
@@ -70,8 +70,8 @@ export function LandingPage(): JSX.Element {
                 Create an account
               </AuthScreenHashLink>
             </p>
-          </CardFooter>
-        </Card>
+          </NotaCardFooter>
+        </NotaCard>
       </div>
     </main>
   );

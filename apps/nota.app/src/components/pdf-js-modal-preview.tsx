@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { NotaLoadingStatus } from '@/components/ui/spinner';
+import { NotaLoadingStatus } from '@nota.app/web-design/spinner';
 import { cn } from '@/lib/utils';
 import pdfjsWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 

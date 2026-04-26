@@ -17,7 +17,7 @@ import {
   NotaButton,
   notaButtonVariants,
 } from '@nota.app/web-design/button';
-import { NotaLoadingStatus } from '@/components/ui/spinner';
+import { NotaLoadingStatus } from '@nota.app/web-design/spinner';
 import {
   NotaTooltip,
   NotaTooltipPopup,

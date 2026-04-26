@@ -1,4 +1,4 @@
-import { NotaLoadingStatus } from '@/components/ui/spinner';
+import { NotaLoadingStatus } from '@nota.app/web-design/spinner';
 import { lazy, Suspense, type JSX } from 'react';
 
 const NotesGraphView = lazy(async () => {

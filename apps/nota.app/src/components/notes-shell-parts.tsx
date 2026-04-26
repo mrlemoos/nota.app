@@ -1,5 +1,5 @@
 import { NotaButton } from '@nota.app/web-design/button';
-import { NotaLoadingStatus } from '@/components/ui/spinner';
+import { NotaLoadingStatus } from '@nota.app/web-design/spinner';
 import { cn } from '@/lib/utils';
 import { useNotesSidebarStore } from '../stores/notes-sidebar';
 import type { JSX, ReactNode } from 'react';

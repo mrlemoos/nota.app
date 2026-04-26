@@ -6,7 +6,7 @@ import {
 } from '@tiptap/react';
 import { useEffect, useRef, useState, type JSX } from 'react';
 import { NotaButton } from '@nota.app/web-design/button';
-import { NotaSpinner } from '@/components/ui/spinner';
+import { NotaSpinner } from '@nota.app/web-design/spinner';
 import { cn } from '@/lib/utils';
 import { fetchOgPreviewForEditor } from '@/lib/og-preview-client';
 import { safeOgImageSrcForPreview } from '@/lib/og-image-url';

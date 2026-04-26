@@ -11,7 +11,7 @@ import { ElectronWindowDragBand } from './components/electron-window-drag-band';
 import { NotFoundScreen } from './components/not-found-screen';
 import { replaceAppHash, syncAppNavigation } from './lib/app-navigation';
 import { repairClerkAuthLocationHash } from './lib/clerk-hash-navigation';
-import { NotaLoadingStatus } from '@/components/ui/spinner';
+import { NotaLoadingStatus } from '@nota.app/web-design/spinner';
 import { cn } from './lib/utils';
 
 interface AppShellProps {
