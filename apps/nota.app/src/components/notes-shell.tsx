@@ -14,7 +14,7 @@ import {
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Button } from '@/components/ui/button';
-import { TooltipProvider } from '@/components/ui/tooltip';
+import { NotaTooltipProvider } from '@/components/ui/tooltip';
 import { ELECTRON_WINDOW_NO_DRAG_CLASS } from '@/lib/electron-window-chrome';
 import { cn } from '@/lib/utils';
 import { useStickyDocTitle } from '../context/sticky-doc-title';
@@ -270,7 +270,7 @@ export function NotesShell(): JSX.Element {
             )}
             aria-hidden={!open}
           >
-            <TooltipProvider>
+            <NotaTooltipProvider>
               <div
                 className={cn(
                   'flex shrink-0 items-center justify-between pr-4 pb-4',
@@ -417,7 +417,7 @@ export function NotesShell(): JSX.Element {
                   </div>
                 </footer>
               ) : null}
-            </TooltipProvider>
+            </NotaTooltipProvider>
           </aside>
         ) : null}
 
