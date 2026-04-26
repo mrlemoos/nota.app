@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type JSX } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type DragEvent,
+  type JSX,
+} from 'react';
 import {
   ArrowDown01Icon,
   ArrowRight01Icon,
@@ -18,6 +26,7 @@ import type { NotesShellPanel } from '../lib/app-navigation';
 import { noteHashHref } from './note-detail-panel';
 import { clientCreateNote } from '../lib/create-note-client';
 import { clientDeleteNoteById } from '../lib/delete-note-client';
+import { clientMoveNoteToFolder } from '../lib/move-note-folder-client';
 import {
   NOTA_RENAME_FOLDER_REQUEST_EVENT,
   type RenameFolderRequestDetail,
@@ -36,6 +45,7 @@ type NotesSidebarListProps = {
   notaProEntitled: boolean;
   userPreferences: UserPreferences | null;
   insertNoteAtFront: (n: Note) => void;
+  patchNoteInList: (id: string, patch: Partial<Note>) => void;
   patchFolderInList: (id: string, patch: Partial<Folder>) => void;
   removeNoteFromList: (id: string) => void;
   removeFolderFromList: (id: string) => void;
@@ -53,6 +63,9 @@ function NoteRow(options: {
   removeNoteFromList: (id: string) => void;
   removeFolderFromList: (id: string) => void;
   refreshNotesList: (options?: { silent?: boolean }) => Promise<void>;
+  draggedNoteId: string | null;
+  setDraggedNoteId: (id: string | null) => void;
+  setDropTargetId: (id: string | null) => void;
 }): JSX.Element {
   const {
     note,
@@ -64,16 +77,33 @@ function NoteRow(options: {
     removeNoteFromList,
     removeFolderFromList,
     refreshNotesList,
+    draggedNoteId,
+    setDraggedNoteId,
+    setDropTargetId,
   } = options;
   const noteLabel = note.title || 'Untitled Note';
+
+  const noteIsDragged = draggedNoteId === note.id;
 
   return (
     <li className="list-none">
       <div
         className={cn(
-          'flex transform-gpu items-center gap-0 rounded-md transition-[transform,colors] duration-300 ease-in-out hover:scale-[1.01]',
+          'flex transform-gpu items-center gap-0 rounded-md transition-[transform,colors,opacity] duration-300 ease-in-out hover:scale-[1.01]',
           isActive ? 'bg-muted' : 'text-foreground hover:bg-muted/60',
+          noteIsDragged && 'opacity-60',
         )}
+        draggable
+        onDragStart={(event: DragEvent<HTMLDivElement>) => {
+          event.dataTransfer.effectAllowed = 'move';
+          event.dataTransfer.setData('text/plain', note.id);
+          setDraggedNoteId(note.id);
+          setDropTargetId(null);
+        }}
+        onDragEnd={() => {
+          setDraggedNoteId(null);
+          setDropTargetId(null);
+        }}
       >
         <a
           href={noteHashHref(note.id)}
@@ -172,12 +202,15 @@ export function NotesSidebarList({
   notaProEntitled,
   userPreferences,
   insertNoteAtFront,
+  patchNoteInList,
   patchFolderInList,
   removeNoteFromList,
   removeFolderFromList,
   refreshNotesList,
 }: NotesSidebarListProps): JSX.Element {
   const uid = userId ?? '';
+  const [draggedNoteId, setDraggedNoteId] = useState<string | null>(null);
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null);
   const { sections, rootNotes } = useMemo(
     () => buildSidebarFolderSections(notes, folders),
     [notes, folders],
@@ -236,6 +269,57 @@ export function NotesSidebarList({
   }, [panel, routeNoteId, notes, expandFolder]);
 
   const vaultEmpty = notes.length === 0 && folders.length === 0;
+
+  const clearDragState = useCallback(() => {
+    setDraggedNoteId(null);
+    setDropTargetId(null);
+  }, []);
+
+  const moveDraggedNoteToFolder = useCallback(
+    async (targetFolderId: string | null): Promise<void> => {
+      if (!draggedNoteId) {
+        return;
+      }
+
+      const note = notes.find((value) => value.id === draggedNoteId);
+      if (!note) {
+        clearDragState();
+        return;
+      }
+
+      const previousFolderId = note.folder_id ?? null;
+      if (previousFolderId === targetFolderId) {
+        clearDragState();
+        return;
+      }
+
+      patchNoteInList(note.id, { folder_id: targetFolderId });
+      clearDragState();
+
+      await clientMoveNoteToFolder({
+        noteId: note.id,
+        targetFolderId,
+        previousFolderId,
+        userId: uid,
+        notaProEntitled,
+        userPreferences,
+        patchNoteInList,
+        removeFolderFromList,
+        refreshNotesList,
+      });
+    },
+    [
+      clearDragState,
+      draggedNoteId,
+      notes,
+      notaProEntitled,
+      patchNoteInList,
+      refreshNotesList,
+      removeFolderFromList,
+      uid,
+      userPreferences,
+    ],
+  );
 
   const onCreateNote = (): void => {
     if (!uid) {
@@ -318,9 +402,46 @@ export function NotesSidebarList({
         {sections.map(({ folder, notes: fn }) => {
           const folderContentId = `sidebar-folder-${folder.id}`;
           const isCollapsed = collapsedFolderIds.includes(folder.id);
+          const isDropTarget = dropTargetId === folder.id;
           return (
             <li key={folder.id} className="list-none">
-              <div className="flex items-center gap-1 rounded-md py-1 pr-1.5 pl-0.5 text-muted-foreground transition-colors duration-300 ease-in-out">
+              <div
+                className={cn(
+                  'flex items-center gap-1 rounded-md py-1 pr-1.5 pl-0.5 text-muted-foreground transition-colors duration-300 ease-in-out',
+                  isDropTarget && 'bg-muted/70 text-foreground',
+                )}
+                onDragEnter={(event) => {
+                  if (!draggedNoteId) {
+                    return;
+                  }
+                  event.preventDefault();
+                  setDropTargetId(folder.id);
+                }}
+                onDragOver={(event) => {
+                  if (!draggedNoteId) {
+                    return;
+                  }
+                  event.preventDefault();
+                  event.dataTransfer.dropEffect = 'move';
+                  setDropTargetId(folder.id);
+                }}
+                onDragLeave={(event) => {
+                  if (
+                    event.relatedTarget instanceof Node &&
+                    event.currentTarget.contains(event.relatedTarget)
+                  ) {
+                    return;
+                  }
+                  setDropTargetId((current) =>
+                    current === folder.id ? null : current,
+                  );
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  void moveDraggedNoteToFolder(folder.id);
+                }}
+              >
                 <NotaButton
                   type="button"
                   variant="ghost"
@@ -454,7 +575,7 @@ export function NotesSidebarList({
                     className="m-0 ml-2.5 list-none space-y-0.5 border-border/35 border-l py-0.5 pl-2"
                   >
                     {fn.map((note) => (
-                      <NoteRow
+                    <NoteRow
                         key={note.id}
                         note={note}
                         nested
@@ -465,6 +586,9 @@ export function NotesSidebarList({
                         removeNoteFromList={removeNoteFromList}
                         removeFolderFromList={removeFolderFromList}
                         refreshNotesList={refreshNotesList}
+                        draggedNoteId={draggedNoteId}
+                        setDraggedNoteId={setDraggedNoteId}
+                        setDropTargetId={setDropTargetId}
                       />
                     ))}
                   </ul>
@@ -474,21 +598,66 @@ export function NotesSidebarList({
           );
         })}
 
-        {rootNotes.length > 0
-          ? rootNotes.map((note) => (
-              <NoteRow
-                key={note.id}
-                note={note}
-                isActive={panel === 'note' && routeNoteId === note.id}
-                userId={uid}
-                notaProEntitled={notaProEntitled}
-                userPreferences={userPreferences}
-                removeNoteFromList={removeNoteFromList}
-                removeFolderFromList={removeFolderFromList}
-                refreshNotesList={refreshNotesList}
-              />
-            ))
-          : null}
+        <li
+          className={cn(
+            'list-none rounded-md transition-colors duration-300 ease-in-out',
+            dropTargetId === 'root' && 'bg-muted/70',
+          )}
+          onDragEnter={(event) => {
+            if (!draggedNoteId) {
+              return;
+            }
+            event.preventDefault();
+            setDropTargetId('root');
+          }}
+          onDragOver={(event) => {
+            if (!draggedNoteId) {
+              return;
+            }
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
+            setDropTargetId('root');
+          }}
+          onDragLeave={(event) => {
+            if (
+              event.relatedTarget instanceof Node &&
+              event.currentTarget.contains(event.relatedTarget)
+            ) {
+              return;
+            }
+            setDropTargetId((current) => (current === 'root' ? null : current));
+          }}
+          onDrop={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            void moveDraggedNoteToFolder(null);
+          }}
+        >
+          {rootNotes.length > 0 ? (
+            <ul className="m-0 list-none space-y-0.5 p-0">
+              {rootNotes.map((note) => (
+                <NoteRow
+                  key={note.id}
+                  note={note}
+                  isActive={panel === 'note' && routeNoteId === note.id}
+                  userId={uid}
+                  notaProEntitled={notaProEntitled}
+                  userPreferences={userPreferences}
+                  removeNoteFromList={removeNoteFromList}
+                  removeFolderFromList={removeFolderFromList}
+                  refreshNotesList={refreshNotesList}
+                  draggedNoteId={draggedNoteId}
+                  setDraggedNoteId={setDraggedNoteId}
+                  setDropTargetId={setDropTargetId}
+                />
+              ))}
+            </ul>
+          ) : draggedNoteId ? (
+            <p className="px-3 py-2 text-xs text-muted-foreground">
+              Drop here to move to root.
+            </p>
+          ) : null}
+        </li>
       </ul>
 
       <FolderDeleteDialog
