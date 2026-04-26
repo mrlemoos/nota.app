@@ -32,7 +32,7 @@ export function StudyRecordingUploadWarningBanner(): JSX.Element | null {
           size="sm"
           variant="secondary"
           className="shrink-0 self-end sm:self-start"
-          onClick={() => clear(null)}
+          onClick={() => { clear(null); }}
         >
           Dismiss
         </NotaButton>

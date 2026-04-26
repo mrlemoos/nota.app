@@ -31,7 +31,7 @@ describe('app-load-url', () => {
     const prodUrl = resolveMainWindowLoadUrl(isProduction);
 
     // Assert
-    expect(devUrl).toBe(`http://localhost:${DEV_PORT}`);
+    expect(devUrl).toBe(`http://localhost:${String(DEV_PORT)}`);
     expect(prodUrl).toBe('https://app.nota.mrlemoos.dev/');
   });
 
@@ -45,7 +45,7 @@ describe('app-load-url', () => {
     const prodBase = ssoCallbackBaseUrl(isProduction);
 
     // Assert
-    expect(devBase).toBe(`http://localhost:${DEV_PORT}`);
+    expect(devBase).toBe(`http://localhost:${String(DEV_PORT)}`);
     expect(prodBase).toBe('https://app.nota.mrlemoos.dev');
   });
 });

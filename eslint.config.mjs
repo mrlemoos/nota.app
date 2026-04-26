@@ -1,6 +1,11 @@
 import nx from '@nx/eslint-plugin';
+import importPlugin from 'eslint-plugin-import';
+import tseslint from 'typescript-eslint';
+import { notaEslintOverrides } from './tools/eslint-nota-overrides.mjs';
 
-export default [
+const tsconfigRootDir = import.meta.dirname;
+
+export default tseslint.config(
   ...nx.configs['flat/base'],
   ...nx.configs['flat/typescript'],
   ...nx.configs['flat/javascript'],
@@ -33,17 +38,24 @@ export default [
     },
   },
   {
-    files: [
-      '**/*.ts',
-      '**/*.tsx',
-      '**/*.cts',
-      '**/*.mts',
-      '**/*.js',
-      '**/*.jsx',
-      '**/*.cjs',
-      '**/*.mjs',
-    ],
-    // Override or add rules here
-    rules: {},
+    files: ['**/*.{ts,tsx,cts,mts}'],
+    extends: [...tseslint.configs.strictTypeChecked],
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir,
+      },
+    },
   },
-];
+  {
+    files: [
+      '**/*.{ts,tsx,cts,mts,js,jsx,cjs,mjs}',
+    ],
+    plugins: { import: importPlugin },
+    rules: {
+      'import/no-duplicates': 'error',
+      'import/no-cycle': 'warn',
+    },
+  },
+  ...notaEslintOverrides,
+);

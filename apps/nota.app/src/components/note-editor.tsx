@@ -72,7 +72,7 @@ function NoteEditorImpl({
   const lastSavedContent = useRef(note.content);
   const lastSavedTitle = useRef(persistedDisplayTitle(note.title || ''));
   const titleRef = useRef(note.title || '');
-  const pendingContentRef = useRef<unknown | null>(null);
+  const pendingContentRef = useRef<unknown>(null);
   const noteRef = useRef(note);
   const onNoteUpdatedRef = useRef(onNoteUpdated);
   const userIdRef = useRef(user?.id);
@@ -129,7 +129,7 @@ function NoteEditorImpl({
       { root, threshold: 0 },
     );
     observer.observe(target);
-    return () => observer.disconnect();
+    return () => { observer.disconnect(); };
   }, [note.id, scrollRootEpoch, scrollRootRef, setSticky]);
 
   useEffect(() => {
@@ -142,7 +142,8 @@ function NoteEditorImpl({
     if (titleDebounceRef.current) {
       clearTimeout(titleDebounceRef.current);
     }
-    titleDebounceRef.current = setTimeout(async () => {
+    titleDebounceRef.current = setTimeout(() => {
+      void (async () => {
       titleDebounceRef.current = null;
       const next = persistedDisplayTitle(titleRef.current);
       if (next === lastSavedTitle.current) {
@@ -154,7 +155,7 @@ function NoteEditorImpl({
           await saveLocalNoteDraft(user.id, {
             id: note.id,
             title: next,
-            content: lastSavedContent.current as Json,
+            content: lastSavedContent.current,
             user_id: note.user_id,
             created_at: note.created_at,
             due_at: note.due_at,
@@ -175,7 +176,7 @@ function NoteEditorImpl({
             mergeUpdatedNoteLocalContent(
               updatedNote,
               pendingContentRef.current,
-              lastSavedContent.current as Json,
+              lastSavedContent.current,
             ),
           );
         } else if (user?.id) {
@@ -188,7 +189,7 @@ function NoteEditorImpl({
                 updated_at: new Date().toISOString(),
               },
               pendingContentRef.current,
-              lastSavedContent.current as Json,
+              lastSavedContent.current,
             ),
           );
         }
@@ -199,6 +200,7 @@ function NoteEditorImpl({
           void drainNotesOutbox(user.id);
         }
       }
+      })();
     }, SAVE_DEBOUNCE_MS);
   }, [note, onNoteUpdated, user?.id]);
 
@@ -231,7 +233,8 @@ function NoteEditorImpl({
     if (contentDebounceRef.current) {
       clearTimeout(contentDebounceRef.current);
     }
-    contentDebounceRef.current = setTimeout(async () => {
+    contentDebounceRef.current = setTimeout(() => {
+      void (async () => {
       contentDebounceRef.current = null;
       const toSave = pendingContentRef.current;
       if (toSave === null || toSave === undefined) {
@@ -296,6 +299,7 @@ function NoteEditorImpl({
           void drainNotesOutbox(user.id);
         }
       }
+      })();
     }, SAVE_DEBOUNCE_MS);
   }, [note, onNoteUpdated, user?.id]);
 
@@ -339,7 +343,7 @@ function NoteEditorImpl({
           mergeUpdatedNoteLocalContent(
             updatedNote,
             pendingContentRef.current,
-            lastSavedContent.current as Json,
+            lastSavedContent.current,
           ),
         );
       } else {
@@ -352,7 +356,7 @@ function NoteEditorImpl({
               updated_at: new Date().toISOString(),
             },
             pendingContentRef.current,
-            lastSavedContent.current as Json,
+            lastSavedContent.current,
           ),
         );
       }
@@ -398,7 +402,7 @@ function NoteEditorImpl({
           mergeUpdatedNoteLocalContent(
             updatedNote,
             pendingContentRef.current,
-            lastSavedContent.current as Json,
+            lastSavedContent.current,
           ),
         );
       } else {
@@ -410,7 +414,7 @@ function NoteEditorImpl({
               updated_at: new Date().toISOString(),
             },
             pendingContentRef.current,
-            lastSavedContent.current as Json,
+            lastSavedContent.current,
           ),
         );
       }
@@ -454,7 +458,7 @@ function NoteEditorImpl({
           mergeUpdatedNoteLocalContent(
             updatedNote,
             pendingContentRef.current,
-            lastSavedContent.current as Json,
+            lastSavedContent.current,
           ),
         );
       } else {
@@ -466,7 +470,7 @@ function NoteEditorImpl({
               updated_at: new Date().toISOString(),
             },
             pendingContentRef.current,
-            lastSavedContent.current as Json,
+            lastSavedContent.current,
           ),
         );
       }
@@ -527,11 +531,15 @@ function NoteEditorImpl({
         >
           <NoteLayoutMenu
             settings={parseNoteEditorSettings(note.editor_settings)}
-            onSettingsChange={persistEditorSettings}
+            onSettingsChange={(next) => {
+              void persistEditorSettings(next);
+            }}
             disabled={!user?.id}
             bannerAttachmentId={note.banner_attachment_id}
             bannerSignedUrl={bannerSignedUrl}
-            onBannerChange={persistBanner}
+            onBannerChange={(attachmentId) => {
+              void persistBanner(attachmentId);
+            }}
             onBannerUpload={handleBannerUpload}
           />
           {saveStatus === 'saving' && (

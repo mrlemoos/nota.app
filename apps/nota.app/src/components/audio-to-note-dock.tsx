@@ -164,7 +164,7 @@ export function AudioToNoteDock(): JSX.Element | null {
     rec.onstop = () => {
       const mime = rec.mimeType || 'audio/webm';
       const blob = new Blob(chunks, { type: mime });
-      stream.getTracks().forEach((t) => t.stop());
+      stream.getTracks().forEach((t) => { t.stop(); });
       sessionRef.current = null;
       const nid = useAudioToNoteSession.getState().noteId;
       const uid = userId;
@@ -185,14 +185,14 @@ export function AudioToNoteDock(): JSX.Element | null {
     }
     const { rec, stream } = s;
     rec.onstop = () => {
-      stream.getTracks().forEach((t) => t.stop());
+      stream.getTracks().forEach((t) => { t.stop(); });
       sessionRef.current = null;
       reset();
     };
     if (rec.state !== 'inactive') {
       rec.stop();
     } else {
-      stream.getTracks().forEach((t) => t.stop());
+      stream.getTracks().forEach((t) => { t.stop(); });
       sessionRef.current = null;
       reset();
     }
@@ -249,7 +249,7 @@ export function AudioToNoteDock(): JSX.Element | null {
       setElapsedSeconds(Math.floor(activeMs / 1000));
     }, 250);
 
-    return () => window.clearInterval(id);
+    return () => { window.clearInterval(id); };
   }, [phase, recordingSessionId, recorderPaused]);
 
   useEffect(() => {
@@ -263,7 +263,7 @@ export function AudioToNoteDock(): JSX.Element | null {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         if (cancelled) {
-          stream.getTracks().forEach((t) => t.stop());
+          stream.getTracks().forEach((t) => { t.stop(); });
           return;
         }
         const mime = pickRecorderMime();
@@ -298,7 +298,7 @@ export function AudioToNoteDock(): JSX.Element | null {
       cancelled = true;
       const s = sessionRef.current;
       if (s) {
-        s.stream.getTracks().forEach((t) => t.stop());
+        s.stream.getTracks().forEach((t) => { t.stop(); });
         if (s.rec.state !== 'inactive') {
           s.rec.stop();
         }
@@ -324,7 +324,7 @@ export function AudioToNoteDock(): JSX.Element | null {
       {phase === 'error' && error ? (
         <div className="flex flex-col gap-2">
           <p className="text-destructive">{error}</p>
-          <NotaButton type="button" size="sm" variant="secondary" onClick={() => reset()}>
+          <NotaButton type="button" size="sm" variant="secondary" onClick={() => { reset(); }}>
             Dismiss
           </NotaButton>
         </div>

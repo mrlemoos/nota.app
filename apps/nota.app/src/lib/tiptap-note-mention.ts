@@ -38,7 +38,7 @@ function blockTextMap(
     for (let o = 0; o < node.text.length; o++) {
       const docPos = pos + o;
       if (docPos >= to) return false;
-      text += node.text[o]!;
+      text += node.text[o];
       indexToPos.push(docPos);
     }
     return undefined;
@@ -73,7 +73,7 @@ export function findNoteMentionTrigger(
   const relStart = text.length - full.length;
   if (relStart < 0 || relStart >= indexToPos.length) return null;
 
-  const from = indexToPos[relStart]!;
+  const from = indexToPos[relStart];
   if (from === undefined) return null;
 
   const query = match[1] ?? '';

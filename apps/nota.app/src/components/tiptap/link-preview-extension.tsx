@@ -12,13 +12,26 @@ import { fetchOgPreviewForEditor } from '@/lib/og-preview-client';
 import { safeOgImageSrcForPreview } from '@/lib/og-image-url';
 import { revertLinkPreviewToParagraph } from './link-preview-scan';
 
+function stringifyPreviewAttr(value: unknown): string {
+  if (value == null) {
+    return '';
+  }
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  return '';
+}
+
 function linkPreviewHasPersistedMeta(node: {
   attrs: Record<string, unknown>;
 }): boolean {
   return Boolean(
-    String(node.attrs['title'] ?? '').trim() ||
-      String(node.attrs['description'] ?? '').trim() ||
-      String(node.attrs['image'] ?? '').trim(),
+    stringifyPreviewAttr(node.attrs['title']).trim() ||
+      stringifyPreviewAttr(node.attrs['description']).trim() ||
+      stringifyPreviewAttr(node.attrs['image']).trim(),
   );
 }
 
@@ -166,7 +179,7 @@ function LinkPreviewNodeView(props: NodeViewProps): JSX.Element {
                 size="xs"
                 className="text-muted-foreground"
                 disabled={loading}
-                onClick={() => setRefreshNonce((n) => n + 1)}
+                onClick={() => { setRefreshNonce((n) => n + 1); }}
               >
                 Refresh
               </NotaButton>

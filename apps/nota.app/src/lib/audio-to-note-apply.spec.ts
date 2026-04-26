@@ -16,7 +16,7 @@ describe('buildAudioNoteApplyPatch', () => {
     const patch = buildAudioNoteApplyPatch({
       mode: 'replace',
       existingTitle: 'ignored',
-      existingContent: { type: 'doc', content: [] } as Json,
+      existingContent: { type: 'doc', content: [] },
       noteCreatedAtIso: createdAt,
       result,
       recording: {

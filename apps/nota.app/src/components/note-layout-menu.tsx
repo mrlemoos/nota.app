@@ -48,7 +48,7 @@ export function NoteLayoutMenu({
       }
     };
     document.addEventListener('pointerdown', onPointer, true);
-    return () => document.removeEventListener('pointerdown', onPointer, true);
+    return () => { document.removeEventListener('pointerdown', onPointer, true); };
   }, [open]);
 
   const handleBannerFileChange = useCallback(
@@ -86,7 +86,7 @@ export function NoteLayoutMenu({
         aria-haspopup="dialog"
         aria-label="Note layout"
         className="text-muted-foreground hover:text-foreground"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => { setOpen((o) => !o); }}
       >
         <HugeiconsIcon icon={TypeCursorIcon} size={18} />
       </NotaButton>
@@ -182,7 +182,7 @@ export function NoteLayoutMenu({
                   type="file"
                   accept="image/jpeg,image/png,image/gif,image/webp"
                   className="hidden"
-                  onChange={handleBannerFileChange}
+                  onChange={(e) => { void handleBannerFileChange(e); }}
                 />
                 {bannerAttachmentId ? (
                   <div className="mt-1 flex items-center gap-2">
@@ -199,7 +199,7 @@ export function NoteLayoutMenu({
                       size="sm"
                       className="flex-1"
                       disabled={disabled}
-                      onClick={() => onBannerChange(null)}
+                      onClick={() => { onBannerChange(null); }}
                     >
                       Remove
                     </NotaButton>

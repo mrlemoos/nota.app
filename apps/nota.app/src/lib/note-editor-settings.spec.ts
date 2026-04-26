@@ -147,9 +147,9 @@ describe('noteEditorSettingsToJson', () => {
 describe('showInNoteGraph', () => {
   it('parses false and true', () => {
     expect(
-      parseNoteEditorSettings({ showInNoteGraph: false } as Json),
+      parseNoteEditorSettings({ showInNoteGraph: false }),
     ).toEqual({ showInNoteGraph: false });
-    expect(parseNoteEditorSettings({ showInNoteGraph: true } as Json)).toEqual({
+    expect(parseNoteEditorSettings({ showInNoteGraph: true })).toEqual({
       showInNoteGraph: true,
     });
   });
@@ -158,19 +158,19 @@ describe('showInNoteGraph', () => {
     const result = parseNoteEditorSettings({
       font: 'sans',
       showInNoteGraph: false,
-    } as Json);
+    });
     expect(result).toEqual({ font: 'sans', showInNoteGraph: false });
   });
 });
 
 describe('isNoteVisibleInNoteGraph', () => {
   it('treats missing and true as visible', () => {
-    expect(isNoteVisibleInNoteGraph({ editor_settings: {} as Json })).toBe(
+    expect(isNoteVisibleInNoteGraph({ editor_settings: {} })).toBe(
       true,
     );
     expect(
       isNoteVisibleInNoteGraph({
-        editor_settings: { showInNoteGraph: true } as Json,
+        editor_settings: { showInNoteGraph: true },
       }),
     ).toBe(true);
   });
@@ -178,7 +178,7 @@ describe('isNoteVisibleInNoteGraph', () => {
   it('treats false as hidden', () => {
     expect(
       isNoteVisibleInNoteGraph({
-        editor_settings: { showInNoteGraph: false } as Json,
+        editor_settings: { showInNoteGraph: false },
       }),
     ).toBe(false);
   });
@@ -187,8 +187,8 @@ describe('isNoteVisibleInNoteGraph', () => {
 describe('filterNotesForNoteGraph', () => {
   it('drops notes hidden from graph', () => {
     const notes = [
-      { id: 'a', editor_settings: {} as Json },
-      { id: 'b', editor_settings: { showInNoteGraph: false } as Json },
+      { id: 'a', editor_settings: {} },
+      { id: 'b', editor_settings: { showInNoteGraph: false } },
     ] as Note[];
 
     expect(filterNotesForNoteGraph(notes).map((n) => n.id)).toEqual(['a']);

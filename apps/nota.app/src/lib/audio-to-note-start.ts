@@ -56,11 +56,11 @@ export async function startStudyNotesFromRecording(options: {
  * Starts assistive capture for the note already open in the shell: merges generated
  * content after the existing body and keeps the current title.
  */
-export async function startStudyNotesAppendToOpenNote(options: {
+export function startStudyNotesAppendToOpenNote(options: {
   userId: string;
   notaProEntitled: boolean;
   openNoteId: string;
-}): Promise<void> {
+}): void {
   if (!options.notaProEntitled || !options.userId || !options.openNoteId) {
     return;
   }

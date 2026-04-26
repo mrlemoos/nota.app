@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { Folder, Note, UserPreferences } from '~/types/database.types';
-import { getBrowserClient } from '../lib/supabase/browser';
+import { getBrowserClient , isSupabaseClerkGetTokenRegistered } from '../lib/supabase/browser';
 import {
   isLikelyOnline,
   listStoredNotes,
@@ -23,7 +23,6 @@ import { listNotes } from '../models/notes';
 import { getUserPreferences } from '../models/user-preferences';
 import { isClerkAccessTokenGetterRegistered } from '../lib/clerk-token-ref';
 import { fetchNotaProEntitled } from '../lib/nota-server-client';
-import { isSupabaseClerkGetTokenRegistered } from '../lib/supabase/browser';
 import {
   readNotaServerEntitledSession,
   syncNotaServerEntitledSession,
@@ -146,11 +145,11 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
   const [loadError, setLoadError] = useState<string | undefined>();
   const [loading, setLoading] = useState(true);
   const didRetryEmptyVaultAfterWelcomeSeededRef = useRef(false);
-  const refreshChainRef = useRef(Promise.resolve<void>(undefined));
+  const refreshChainRef = useRef<Promise<void>>(Promise.resolve());
 
   useEffect(() => {
     didRetryEmptyVaultAfterWelcomeSeededRef.current = false;
-    refreshChainRef.current = Promise.resolve(undefined);
+    refreshChainRef.current = Promise.resolve();
     clearNoteAttachmentSignedUrlCache();
   }, [userId]);
 
@@ -519,15 +518,20 @@ export function useNotesData(): NotesDataContextValue {
 }
 
 export function useOptionalNotesData(): NotesDataContextValue | null {
-  const slices = parseFullNotesDataSlices(
-    use(NotesDataActionsContext),
-    use(NotesDataVaultContext),
-    use(NotesDataMetaContext),
-  );
-  if (!slices) {
-    return null;
-  }
-  return useMergedNotesData(slices.actions, slices.vault, slices.meta);
+  const actions = use(NotesDataActionsContext);
+  const vault = use(NotesDataVaultContext);
+  const meta = use(NotesDataMetaContext);
+  const slices = parseFullNotesDataSlices(actions, vault, meta);
+  return useMemo((): NotesDataContextValue | null => {
+    if (!slices) {
+      return null;
+    }
+    return {
+      ...slices.actions,
+      ...slices.vault,
+      ...slices.meta,
+    };
+  }, [slices]);
 }
 
 /**

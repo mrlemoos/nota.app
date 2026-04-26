@@ -7,11 +7,8 @@ import type {
 } from '~/types/database.types';
 import { listNoteAttachments, NOTE_PDFS_BUCKET } from './note-attachments';
 
-/**
- * `SupabaseClient` generics vary by import path; using `any` for schema slots accepts
- * browser and test mocks without assignability noise.
- */
-export type TypedSupabaseClient = SupabaseClient<Database, any, any>;
+/** Browser and tests use the generated `Database` shape. */
+export type TypedSupabaseClient = SupabaseClient<Database>;
 
 export async function listNotes(client: TypedSupabaseClient) {
   const { data, error } = await client

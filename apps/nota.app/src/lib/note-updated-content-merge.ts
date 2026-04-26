@@ -7,7 +7,7 @@ import type { Json, Note } from '~/types/database.types';
  */
 export function mergeUpdatedNoteLocalContent(
   updatedNote: Note,
-  pendingContent: unknown | null | undefined,
+  pendingContent?: unknown,
   fallbackContent: Json,
 ): Note {
   return {

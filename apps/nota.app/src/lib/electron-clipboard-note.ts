@@ -19,7 +19,7 @@ function noteImageDoc(attachmentId: string, filename: string): Json {
         attrs: { attachmentId, filename },
       },
     ],
-  } as Json;
+  };
 }
 
 function base64ToFile(base64: string, filename: string, mime: string): File {

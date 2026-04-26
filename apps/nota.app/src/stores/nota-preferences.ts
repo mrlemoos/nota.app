@@ -93,7 +93,7 @@ export const useNotaPreferencesStore = create<NotaPreferencesState>()(
       clearDailyNoteForLocalDate: (dateKey) =>
         set((s) => {
           const next = { ...s.dailyNoteIdByLocalDate };
-          delete next[dateKey];
+          Reflect.deleteProperty(next, dateKey);
           return { dailyNoteIdByLocalDate: next };
         }),
     }),

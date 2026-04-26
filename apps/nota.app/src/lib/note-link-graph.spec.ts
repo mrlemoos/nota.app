@@ -12,12 +12,12 @@ function minimalNote(overrides: Partial<Note> & Pick<Note, 'id'>): Note {
   return {
     user_id: 'u',
     title: '',
-    content: { type: 'doc', content: [{ type: 'paragraph' }] } as Json,
+    content: { type: 'doc', content: [{ type: 'paragraph' }] },
     created_at: '2020-01-01T00:00:00Z',
     updated_at: '2020-01-01T00:00:00Z',
     due_at: null,
     is_deadline: false,
-    editor_settings: {} as Json,
+    editor_settings: {},
     ...overrides,
   };
 }

@@ -11,7 +11,7 @@ export function normalisedPackagedAppOrigin(): string {
 /** Base URL for mapping `nota://oauth-callback` → `/sso-callback` on the same host as the shell. */
 export function ssoCallbackBaseUrl(isDev: boolean): string {
   if (isDev) {
-    return `http://localhost:${DEV_PORT}`;
+    return `http://localhost:${String(DEV_PORT)}`;
   }
   return normalisedPackagedAppOrigin();
 }
@@ -19,7 +19,7 @@ export function ssoCallbackBaseUrl(isDev: boolean): string {
 /** Argument to `BrowserWindow.loadURL` for the main shell (initial navigation). */
 export function resolveMainWindowLoadUrl(isDev: boolean): string {
   if (isDev) {
-    return `http://localhost:${DEV_PORT}`;
+    return `http://localhost:${String(DEV_PORT)}`;
   }
   return `${normalisedPackagedAppOrigin()}/`;
 }

@@ -144,7 +144,10 @@ function ensureMainWindow(): BrowserWindow {
   if (!mainWindow || mainWindow.isDestroyed()) {
     createWindow();
   }
-  const win = mainWindow!;
+  const win = mainWindow;
+  if (!win) {
+    throw new Error('[nota-electron] main window missing after createWindow');
+  }
   if (win.isMinimized()) {
     win.restore();
   }
@@ -199,7 +202,7 @@ function createTray(): void {
   if (!iconPath) {
     return;
   }
-  let icon = nativeImage.createFromPath(iconPath);
+  const icon = nativeImage.createFromPath(iconPath);
   if (icon.isEmpty()) {
     console.warn(
       '[nota-electron] Tray icon could not be loaded; menu bar extra disabled.',
@@ -371,7 +374,7 @@ async function startServer(): Promise<void> {
   }
   const waitOn = (await import('wait-on')).default;
   await waitOn({
-    resources: [`http://localhost:${DEV_PORT}`],
+    resources: [`http://localhost:${String(DEV_PORT)}`],
     timeout: 30_000,
   });
 }
@@ -414,7 +417,7 @@ if (!gotTheLock) {
     }
   });
 
-  app.whenReady().then(async () => {
+  void app.whenReady().then(async () => {
     try {
       if (process.defaultApp) {
         if (process.argv.length >= 2) {

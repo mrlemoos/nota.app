@@ -48,7 +48,7 @@ export function NoteLinkMentionMenu({
       }}
       role="listbox"
       aria-label="Link to note"
-      onMouseDown={(e) => e.preventDefault()}
+      onMouseDown={(e) => { e.preventDefault(); }}
     >
       {notes.length === 0 ? (
         <p className="px-3 py-3 text-center text-sm text-muted-foreground">
@@ -69,8 +69,8 @@ export function NoteLinkMentionMenu({
                   'h-auto w-full justify-start whitespace-normal rounded-none px-3 py-1.5 text-left font-normal',
                   i === selectedIndex && 'bg-muted',
                 )}
-                onMouseEnter={() => onHighlightIndex(i)}
-                onClick={() => onSelect(note)}
+                onMouseEnter={() => { onHighlightIndex(i); }}
+                onClick={() => { onSelect(note); }}
               >
                 {persistedDisplayTitle(note.title || '')}
               </NotaButton>

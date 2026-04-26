@@ -11,6 +11,7 @@ import { submitUserPreferencesPatch } from '../lib/use-sync-user-preferences';
 import { useNotaPreferencesStore } from '../stores/nota-preferences';
 import { NotaProSettingsSection } from '../components/nota-pro-settings-section';
 import { hashForScreen } from '../lib/app-navigation';
+import { navigatorLooksLikeApplePlatform } from '../lib/navigator-apple-platform';
 
 export default function NotesSettings(): JSX.Element {
   const { user } = useRootLoaderData();
@@ -50,7 +51,7 @@ export default function NotesSettings(): JSX.Element {
 
   useLayoutEffect(() => {
     const isApple =
-      /Mac|iPhone|iPad|iPod/i.test(navigator.platform || '') ||
+      navigatorLooksLikeApplePlatform() ||
       /\bMac OS X\b/i.test(navigator.userAgent);
     setModDLabel(isApple ? '⌘D' : 'Ctrl+D');
     setHistoryBackLabel(isApple ? '⌘[' : 'Ctrl+[');

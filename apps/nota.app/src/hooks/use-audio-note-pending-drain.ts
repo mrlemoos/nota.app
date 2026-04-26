@@ -80,7 +80,9 @@ export function useAudioNotePendingDrain(enabled: boolean): void {
     };
 
     void drain();
-    return subscribeOnline(drain);
+    return subscribeOnline(() => {
+      void drain();
+    });
   }, [
     enabled,
     notaProEntitled,

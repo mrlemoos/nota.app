@@ -60,12 +60,12 @@ describe('notes sidebar store (folder expand/collapse)', () => {
 
   it('partializeNotesSidebarForStorage serialises only open and collapsedFolderIds (reload contract)', () => {
     // Arrange
-    const s0 = useNotesSidebarStore.getState() as NotesSidebarState;
+    const s0 = useNotesSidebarStore.getState();
     // Act
     const a = partializeNotesSidebarForStorage(s0);
     useNotesSidebarStore.getState().toggleFolderCollapsed('folder-x');
     const a2 = partializeNotesSidebarForStorage(
-      useNotesSidebarStore.getState() as NotesSidebarState,
+      useNotesSidebarStore.getState(),
     );
     // Assert
     expect(a).toEqual({ open: true, collapsedFolderIds: [] });

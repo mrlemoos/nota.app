@@ -30,11 +30,11 @@ function useDocumentDarkClass(): boolean {
 
   useEffect(() => {
     const el = document.documentElement;
-    const sync = () => setDark(el.classList.contains('dark'));
+    const sync = () => { setDark(el.classList.contains('dark')); };
     const obs = new MutationObserver(sync);
     obs.observe(el, { attributes: true, attributeFilter: ['class'] });
     sync();
-    return () => obs.disconnect();
+    return () => { obs.disconnect(); };
   }, []);
 
   return dark;
@@ -119,8 +119,8 @@ function NotaCodeBlockView(props: NodeViewProps): JSX.Element {
   const isDark = useDocumentDarkClass();
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedText(rawText), MERMAID_DEBOUNCE_MS);
-    return () => clearTimeout(t);
+    const t = setTimeout(() => { setDebouncedText(rawText); }, MERMAID_DEBOUNCE_MS);
+    return () => { clearTimeout(t); };
   }, [rawText]);
 
   return (

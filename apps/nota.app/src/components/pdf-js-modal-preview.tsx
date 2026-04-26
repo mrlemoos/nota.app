@@ -29,7 +29,7 @@ export function PdfJsModalPreview({
 
     let cancelled = false;
 
-    (async () => {
+    void (async () => {
       setPhase('loading');
       container.replaceChildren();
 

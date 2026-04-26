@@ -110,7 +110,7 @@ describe('runWelcomeNoteSeedIfNeeded', () => {
     vi.mocked(createLocalOnlyNote).mockImplementation(
       () =>
         new Promise((resolve) => {
-          setTimeout(() => resolve('welcome-note-id'), 20);
+          setTimeout(() => { resolve('welcome-note-id'); }, 20);
         }),
     );
     const input = {

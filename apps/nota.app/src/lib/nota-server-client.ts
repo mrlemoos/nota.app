@@ -1,3 +1,5 @@
+/* App binding re-exports server client with Clerk token; tests use `vi.mock` + dynamic `import()`. */
+/* eslint-disable @nx/enforce-module-boundaries -- intentional static wrapper over `@nota.app/nota-server-client` */
 import {
   fetchNotaProEntitled as fetchNotaProEntitledRequest,
   postNotaProInvalidate as postNotaProInvalidateRequest,

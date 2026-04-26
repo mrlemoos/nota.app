@@ -49,7 +49,7 @@ function visitTipTapJson(node: unknown, into: Set<string>): void {
  */
 export function extractOutgoingNoteIdsFromContent(content: unknown): string[] {
   if (content !== null && typeof content === 'object') {
-    const cached = outgoingIdsByContentRoot.get(content as object);
+    const cached = outgoingIdsByContentRoot.get(content);
     if (cached) {
       return cached;
     }
@@ -58,7 +58,7 @@ export function extractOutgoingNoteIdsFromContent(content: unknown): string[] {
   visitTipTapJson(content, into);
   const result = [...into];
   if (content !== null && typeof content === 'object') {
-    outgoingIdsByContentRoot.set(content as object, result);
+    outgoingIdsByContentRoot.set(content, result);
   }
   return result;
 }

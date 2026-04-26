@@ -125,7 +125,7 @@ function NotesGraphFlowInner(): JSX.Element {
     const id = requestAnimationFrame(() => {
       void fitView({ padding: 0.15, duration: 200 });
     });
-    return () => cancelAnimationFrame(id);
+    return () => { cancelAnimationFrame(id); };
   }, [derivedNodes, derivedEdges, fitView]);
 
   const onNodeClick = useCallback((_event: MouseEvent, node: Node) => {

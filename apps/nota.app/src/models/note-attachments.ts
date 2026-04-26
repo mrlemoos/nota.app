@@ -79,7 +79,7 @@ export async function createNoteAttachmentRecord(
     throw new Error(`Failed to create note attachment: ${error.message}`);
   }
 
-  return data as NoteAttachment;
+  return data;
 }
 
 export async function deleteNoteAttachment(
@@ -109,5 +109,5 @@ export async function updateNoteAttachmentFilename(
     throw new Error(`Failed to rename attachment: ${error.message}`);
   }
 
-  return data as NoteAttachment;
+  return data;
 }

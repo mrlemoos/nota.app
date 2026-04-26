@@ -7,12 +7,12 @@ function makeNote(overrides: Partial<Note> = {}): Note {
     id: 'n1',
     user_id: 'u1',
     title: 'T',
-    content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'server' }] }] } as Json,
+    content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'server' }] }] },
     created_at: '2020-01-01T00:00:00Z',
     updated_at: '2020-01-02T00:00:00Z',
     due_at: null,
     is_deadline: false,
-    editor_settings: {} as Json,
+    editor_settings: {},
     ...overrides,
   };
 }

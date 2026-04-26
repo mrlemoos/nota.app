@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-deprecated -- `MutableRefObject` for parent-assigned body editor ref */
 import type { Editor } from '@tiptap/core';
 import { Node as PMNode } from '@tiptap/pm/model';
 import type { EditorView } from '@tiptap/pm/view';
@@ -76,7 +77,7 @@ function isDocContentEqual(editor: Editor, content: unknown): boolean {
   try {
     const parsed = PMNode.fromJSON(
       editor.schema,
-      content as Record<string, unknown>,
+      content,
     );
     return editor.state.doc.eq(parsed);
   } catch {
@@ -437,7 +438,7 @@ export function TipTapEditor({
         },
       },
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- TipTap: stable `editorProps` identity; live values via refs.
+     
     [],
   );
 

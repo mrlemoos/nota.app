@@ -80,7 +80,7 @@ export function dateSpanContainingOffset(
   }
   if (candidates.length > 0) {
     candidates.sort((a, c) => a.end - a.start - (c.end - c.start));
-    return candidates[0]!;
+    return candidates[0];
   }
   if (
     results.length === 0 &&

@@ -68,7 +68,7 @@ beforeAll(() => {
     observe(): void {}
     unobserve(): void {}
     disconnect(): void {}
-  } as typeof ResizeObserver;
+  };
 });
 
 function renderPalette(): ReturnType<typeof render> {

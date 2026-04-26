@@ -4,7 +4,7 @@ export const NOTES_IDB_PUT_CHUNK_SIZE = 16;
 
 function yieldToMainThread(): Promise<void> {
   return new Promise((resolve) => {
-    requestAnimationFrame(() => resolve());
+    requestAnimationFrame(() => { resolve(); });
   });
 }
 
@@ -23,7 +23,7 @@ export async function syncServerNotesToIdbInChunks(
   for (let i = 0; i < serverNotes.length; i += NOTES_IDB_PUT_CHUNK_SIZE) {
     const end = Math.min(i + NOTES_IDB_PUT_CHUNK_SIZE, serverNotes.length);
     for (let j = i; j < end; j += 1) {
-      await putServerNoteIfNotDirty(userId, serverNotes[j]!);
+      await putServerNoteIfNotDirty(userId, serverNotes[j]);
     }
     if (end < serverNotes.length) {
       await yieldToMainThread();

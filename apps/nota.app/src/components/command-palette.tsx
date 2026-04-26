@@ -40,6 +40,7 @@ import { useClerk } from '@clerk/react';
 import { clientCreateNote } from '../lib/create-note-client';
 import { clientDeleteNoteById } from '../lib/delete-note-client';
 import { clientMoveNoteToFolder } from '../lib/move-note-folder-client';
+import { navigatorLooksLikeApplePlatform } from '../lib/navigator-apple-platform';
 import { movePickEnterAction } from '../lib/move-pick-enter';
 import {
   parseMovePickNoteId,
@@ -403,7 +404,7 @@ export function CommandPalette(): JSX.Element {
 
   useLayoutEffect(() => {
     const isApple =
-      /Mac|iPhone|iPad|iPod/i.test(navigator.platform || '') ||
+      navigatorLooksLikeApplePlatform() ||
       /\bMac OS X\b/i.test(navigator.userAgent);
     setNewNoteHotkeyLabel(isApple ? '⌘N' : 'Ctrl+N');
     setTodaysNoteHotkeyLabel(isApple ? '⌘D' : 'Ctrl+D');
@@ -558,7 +559,7 @@ export function CommandPalette(): JSX.Element {
   useEffect(() => {
     document.addEventListener('keydown', onKeyDown, { capture: true });
     return () =>
-      document.removeEventListener('keydown', onKeyDown, { capture: true });
+      { document.removeEventListener('keydown', onKeyDown, { capture: true }); };
   }, [onKeyDown]);
 
   return (
@@ -1135,9 +1136,9 @@ export function CommandPalette(): JSX.Element {
                         ]}
                         onSelect={() => {
                           setStartingAudioNote(true);
-                          void (async () => {
+                          (() => {
                             try {
-                              await startStudyNotesAppendToOpenNote({
+                              startStudyNotesAppendToOpenNote({
                                 userId: user?.id ?? '',
                                 notaProEntitled,
                                 openNoteId: activeNoteId,
@@ -1335,7 +1336,7 @@ export function CommandPalette(): JSX.Element {
                       keywords={['remove', 'trash', 'delete note']}
                       onSelect={() => {
                         if (
-                          !confirm('Are you sure you want to delete this note?')
+                          !window.confirm('Are you sure you want to delete this note?')
                         ) {
                           return;
                         }

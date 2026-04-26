@@ -22,8 +22,8 @@ export function CommandPaletteSemanticSync(options: {
   const [debounced, setDebounced] = useState('');
 
   useEffect(() => {
-    const t = window.setTimeout(() => setDebounced(search), DEBOUNCE_MS);
-    return () => window.clearTimeout(t);
+    const t = window.setTimeout(() => { setDebounced(search); }, DEBOUNCE_MS);
+    return () => { window.clearTimeout(t); };
   }, [search]);
 
   useEffect(() => {

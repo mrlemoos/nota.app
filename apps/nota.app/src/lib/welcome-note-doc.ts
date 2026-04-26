@@ -233,4 +233,4 @@ export const WELCOME_NOTE_CONTENT: Json = {
       ],
     },
   ],
-} as Json;
+};

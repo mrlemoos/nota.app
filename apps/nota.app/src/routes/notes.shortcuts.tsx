@@ -5,6 +5,7 @@ import {
   filterShortcutCatalogSections,
   NOTA_SHORTCUT_SECTIONS,
 } from '@/lib/nota-shortcuts-catalogue';
+import { navigatorLooksLikeApplePlatform } from '@/lib/navigator-apple-platform';
 import { useNotaPreferencesStore } from '@/stores/nota-preferences';
 
 export default function NotesShortcuts(): JSX.Element {
@@ -15,7 +16,7 @@ export default function NotesShortcuts(): JSX.Element {
 
   useLayoutEffect(() => {
     setIsApple(
-      /Mac|iPhone|iPad|iPod/i.test(navigator.platform || '') ||
+      navigatorLooksLikeApplePlatform() ||
         /\bMac OS X\b/i.test(navigator.userAgent),
     );
   }, []);

@@ -222,7 +222,7 @@ export function storageMetaForStudyRecording(mimeRaw: string): {
   contentType: string;
   filename: string;
 } {
-  const mime = mimeRaw.split(';')[0]!.trim().toLowerCase();
+  const mime = mimeRaw.split(';')[0].trim().toLowerCase();
   const table: Record<string, { ext: string; filename: string }> = {
     'audio/webm': { ext: '.webm', filename: 'recording.webm' },
     'video/webm': { ext: '.webm', filename: 'recording.webm' },

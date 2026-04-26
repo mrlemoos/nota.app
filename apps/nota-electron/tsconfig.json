@@ -13,10 +13,11 @@
     "resolveJsonModule": true,
     "declaration": true,
     "declarationMap": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "types": ["node", "vitest/globals"]
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "release", "**/*.spec.ts"],
+  "exclude": ["node_modules", "dist", "release"],
   "references": [
     {
       "path": "../../packages/clerk-oauth-protocol"

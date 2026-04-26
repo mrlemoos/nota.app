@@ -28,7 +28,7 @@ function TestNotesSlices({ children }: { children: ReactNode }) {
       editor_settings: {},
       banner_attachment_id: null,
       folder_id: null,
-    } as Note,
+    },
   ]);
 
   const actions: NotesDataActionsSlice = useMemo(
@@ -82,9 +82,9 @@ function PatchNoteTitle() {
       type="button"
       data-testid="patch"
       onClick={() =>
-        patchNoteInList('aaaaaaaa-bbbb-4ccc-dddd-eeeeeeeeeeee', {
+        { patchNoteInList('aaaaaaaa-bbbb-4ccc-dddd-eeeeeeeeeeee', {
           title: 'Patched',
-        })
+        }); }
       }
     >
       patch

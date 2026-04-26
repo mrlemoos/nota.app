@@ -60,7 +60,7 @@ export function audioBufferToWav(buffer: AudioBuffer): Blob {
  * through and triggered STT header errors.
  */
 export function shouldPassThroughToXaiStt(mime: string): boolean {
-  const base = mime.toLowerCase().split(';')[0]!.trim();
+  const base = mime.toLowerCase().split(';')[0].trim();
   return (
     base === 'audio/wav' ||
     base === 'audio/x-wav' ||
@@ -91,7 +91,7 @@ export async function ensureBlobForXaiStt(input: Blob): Promise<Blob> {
 
 export function filenameForSttUpload(blob: Blob): string {
   const m = (blob.type || '').toLowerCase();
-  const base = m.split(';')[0]!.trim();
+  const base = m.split(';')[0].trim();
   if (base === 'audio/wav' || base === 'audio/x-wav' || base === 'audio/wave') {
     return 'recording.wav';
   }

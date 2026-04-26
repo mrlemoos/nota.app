@@ -18,8 +18,8 @@ export type PendingAudioNoteJob = {
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onerror = (): void => reject(req.error ?? new Error('IndexedDB open failed'));
-    req.onsuccess = (): void => resolve(req.result);
+    req.onerror = (): void => { reject(req.error ?? new Error('IndexedDB open failed')); };
+    req.onsuccess = (): void => { resolve(req.result); };
     req.onupgradeneeded = (ev): void => {
       const db = (ev.target as IDBOpenDBRequest).result;
       if (!db.objectStoreNames.contains(STORE)) {

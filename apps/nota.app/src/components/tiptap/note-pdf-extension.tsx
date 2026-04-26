@@ -225,9 +225,9 @@ function NotePdfNodeView(props: NodeViewProps) {
   useEffect(() => {
     const dlg = previewDialogRef.current;
     if (!dlg) return;
-    const onClose = () => setPreview(null);
+    const onClose = () => { setPreview(null); };
     dlg.addEventListener('close', onClose);
-    return () => dlg.removeEventListener('close', onClose);
+    return () => { dlg.removeEventListener('close', onClose); };
   }, []);
 
   const handleDownload = useCallback(async () => {
@@ -251,7 +251,7 @@ function NotePdfNodeView(props: NodeViewProps) {
 
   const handleRemove = useCallback(async () => {
     if (!attachment || !ctx) return;
-    if (!confirm(`Remove “${attachment.filename}” from this note?`)) {
+    if (!window.confirm(`Remove “${attachment.filename}” from this note?`)) {
       return;
     }
 
@@ -296,7 +296,7 @@ function NotePdfNodeView(props: NodeViewProps) {
               ref={renameInputRef}
               type="text"
               value={draftFilename}
-              onChange={(e) => setDraftFilename(e.target.value)}
+              onChange={(e) => { setDraftFilename(e.target.value); }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
@@ -347,7 +347,7 @@ function NotePdfNodeView(props: NodeViewProps) {
                 variant="ghost"
                 size="sm"
                 className="text-muted-foreground hover:text-foreground"
-                onClick={() => props.deleteNode()}
+                onClick={() => { props.deleteNode(); }}
               >
                 Remove from note
               </NotaButton>
@@ -419,15 +419,17 @@ function NotePdfNodeView(props: NodeViewProps) {
 
         {typeof document !== 'undefined'
           ? createPortal(
-              <dialog
-                ref={previewDialogRef}
-                className="fixed left-1/2 top-1/2 z-50 w-[min(100vw-2rem,56rem)] max-h-[min(100vh-2rem,90vh)] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-background p-0 shadow-lg [&::backdrop]:bg-black/50"
-                onClick={(ev) => {
-                  if (ev.target === previewDialogRef.current) {
-                    closePreview();
-                  }
-                }}
-              >
+              <>
+                {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events -- native dialog backdrop click */}
+                <dialog
+                  ref={previewDialogRef}
+                  className="fixed left-1/2 top-1/2 z-50 w-[min(100vw-2rem,56rem)] max-h-[min(100vh-2rem,90vh)] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-background p-0 shadow-lg [&::backdrop]:bg-black/50"
+                  onClick={(ev) => {
+                    if (ev.target === previewDialogRef.current) {
+                      closePreview();
+                    }
+                  }}
+                >
                 <div className="flex max-h-[min(100vh-2rem,90vh)] flex-col">
                   <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
                     <h4 className="min-w-0 truncate text-sm font-medium text-foreground">
@@ -473,7 +475,8 @@ function NotePdfNodeView(props: NodeViewProps) {
                     ) : null}
                   </div>
                 </div>
-              </dialog>,
+                </dialog>
+              </>,
               document.body,
             )
           : null}

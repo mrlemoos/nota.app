@@ -201,7 +201,7 @@ export function NoteImageNodeView(props: NodeViewProps) {
 
   const handleRemove = useCallback(async () => {
     if (!attachment || !ctx) return;
-    if (!confirm(`Remove “${attachment.filename}” from this note?`)) {
+    if (!window.confirm(`Remove “${attachment.filename}” from this note?`)) {
       return;
     }
 
@@ -251,7 +251,7 @@ export function NoteImageNodeView(props: NodeViewProps) {
                   variant="ghost"
                   size="sm"
                   className="text-muted-foreground hover:text-foreground"
-                  onClick={() => props.deleteNode()}
+                  onClick={() => { props.deleteNode(); }}
                 >
                   Remove from note
                 </NotaButton>
@@ -374,7 +374,7 @@ export function NoteImageNodeView(props: NodeViewProps) {
                     size="sm"
                     className="text-muted-foreground hover:text-foreground"
                     disabled={!signedUrl}
-                    onClick={() => handleOpenTab()}
+                    onClick={() => { handleOpenTab(); }}
                   >
                     Open
                   </NotaButton>

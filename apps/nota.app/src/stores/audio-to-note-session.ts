@@ -31,7 +31,7 @@ export const useAudioToNoteSession = create<State>((set) => ({
   statusLine: '',
   recordingAttachmentWarning: null,
   reset: () =>
-    set({
+    { set({
       phase: 'idle',
       noteId: null,
       appendToExisting: false,
@@ -39,9 +39,9 @@ export const useAudioToNoteSession = create<State>((set) => ({
       error: null,
       statusLine: '',
       recordingAttachmentWarning: null,
-    }),
+    }); },
   beginSession: (noteId, options) =>
-    set((s) => ({
+    { set((s) => ({
       phase: 'recording',
       noteId,
       appendToExisting: Boolean(options?.append),
@@ -50,15 +50,15 @@ export const useAudioToNoteSession = create<State>((set) => ({
       error: null,
       statusLine: 'Requesting microphone…',
       recordingAttachmentWarning: null,
-    })),
+    })); },
   setProcessing: (line) =>
-    set({ phase: 'processing', statusLine: line, streamPreview: '' }),
+    { set({ phase: 'processing', statusLine: line, streamPreview: '' }); },
   appendPreview: (chunk) =>
-    set((s) => ({
+    { set((s) => ({
       streamPreview: s.streamPreview + chunk,
-    })),
+    })); },
   setError: (message) =>
-    set({ phase: 'error', error: message, statusLine: '' }),
+    { set({ phase: 'error', error: message, statusLine: '' }); },
   setRecordingAttachmentWarning: (message) =>
-    set({ recordingAttachmentWarning: message }),
+    { set({ recordingAttachmentWarning: message }); },
 }));

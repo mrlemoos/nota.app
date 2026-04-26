@@ -79,7 +79,7 @@ export async function clientCreateNote(options: {
     try {
       const { data } = await c.from('notes').select('*').eq('id', rootId).maybeSingle();
       if (data) {
-        options.insertNoteAtFront(data as Note);
+        options.insertNoteAtFront(data);
       }
     } catch {
       /* list refresh still hydrates */

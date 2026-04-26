@@ -239,7 +239,7 @@ export function NoteDueDatePickerPanel({
           <input
             type="text"
             value={nlInput}
-            onChange={(e) => setNlInput(e.target.value)}
+            onChange={(e) => { setNlInput(e.target.value); }}
             onBlur={applyNaturalLanguage}
             onKeyDown={onNlInputKeyDown}
             placeholder="e.g. next Friday 3pm"
@@ -321,7 +321,7 @@ export function NoteDueDatePickerPanel({
           type="checkbox"
           checked={draftDeadline}
           disabled={!selectedDate || saving || disabled}
-          onChange={(e) => setDraftDeadline(e.target.checked)}
+          onChange={(e) => { setDraftDeadline(e.target.checked); }}
           className="size-3.5 cursor-pointer rounded border-input accent-primary"
         />
         <label
@@ -347,7 +347,7 @@ export function NoteDueDatePickerPanel({
             saving || disabled || (!persistedDueAt && !selectedDate)
           }
           onMouseDown={keepEditorTextSelection}
-          onClick={handleClear}
+          onClick={() => { void handleClear(); }}
         >
           Clear
         </NotaButton>
@@ -356,7 +356,7 @@ export function NoteDueDatePickerPanel({
           size="sm"
           disabled={saving || disabled}
           onMouseDown={keepEditorTextSelection}
-          onClick={handleSave}
+          onClick={() => { void handleSave(); }}
         >
           Save
         </NotaButton>

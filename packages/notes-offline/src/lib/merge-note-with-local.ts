@@ -1,14 +1,18 @@
 import type { StoredNote } from './types.js';
-import type { Json, Note } from '@nota.app/database-types';
+import type { Note } from '@nota.app/database-types';
 
 function noteFromStored(stored: StoredNote): Note {
   const {
-    dirty: _d,
-    pending_create: _pc,
-    pending_delete: _pd,
-    server_updated_at: _s,
+    dirty,
+    pending_create,
+    pending_delete,
+    server_updated_at,
     ...note
   } = stored;
+  void dirty;
+  void pending_create;
+  void pending_delete;
+  void server_updated_at;
   return note;
 }
 
@@ -37,10 +41,7 @@ export function mergeNoteWithLocal(
     due_at: base.due_at,
     is_deadline: base.is_deadline,
     folder_id: base.folder_id ?? server.folder_id ?? null,
-    editor_settings:
-      (base.editor_settings as Json | undefined) ??
-      server.editor_settings ??
-      ({} as Json),
+    editor_settings: base.editor_settings ?? server.editor_settings ?? {},
   };
 }
 

@@ -55,6 +55,6 @@ export function useTodaysNoteShortcut(
       return;
     }
     document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
+    return () => { document.removeEventListener('keydown', onKeyDown); };
   }, [enabled, userId, onKeyDown]);
 }

@@ -22,4 +22,4 @@ export type OutboxEntry = {
 export const DEFAULT_NOTE_CONTENT: Json = {
   type: 'doc',
   content: [{ type: 'paragraph' }],
-} as Json;
+};

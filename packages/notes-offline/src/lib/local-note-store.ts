@@ -28,9 +28,11 @@ export async function putServerNoteIfNotDirty(
 
   const tx = db.transaction(NOTES_OBJECT_STORE, 'readwrite');
   const store = tx.objectStore(NOTES_OBJECT_STORE);
-  const existing = await idbRequest(store.get(note.id));
+  const existing = await idbRequest<StoredNote | undefined>(
+    store.get(note.id) as IDBRequest<StoredNote | undefined>,
+  );
 
-  if (existing && (existing as StoredNote).dirty) {
+  if (existing?.dirty) {
     await transactionComplete(tx);
     return;
   }
@@ -70,7 +72,7 @@ export async function saveLocalNoteDraft(
     id: patch.id,
     user_id: patch.user_id ?? existing?.user_id ?? userId,
     title,
-    content: content as Json,
+    content: content,
     created_at: patch.created_at ?? existing?.created_at ?? now,
     updated_at: now,
     due_at:
@@ -84,7 +86,7 @@ export async function saveLocalNoteDraft(
     editor_settings:
       patch.editor_settings !== undefined
         ? patch.editor_settings
-        : (existing?.editor_settings ?? ({} as Json)),
+        : (existing?.editor_settings ?? ({})),
     banner_attachment_id:
       patch.banner_attachment_id !== undefined
         ? patch.banner_attachment_id
@@ -111,9 +113,13 @@ export async function getStoredNote(
 ): Promise<StoredNote | null> {
   const db = await getNotaNotesDb(userId);
   const tx = db.transaction(NOTES_OBJECT_STORE, 'readonly');
-  const row = await idbRequest(tx.objectStore(NOTES_OBJECT_STORE).get(noteId));
+  const row = await idbRequest<StoredNote | undefined>(
+    tx.objectStore(NOTES_OBJECT_STORE).get(noteId) as IDBRequest<
+      StoredNote | undefined
+    >,
+  );
   await transactionComplete(tx);
-  return (row as StoredNote) ?? null;
+  return row ?? null;
 }
 
 export async function listStoredNotes(userId: string): Promise<StoredNote[]> {
@@ -209,7 +215,7 @@ export async function createLocalOnlyNote(
     updated_at: now,
     due_at: null,
     is_deadline: false,
-    editor_settings: {} as Json,
+    editor_settings: {},
     banner_attachment_id: null,
     folder_id: folderId,
     dirty: true,

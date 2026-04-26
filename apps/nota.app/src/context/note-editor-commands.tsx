@@ -1,4 +1,4 @@
-import type { Editor } from '@tiptap/core';
+import type { Editor , JSONContent } from '@tiptap/core';
 import {
   createContext,
   useCallback,
@@ -9,7 +9,6 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import type { JSONContent } from '@tiptap/core';
 import { MERMAID_CODE_BLOCK_INSERT } from '@/lib/tiptap-mermaid-insert';
 
 type NoteEditorCommandsContextValue = {

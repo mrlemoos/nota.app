@@ -1,6 +1,9 @@
 // Runs before Vitest tests
 import { vi } from 'vitest';
 
+import { setClerkAccessTokenGetter } from './src/lib/clerk-token-ref';
+import { setSupabaseClerkGetToken } from './src/lib/supabase/browser';
+
 // Node 25+ / the test runtime can provide a `localStorage` that lacks `setItem`; Zustand `persist`
 // needs a full `Storage` shape (e.g. notes sidebar folder collapse state).
 const inMemoryLocalStorage: Record<string, string> = {};
@@ -25,11 +28,8 @@ if (
       delete inMemoryLocalStorage[key];
     },
     key: (i: number) => Object.keys(inMemoryLocalStorage)[i] ?? null,
-  } as Storage);
+  });
 }
-
-import { setClerkAccessTokenGetter } from './src/lib/clerk-token-ref';
-import { setSupabaseClerkGetToken } from './src/lib/supabase/browser';
 
 // TipTap `@tiptap/extension-emoji` pulls `is-emoji-supported`, which probes canvas; jsdom
 // otherwise logs "Not implemented: HTMLCanvasElement.prototype.getContext".

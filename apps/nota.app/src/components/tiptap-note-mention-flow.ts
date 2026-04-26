@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-deprecated -- `MutableRefObject` matches writable `.current` for TipTap refs */
 import type { Editor } from '@tiptap/core';
 import { TextSelection } from '@tiptap/pm/state';
 import type { EditorView } from '@tiptap/pm/view';
@@ -111,7 +112,7 @@ export function tryConfirmNoteMention(
     refs.mentionSelectedIndexRef.current,
     filtered.length - 1,
   );
-  const target = filtered[idx]!;
+  const target = filtered[idx];
   const to = state.selection.from;
   const inserted = insertNoteLinkAtMentionRangeView(
     view,

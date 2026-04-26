@@ -22,9 +22,24 @@
     "tags": [
       "scope:nota",
       "type:feature"
-    ]
+    ],
+    "targets": {
+      "build": {
+        "executor": "nx:run-commands",
+        "options": {
+          "cwd": "packages/notes-offline",
+          "command": "pnpm run build"
+        }
+      }
+    }
   },
   "dependencies": {
     "@nota.app/database-types": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "catalog:"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.lib.json"
   }
 }
