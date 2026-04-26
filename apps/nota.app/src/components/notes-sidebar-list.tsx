@@ -60,14 +60,14 @@ function NoteRow(options: {
     <li className="list-none">
       <div
         className={cn(
-          'flex items-center gap-0 rounded-md transition-colors',
+          'flex transform-gpu items-center gap-0 rounded-md transition-[transform,colors] duration-300 ease-in-out hover:scale-[1.01]',
           isActive ? 'bg-muted' : 'text-foreground hover:bg-muted/60',
         )}
       >
         <a
           href={noteHashHref(note.id)}
           className={cn(
-            'min-w-0 flex-1 py-2 text-sm transition-colors',
+            'min-w-0 flex-1 py-2 text-sm transition-colors duration-300 ease-in-out',
             nested ? 'pl-2 pr-1' : 'px-3',
             isActive ? 'font-medium text-foreground' : 'text-foreground',
           )}
@@ -225,7 +225,7 @@ export function NotesSidebarList({
           const isCollapsed = collapsedFolderIds.includes(folder.id);
           return (
             <li key={folder.id} className="list-none">
-              <div className="flex items-center gap-0.5 rounded-md pr-1.5 py-1 pl-0.5 text-muted-foreground">
+              <div className="flex items-center gap-0.5 rounded-md py-1 pr-1.5 pl-0.5 text-muted-foreground transition-colors duration-300 ease-in-out">
                 <Button
                   type="button"
                   variant="ghost"

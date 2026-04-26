@@ -351,7 +351,7 @@ export function CommandPalette(): JSX.Element {
 
       if (open) {
         gsap.set(backdrop, { autoAlpha: 0 });
-        gsap.set(panel, { autoAlpha: 0, scale: 0.96, y: -8 });
+        gsap.set(panel, { autoAlpha: 0, scale: 0.98, y: -4 });
         gsap
           .timeline()
           .to(backdrop, {
@@ -380,8 +380,8 @@ export function CommandPalette(): JSX.Element {
       });
       tl.to(panel, {
         autoAlpha: 0,
-        scale: 0.96,
-        y: -8,
+        scale: 0.98,
+        y: -4,
         duration: NOTA_PALETTE_EXIT_S,
         ease: NOTA_MOTION_EASE_IN,
       }).to(

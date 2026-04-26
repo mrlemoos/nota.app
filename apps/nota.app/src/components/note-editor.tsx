@@ -504,7 +504,7 @@ function NoteEditorImpl({
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="nota-calm-caret-surface space-y-6">
       <div ref={titleRowRef} className="flex items-start justify-between gap-4">
         <textarea
           ref={titleTextareaRef}

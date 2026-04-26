@@ -4,18 +4,19 @@ import { useGSAP } from '@gsap/react';
 
 gsap.registerPlugin(useGSAP);
 
-export const NOTA_MOTION_EASE_OUT = 'power2.out';
-export const NOTA_MOTION_EASE_IN = 'power2.in';
-export const NOTA_MOTION_EASE_IN_OUT = 'power2.inOut';
+export const NOTA_MOTION_EASE_OUT = 'sine.out';
+export const NOTA_MOTION_EASE_IN = 'sine.in';
+export const NOTA_MOTION_EASE_IN_OUT = 'sine.inOut';
 
-export const NOTA_PALETTE_ENTER_S = 0.25;
-export const NOTA_PALETTE_EXIT_S = 0.2;
+/** Calm motion band ~300–500ms — palette, shell chrome. */
+export const NOTA_PALETTE_ENTER_S = 0.4;
+export const NOTA_PALETTE_EXIT_S = 0.35;
 
-export const NOTA_SIDEBAR_S = 0.28;
+export const NOTA_SIDEBAR_S = 0.45;
 export const NOTA_SIDEBAR_WIDTH_PX = 288;
 
-export const NOTA_BUTTON_PRESS_S = 0.08;
-export const NOTA_BUTTON_RELEASE_S = 0.15;
+export const NOTA_BUTTON_PRESS_S = 0.25;
+export const NOTA_BUTTON_RELEASE_S = 0.35;
 
 export function usePrefersReducedMotion(): boolean {
   const [reduced, setReduced] = useState(false);

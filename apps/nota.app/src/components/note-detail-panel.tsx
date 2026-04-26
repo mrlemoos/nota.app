@@ -427,20 +427,22 @@ export function NoteDetailPanel({ noteId }: { noteId: string }): React.ReactNode
             'rounded-2xl bg-background/80 px-6 py-10 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.35),0_10px_30px_-12px_rgba(0,0,0,0.18)] ring-1 ring-black/5 backdrop-blur-2xl backdrop-saturate-150 md:px-14 md:py-16 dark:bg-background/70 dark:ring-white/10',
         )}
       >
-        <NoteEditor
-          note={displayNote}
-          noteMentionCandidates={notes}
-          attachments={attachments}
-          titleFontClassName={layout.titleFontClass}
-          bodyFontClassName={layout.bodyFontClass}
-          onNoteUpdated={handleNoteUpdated}
-          bannerSignedUrl={bannerSignedUrl}
-        />
-        {showNoteBacklinks ? (
-          <div className={layout.bodyFontClass}>
-            <NoteBacklinksPanel noteId={noteId} />
-          </div>
-        ) : null}
+        <div key={displayNote.id} className="nota-note-open-fade">
+          <NoteEditor
+            note={displayNote}
+            noteMentionCandidates={notes}
+            attachments={attachments}
+            titleFontClassName={layout.titleFontClass}
+            bodyFontClassName={layout.bodyFontClass}
+            onNoteUpdated={handleNoteUpdated}
+            bannerSignedUrl={bannerSignedUrl}
+          />
+          {showNoteBacklinks ? (
+            <div className={layout.bodyFontClass}>
+              <NoteBacklinksPanel noteId={noteId} />
+            </div>
+          ) : null}
+        </div>
       </div>
     </div>
   );
