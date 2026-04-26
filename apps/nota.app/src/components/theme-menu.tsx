@@ -8,7 +8,7 @@ import {
   Tick01Icon,
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { buttonVariants } from '@/components/ui/button';
+import { notaButtonVariants } from '@nota.app/web-design/button';
 import { cn } from '@/lib/utils';
 import { type Theme, useTheme } from './theme-provider';
 
@@ -32,7 +32,7 @@ export function ThemeMenu(): JSX.Element {
         type="button"
         aria-label="Theme"
         className={cn(
-          buttonVariants({ variant: 'outline', size: 'default' }),
+          notaButtonVariants({ variant: 'outline', size: 'default' }),
           'min-w-[7.5rem] justify-between gap-2 px-2.5 font-normal',
         )}
       >

@@ -13,7 +13,7 @@ import {
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { type JSX, type MouseEvent as ReactMouseEvent } from 'react';
-import { Button } from '@/components/ui/button';
+import { NotaButton } from '@nota.app/web-design/button';
 import { cn } from '@/lib/utils';
 
 const menuClass =
@@ -51,7 +51,7 @@ export function TableEditorMenu({ editor }: TableEditorMenuProps): JSX.Element |
         aria-label="Table"
         onMouseDownCapture={keepEditorCellSelection}
       >
-        <Button
+        <NotaButton
           type="button"
           variant="ghost"
           size="icon-xs"
@@ -61,8 +61,8 @@ export function TableEditorMenu({ editor }: TableEditorMenuProps): JSX.Element |
           onClick={() => editor.chain().addRowBefore().focus().run()}
         >
           <HugeiconsIcon icon={ArrowUp01Icon} size={14} />
-        </Button>
-        <Button
+        </NotaButton>
+        <NotaButton
           type="button"
           variant="ghost"
           size="icon-xs"
@@ -72,8 +72,8 @@ export function TableEditorMenu({ editor }: TableEditorMenuProps): JSX.Element |
           onClick={() => editor.chain().addRowAfter().focus().run()}
         >
           <HugeiconsIcon icon={ArrowDown01Icon} size={14} />
-        </Button>
-        <Button
+        </NotaButton>
+        <NotaButton
           type="button"
           variant="ghost"
           size="icon-xs"
@@ -83,12 +83,12 @@ export function TableEditorMenu({ editor }: TableEditorMenuProps): JSX.Element |
           onClick={() => editor.chain().deleteRow().focus().run()}
         >
           <HugeiconsIcon icon={DeleteRowIcon} size={14} />
-        </Button>
+        </NotaButton>
         <span
           className="mx-0.5 h-4 w-px shrink-0 bg-border"
           aria-hidden
         />
-        <Button
+        <NotaButton
           type="button"
           variant="ghost"
           size="icon-xs"
@@ -98,8 +98,8 @@ export function TableEditorMenu({ editor }: TableEditorMenuProps): JSX.Element |
           onClick={() => editor.chain().addColumnBefore().focus().run()}
         >
           <HugeiconsIcon icon={ArrowLeft01Icon} size={14} />
-        </Button>
-        <Button
+        </NotaButton>
+        <NotaButton
           type="button"
           variant="ghost"
           size="icon-xs"
@@ -109,8 +109,8 @@ export function TableEditorMenu({ editor }: TableEditorMenuProps): JSX.Element |
           onClick={() => editor.chain().addColumnAfter().focus().run()}
         >
           <HugeiconsIcon icon={ArrowRight01Icon} size={14} />
-        </Button>
-        <Button
+        </NotaButton>
+        <NotaButton
           type="button"
           variant="ghost"
           size="icon-xs"
@@ -120,12 +120,12 @@ export function TableEditorMenu({ editor }: TableEditorMenuProps): JSX.Element |
           onClick={() => editor.chain().deleteColumn().focus().run()}
         >
           <HugeiconsIcon icon={DeleteColumnIcon} size={14} />
-        </Button>
+        </NotaButton>
         <span
           className="mx-0.5 h-4 w-px shrink-0 bg-border"
           aria-hidden
         />
-        <Button
+        <NotaButton
           type="button"
           variant="ghost"
           size="icon-xs"
@@ -135,8 +135,8 @@ export function TableEditorMenu({ editor }: TableEditorMenuProps): JSX.Element |
           onClick={() => editor.chain().toggleHeaderRow().focus().run()}
         >
           <HugeiconsIcon icon={TableRowsSplitIcon} size={14} />
-        </Button>
-        <Button
+        </NotaButton>
+        <NotaButton
           type="button"
           variant="ghost"
           size="icon-xs"
@@ -146,12 +146,12 @@ export function TableEditorMenu({ editor }: TableEditorMenuProps): JSX.Element |
           onClick={() => editor.chain().toggleHeaderColumn().focus().run()}
         >
           <HugeiconsIcon icon={LayoutTable01Icon} size={14} />
-        </Button>
+        </NotaButton>
         <span
           className="mx-0.5 h-4 w-px shrink-0 bg-border"
           aria-hidden
         />
-        <Button
+        <NotaButton
           type="button"
           variant="ghost"
           size="icon-xs"
@@ -162,7 +162,7 @@ export function TableEditorMenu({ editor }: TableEditorMenuProps): JSX.Element |
           onClick={() => editor.chain().deleteTable().focus().run()}
         >
           <HugeiconsIcon icon={Delete01Icon} size={14} />
-        </Button>
+        </NotaButton>
       </div>
     </BubbleMenu>
   );

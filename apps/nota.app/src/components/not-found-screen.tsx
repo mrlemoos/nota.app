@@ -2,7 +2,7 @@ import type { JSX } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowRight01Icon } from '@hugeicons/core-free-icons';
 import { NotaLogo } from '@/components/nota-logo';
-import { buttonVariants } from '@/components/ui/button';
+import { notaButtonVariants } from '@nota.app/web-design/button';
 import { cn } from '@/lib/utils';
 import { hashForScreen } from '@/lib/app-navigation';
 
@@ -99,7 +99,7 @@ export function NotFoundScreen({
           <a
             href={homeHref}
             className={cn(
-              buttonVariants({ variant: 'default', size: 'lg' }),
+              notaButtonVariants({ variant: 'default', size: 'lg' }),
               'mt-8 flex h-10 w-full touch-manipulation items-center justify-center gap-2 text-center',
             )}
           >

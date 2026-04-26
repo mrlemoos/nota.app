@@ -1,6 +1,6 @@
 import { PricingTable } from '@clerk/react';
 import { useCallback, useState, type JSX } from 'react';
-import { Button } from '@/components/ui/button';
+import { NotaButton } from '@nota.app/web-design/button';
 import { NotaLoadingStatus } from '@/components/ui/spinner';
 import {
   useNotesDataActions,
@@ -62,7 +62,7 @@ export function NotaProSettingsSection(): JSX.Element {
             <div className="nota-clerk-pricing-table [&_.cl-card]:bg-transparent [&_.cl-card]:shadow-none">
               <PricingTable />
             </div>
-            <Button
+            <NotaButton
               type="button"
               variant="secondary"
               size="sm"
@@ -74,7 +74,7 @@ export function NotaProSettingsSection(): JSX.Element {
                 : notaProEntitled
                   ? 'Refresh subscription status'
                   : 'I completed checkout — refresh'}
-            </Button>
+            </NotaButton>
           </div>
         )}
       </div>

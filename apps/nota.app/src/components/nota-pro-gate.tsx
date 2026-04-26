@@ -1,6 +1,6 @@
 import { PricingTable, useClerk } from '@clerk/react';
 import type { JSX } from 'react';
-import { Button } from '@/components/ui/button';
+import { NotaButton } from '@nota.app/web-design/button';
 import { cn } from '@/lib/utils';
 import { useIsElectron } from '../lib/use-is-electron';
 import { setAppHash } from '../lib/app-navigation';
@@ -36,7 +36,7 @@ export function NotaProGate(): JSX.Element {
           </div>
 
           <div className="border-t border-border/40 pt-6">
-            <Button
+            <NotaButton
               type="button"
               variant="ghost"
               size="sm"
@@ -48,7 +48,7 @@ export function NotaProGate(): JSX.Element {
               }}
             >
               Sign out
-            </Button>
+            </NotaButton>
           </div>
         </div>
       </main>

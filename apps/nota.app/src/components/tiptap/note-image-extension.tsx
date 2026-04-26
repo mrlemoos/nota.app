@@ -13,7 +13,10 @@ import {
   type NodeViewProps,
 } from '@tiptap/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button, buttonVariants } from '@/components/ui/button';
+import {
+  NotaButton,
+  notaButtonVariants,
+} from '@nota.app/web-design/button';
 import { NotaLoadingStatus } from '@/components/ui/spinner';
 import {
   NotaTooltip,
@@ -22,7 +25,7 @@ import {
   NotaTooltipPositioner,
   NotaTooltipProvider,
   NotaTooltipTrigger,
-} from '@/components/ui/tooltip';
+} from '@nota.app/web-design/tooltip';
 import { cn } from '@/lib/utils';
 import { getBrowserClient } from '../../lib/supabase/browser';
 import { getValidNoteAttachmentSignedUrlCacheEntry } from '../../lib/note-attachment-signed-url-cache';
@@ -243,7 +246,7 @@ export function NoteImageNodeView(props: NodeViewProps) {
                 <span className="text-xs text-muted-foreground">
                   File no longer available
                 </span>
-                <Button
+                <NotaButton
                   type="button"
                   variant="ghost"
                   size="sm"
@@ -251,7 +254,7 @@ export function NoteImageNodeView(props: NodeViewProps) {
                   onClick={() => props.deleteNode()}
                 >
                   Remove from note
-                </Button>
+                </NotaButton>
               </div>
             </div>
           ) : (
@@ -279,7 +282,7 @@ export function NoteImageNodeView(props: NodeViewProps) {
                       type="button"
                       aria-label="Image alignment"
                       className={cn(
-                        buttonVariants({
+                        notaButtonVariants({
                           variant: 'ghost',
                           size: 'icon',
                         }),
@@ -365,7 +368,7 @@ export function NoteImageNodeView(props: NodeViewProps) {
                       </Menu.Positioner>
                     </Menu.Portal>
                   </Menu.Root>
-                  <Button
+                  <NotaButton
                     type="button"
                     variant="ghost"
                     size="sm"
@@ -374,8 +377,8 @@ export function NoteImageNodeView(props: NodeViewProps) {
                     onClick={() => handleOpenTab()}
                   >
                     Open
-                  </Button>
-                  <Button
+                  </NotaButton>
+                  <NotaButton
                     type="button"
                     variant="ghost"
                     size="sm"
@@ -384,11 +387,11 @@ export function NoteImageNodeView(props: NodeViewProps) {
                     onClick={() => void handleDownload()}
                   >
                     Download
-                  </Button>
+                  </NotaButton>
                   <NotaTooltip>
                     <NotaTooltipTrigger
                       render={
-                        <Button
+                        <NotaButton
                           type="button"
                           variant="ghost"
                           size="icon"
@@ -411,7 +414,7 @@ export function NoteImageNodeView(props: NodeViewProps) {
                               d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
                             />
                           </svg>
-                        </Button>
+                        </NotaButton>
                       }
                     />
                     <NotaTooltipPortal>

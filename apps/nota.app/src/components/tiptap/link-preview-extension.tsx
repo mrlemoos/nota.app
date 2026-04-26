@@ -5,7 +5,7 @@ import {
   type NodeViewProps,
 } from '@tiptap/react';
 import { useEffect, useRef, useState, type JSX } from 'react';
-import { Button } from '@/components/ui/button';
+import { NotaButton } from '@nota.app/web-design/button';
 import { NotaSpinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import { fetchOgPreviewForEditor } from '@/lib/og-preview-client';
@@ -160,7 +160,7 @@ function LinkPreviewNodeView(props: NodeViewProps): JSX.Element {
               {displayTitle}
             </a>
             <div className="flex shrink-0 gap-1">
-              <Button
+              <NotaButton
                 type="button"
                 variant="ghost"
                 size="xs"
@@ -169,7 +169,7 @@ function LinkPreviewNodeView(props: NodeViewProps): JSX.Element {
                 onClick={() => setRefreshNonce((n) => n + 1)}
               >
                 Refresh
-              </Button>
+              </NotaButton>
             </div>
           </div>
           {descriptionAttr ? (

@@ -13,8 +13,8 @@ import {
   SparklesIcon,
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { Button } from '@/components/ui/button';
-import { NotaTooltipProvider } from '@/components/ui/tooltip';
+import { NotaButton } from '@nota.app/web-design/button';
+import { NotaTooltipProvider } from '@nota.app/web-design/tooltip';
 import { ELECTRON_WINDOW_NO_DRAG_CLASS } from '@/lib/electron-window-chrome';
 import { cn } from '@/lib/utils';
 import { useStickyDocTitle } from '../context/sticky-doc-title';
@@ -286,7 +286,7 @@ export function NotesShell(): JSX.Element {
                   Notes
                 </h2>
                 <div className="flex items-center gap-2">
-                  <Button
+                  <NotaButton
                     type="button"
                     size="icon"
                     variant="outline"
@@ -310,8 +310,8 @@ export function NotesShell(): JSX.Element {
                         d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.25-3v8.25m0-8.25h-8.25m8.25 0h8.25"
                       />
                     </svg>
-                  </Button>
-                  <Button
+                  </NotaButton>
+                  <NotaButton
                     type="button"
                     size="icon-lg"
                     variant="default"
@@ -332,7 +332,7 @@ export function NotesShell(): JSX.Element {
                         d="M12 4.5v15m7.5-7.5h-15"
                       />
                     </svg>
-                  </Button>
+                  </NotaButton>
                   <SidebarToggle />
                 </div>
               </div>

@@ -2,11 +2,21 @@ import * as React from 'react';
 
 import { cn } from '../lib/utils.js';
 
-function Card({
+export type NotaCardProps = React.ComponentProps<'div'> & {
+  size?: 'default' | 'sm';
+};
+export type NotaCardHeaderProps = React.ComponentProps<'div'>;
+export type NotaCardTitleProps = React.ComponentProps<'div'>;
+export type NotaCardDescriptionProps = React.ComponentProps<'div'>;
+export type NotaCardActionProps = React.ComponentProps<'div'>;
+export type NotaCardContentProps = React.ComponentProps<'div'>;
+export type NotaCardFooterProps = React.ComponentProps<'div'>;
+
+export function NotaCard({
   className,
   size = 'default',
   ...props
-}: React.ComponentProps<'div'> & { size?: 'default' | 'sm' }) {
+}: NotaCardProps) {
   return (
     <div
       data-slot="card"
@@ -20,7 +30,7 @@ function Card({
   );
 }
 
-function CardHeader({ className, ...props }: React.ComponentProps<'div'>) {
+export function NotaCardHeader({ className, ...props }: NotaCardHeaderProps) {
   return (
     <div
       data-slot="card-header"
@@ -33,7 +43,7 @@ function CardHeader({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
-function CardTitle({ className, ...props }: React.ComponentProps<'div'>) {
+export function NotaCardTitle({ className, ...props }: NotaCardTitleProps) {
   return (
     <div
       data-slot="card-title"
@@ -43,7 +53,10 @@ function CardTitle({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
-function CardDescription({ className, ...props }: React.ComponentProps<'div'>) {
+export function NotaCardDescription({
+  className,
+  ...props
+}: NotaCardDescriptionProps) {
   return (
     <div
       data-slot="card-description"
@@ -53,7 +66,7 @@ function CardDescription({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
-function CardAction({ className, ...props }: React.ComponentProps<'div'>) {
+export function NotaCardAction({ className, ...props }: NotaCardActionProps) {
   return (
     <div
       data-slot="card-action"
@@ -66,7 +79,7 @@ function CardAction({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
-function CardContent({ className, ...props }: React.ComponentProps<'div'>) {
+export function NotaCardContent({ className, ...props }: NotaCardContentProps) {
   return (
     <div
       data-slot="card-content"
@@ -76,7 +89,7 @@ function CardContent({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
-function CardFooter({ className, ...props }: React.ComponentProps<'div'>) {
+export function NotaCardFooter({ className, ...props }: NotaCardFooterProps) {
   return (
     <div
       data-slot="card-footer"
@@ -88,13 +101,3 @@ function CardFooter({ className, ...props }: React.ComponentProps<'div'>) {
     />
   );
 }
-
-export {
-  Card,
-  CardHeader,
-  CardFooter,
-  CardTitle,
-  CardAction,
-  CardDescription,
-  CardContent,
-};

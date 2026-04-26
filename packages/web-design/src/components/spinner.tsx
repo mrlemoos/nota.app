@@ -2,9 +2,14 @@ import type { JSX, ReactNode } from 'react';
 
 import { cn } from '../lib/utils.js';
 
-const spinnerSizeClass: Record<'sm' | 'md', string> = {
+const NOTA_SPINNER_SIZE_CLASS: Record<'sm' | 'md', string> = {
   sm: 'size-3.5 border-2',
   md: 'size-5 border-2',
+};
+
+export type NotaSpinnerProps = {
+  className?: string;
+  size?: 'sm' | 'md';
 };
 
 /**
@@ -13,15 +18,12 @@ const spinnerSizeClass: Record<'sm' | 'md', string> = {
 export function NotaSpinner({
   className,
   size = 'md',
-}: {
-  className?: string;
-  size?: 'sm' | 'md';
-}): JSX.Element {
+}: NotaSpinnerProps): JSX.Element {
   return (
     <span
       className={cn(
         'inline-block shrink-0 animate-spin rounded-full border-muted-foreground/20 border-t-muted-foreground/55',
-        spinnerSizeClass[size],
+        NOTA_SPINNER_SIZE_CLASS[size],
         className,
       )}
       aria-hidden
@@ -29,15 +31,17 @@ export function NotaSpinner({
   );
 }
 
+export type NotaLoadingStatusProps = {
+  label: ReactNode;
+  className?: string;
+  spinnerSize?: 'sm' | 'md';
+};
+
 export function NotaLoadingStatus({
   label,
   className,
   spinnerSize = 'md',
-}: {
-  label: ReactNode;
-  className?: string;
-  spinnerSize?: 'sm' | 'md';
-}): JSX.Element {
+}: NotaLoadingStatusProps): JSX.Element {
   return (
     <div
       className={cn(

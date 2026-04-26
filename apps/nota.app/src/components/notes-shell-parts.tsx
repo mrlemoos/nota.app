@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/button';
+import { NotaButton } from '@nota.app/web-design/button';
 import { NotaLoadingStatus } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import { useNotesSidebarStore } from '../stores/notes-sidebar';
@@ -22,7 +22,7 @@ export function SidebarToggle({ className }: { className?: string }): JSX.Elemen
   const { open, toggle } = useNotesSidebarStore();
 
   return (
-    <Button
+    <NotaButton
       type="button"
       variant="ghost"
       size="icon-lg"
@@ -62,7 +62,7 @@ export function SidebarToggle({ className }: { className?: string }): JSX.Elemen
           />
         </svg>
       )}
-    </Button>
+    </NotaButton>
   );
 }
 
@@ -114,14 +114,14 @@ export function NotesIndexPanel({ onCreate }: { onCreate: () => void }): JSX.Ele
         <p className="mb-6 text-muted-foreground">
           Choose a note from the sidebar or create a new one.
         </p>
-        <Button
+        <NotaButton
           type="button"
           size="lg"
           className="min-h-10 px-6"
           onClick={onCreate}
         >
           Create New Note
-        </Button>
+        </NotaButton>
       </div>
     </div>
   );

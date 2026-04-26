@@ -1,6 +1,6 @@
 import { useCallback, useId, useState, type JSX } from 'react';
 import { Dialog } from '@base-ui/react/dialog';
-import { Button } from '@/components/ui/button';
+import { NotaButton } from '@nota.app/web-design/button';
 import { cn } from '@/lib/utils';
 import type { Folder } from '~/types/database.types';
 import { getBrowserClient } from '../lib/supabase/browser';
@@ -105,7 +105,7 @@ export function FolderCreateDialog({
             </p>
           ) : null}
           <div className="mt-4 flex justify-end gap-2">
-            <Button
+            <NotaButton
               type="button"
               variant="outline"
               disabled={busy}
@@ -114,8 +114,8 @@ export function FolderCreateDialog({
               }}
             >
               Cancel
-            </Button>
-            <Button
+            </NotaButton>
+            <NotaButton
               type="button"
               variant="default"
               disabled={busy}
@@ -124,7 +124,7 @@ export function FolderCreateDialog({
               }}
             >
               {busy ? 'Creating…' : 'Create'}
-            </Button>
+            </NotaButton>
           </div>
         </Dialog.Popup>
       </Dialog.Portal>

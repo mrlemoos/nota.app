@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import { TypeCursorIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { Button } from '@/components/ui/button';
+import { NotaButton } from '@nota.app/web-design/button';
 import { cn } from '@/lib/utils';
 import {
   NOTE_THEME_LABEL,
@@ -77,7 +77,7 @@ export function NoteLayoutMenu({
 
   return (
     <div ref={rootRef} className="relative">
-      <Button
+      <NotaButton
         type="button"
         variant="ghost"
         size="icon-sm"
@@ -89,7 +89,7 @@ export function NoteLayoutMenu({
         onClick={() => setOpen((o) => !o)}
       >
         <HugeiconsIcon icon={TypeCursorIcon} size={18} />
-      </Button>
+      </NotaButton>
       {open ? (
         <div
           role="dialog"
@@ -193,7 +193,7 @@ export function NoteLayoutMenu({
                         className="h-8 w-14 rounded border border-border object-cover"
                       />
                     )}
-                    <Button
+                    <NotaButton
                       type="button"
                       variant="outline"
                       size="sm"
@@ -202,10 +202,10 @@ export function NoteLayoutMenu({
                       onClick={() => onBannerChange(null)}
                     >
                       Remove
-                    </Button>
+                    </NotaButton>
                   </div>
                 ) : (
-                  <Button
+                  <NotaButton
                     type="button"
                     variant="outline"
                     size="sm"
@@ -214,11 +214,11 @@ export function NoteLayoutMenu({
                     onClick={() => bannerInputRef.current?.click()}
                   >
                     {uploading ? 'Uploading…' : 'Add banner image'}
-                  </Button>
+                  </NotaButton>
                 )}
               </div>
             )}
-            <Button
+            <NotaButton
               type="button"
               variant="outline"
               size="sm"
@@ -229,7 +229,7 @@ export function NoteLayoutMenu({
               }}
             >
               Reset to defaults
-            </Button>
+            </NotaButton>
           </div>
         </div>
       ) : null}

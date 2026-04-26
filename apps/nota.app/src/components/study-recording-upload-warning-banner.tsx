@@ -1,5 +1,5 @@
 import type { JSX } from 'react';
-import { Button } from '@/components/ui/button';
+import { NotaButton } from '@nota.app/web-design/button';
 import { cn } from '@/lib/utils';
 import { useAudioToNoteSession } from '../stores/audio-to-note-session';
 
@@ -27,7 +27,7 @@ export function StudyRecordingUploadWarningBanner(): JSX.Element | null {
     >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
         <p className="min-w-0 flex-1 leading-snug">{warning}</p>
-        <Button
+        <NotaButton
           type="button"
           size="sm"
           variant="secondary"
@@ -35,7 +35,7 @@ export function StudyRecordingUploadWarningBanner(): JSX.Element | null {
           onClick={() => clear(null)}
         >
           Dismiss
-        </Button>
+        </NotaButton>
       </div>
     </div>
   );

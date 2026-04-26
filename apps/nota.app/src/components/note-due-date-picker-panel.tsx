@@ -8,7 +8,7 @@ import {
   type MouseEvent as ReactMouseEvent,
 } from 'react';
 import { DayPicker } from 'react-day-picker';
-import { Button } from '@/components/ui/button';
+import { NotaButton } from '@nota.app/web-design/button';
 import { cn } from '@/lib/utils';
 import { firstDateFromText } from '@/lib/parse-natural-due-date';
 
@@ -339,7 +339,7 @@ export function NoteDueDatePickerPanel({
       </div>
 
       <div className="mt-4 flex flex-wrap justify-end gap-2">
-        <Button
+        <NotaButton
           type="button"
           variant="ghost"
           size="sm"
@@ -350,8 +350,8 @@ export function NoteDueDatePickerPanel({
           onClick={handleClear}
         >
           Clear
-        </Button>
-        <Button
+        </NotaButton>
+        <NotaButton
           type="button"
           size="sm"
           disabled={saving || disabled}
@@ -359,7 +359,7 @@ export function NoteDueDatePickerPanel({
           onClick={handleSave}
         >
           Save
-        </Button>
+        </NotaButton>
       </div>
     </div>
   );

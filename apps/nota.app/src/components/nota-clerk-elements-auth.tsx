@@ -3,7 +3,7 @@ import * as SignIn from '@clerk/elements/sign-in';
 import * as SignUp from '@clerk/elements/sign-up';
 import type { JSX } from 'react';
 
-import { buttonVariants } from '@/components/ui/button';
+import { notaButtonVariants } from '@nota.app/web-design/button';
 import { NotaLoadingStatus } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 
@@ -12,7 +12,7 @@ const labelClass = 'text-sm font-medium leading-none text-foreground';
 const inputClass =
   'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm';
 const primarySubmitClass = cn(
-  buttonVariants({ variant: 'default', size: 'lg', className: 'w-full' }),
+  notaButtonVariants({ variant: 'default', size: 'lg', className: 'w-full' }),
 );
 /** Vertical rhythm inside each Clerk step (fields + actions). */
 const stepStackClass = 'flex flex-col gap-4';
@@ -72,7 +72,7 @@ export function NotaClerkSignIn(): JSX.Element {
                 <SignIn.Action
                   navigate="choose-strategy"
                   className={cn(
-                    buttonVariants({
+                    notaButtonVariants({
                       variant: 'ghost',
                       className: 'w-full',
                     }),
@@ -95,7 +95,7 @@ export function NotaClerkSignIn(): JSX.Element {
                 <SignIn.Action
                   resend
                   className={cn(
-                    buttonVariants({
+                    notaButtonVariants({
                       variant: 'outline',
                       size: 'default',
                       className: 'w-full',
@@ -107,7 +107,7 @@ export function NotaClerkSignIn(): JSX.Element {
                 <SignIn.Action
                   navigate="choose-strategy"
                   className={cn(
-                    buttonVariants({
+                    notaButtonVariants({
                       variant: 'ghost',
                       className: 'w-full',
                     }),
@@ -137,7 +137,7 @@ export function NotaClerkSignIn(): JSX.Element {
                   <SignIn.Action
                     resend
                     className={cn(
-                      buttonVariants({
+                      notaButtonVariants({
                         variant: 'ghost',
                         size: 'default',
                         className: 'w-full',
@@ -150,7 +150,7 @@ export function NotaClerkSignIn(): JSX.Element {
                 <SignIn.Action
                   navigate="choose-strategy"
                   className={cn(
-                    buttonVariants({
+                    notaButtonVariants({
                       variant: 'ghost',
                       className: 'w-full',
                     }),
@@ -180,7 +180,7 @@ export function NotaClerkSignIn(): JSX.Element {
                   <SignIn.Action
                     resend
                     className={cn(
-                      buttonVariants({
+                      notaButtonVariants({
                         variant: 'ghost',
                         size: 'default',
                         className: 'w-full',
@@ -205,7 +205,7 @@ export function NotaClerkSignIn(): JSX.Element {
                 <button
                   type="button"
                   className={cn(
-                    buttonVariants({ variant: 'outline', className: 'w-full' }),
+                    notaButtonVariants({ variant: 'outline', className: 'w-full' }),
                   )}
                 >
                   Password
@@ -215,7 +215,7 @@ export function NotaClerkSignIn(): JSX.Element {
                 <button
                   type="button"
                   className={cn(
-                    buttonVariants({ variant: 'outline', className: 'w-full' }),
+                    notaButtonVariants({ variant: 'outline', className: 'w-full' }),
                   )}
                 >
                   Email code
@@ -225,7 +225,7 @@ export function NotaClerkSignIn(): JSX.Element {
                 <button
                   type="button"
                   className={cn(
-                    buttonVariants({ variant: 'outline', className: 'w-full' }),
+                    notaButtonVariants({ variant: 'outline', className: 'w-full' }),
                   )}
                 >
                   Email link
@@ -240,7 +240,7 @@ export function NotaClerkSignIn(): JSX.Element {
             <SignIn.Action
               navigate="start"
               className={cn(
-                buttonVariants({ variant: 'ghost', className: 'w-full' }),
+                notaButtonVariants({ variant: 'ghost', className: 'w-full' }),
               )}
             >
               Back
@@ -354,7 +354,7 @@ export function NotaClerkSignUp(): JSX.Element {
                 <SignUp.Action
                   resend
                   className={cn(
-                    buttonVariants({
+                    notaButtonVariants({
                       variant: 'ghost',
                       size: 'default',
                       className: 'w-full',

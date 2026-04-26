@@ -1,6 +1,6 @@
 import { useEffect, useRef, type JSX } from 'react';
 import { createPortal } from 'react-dom';
-import { Button } from '@/components/ui/button';
+import { NotaButton } from '@nota.app/web-design/button';
 import { cn } from '@/lib/utils';
 import { persistedDisplayTitle } from '../../lib/note-title';
 import type { Note } from '~/types/database.types';
@@ -58,7 +58,7 @@ export function NoteLinkMentionMenu({
         <ul ref={listRef} className="max-h-56 overflow-y-auto py-0.5">
           {notes.map((note, i) => (
             <li key={note.id} role="none">
-              <Button
+              <NotaButton
                 type="button"
                 tabIndex={-1}
                 variant="ghost"
@@ -73,7 +73,7 @@ export function NoteLinkMentionMenu({
                 onClick={() => onSelect(note)}
               >
                 {persistedDisplayTitle(note.title || '')}
-              </Button>
+              </NotaButton>
             </li>
           ))}
         </ul>
