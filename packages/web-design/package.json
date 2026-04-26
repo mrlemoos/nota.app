@@ -22,6 +22,12 @@
       "import": "./dist/tooltip.js",
       "default": "./dist/tooltip.js"
     },
+    "./context-menu": {
+      "@nota.app/source": "./src/components/context-menu.tsx",
+      "types": "./dist/components/context-menu.d.ts",
+      "import": "./dist/context-menu.js",
+      "default": "./dist/context-menu.js"
+    },
     "./spinner": {
       "@nota.app/source": "./src/components/spinner.tsx",
       "types": "./dist/components/spinner.d.ts",

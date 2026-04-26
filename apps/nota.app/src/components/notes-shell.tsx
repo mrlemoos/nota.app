@@ -333,6 +333,7 @@ export function NotesShell(): JSX.Element {
                   notaProEntitled={notaProEntitled}
                   userPreferences={userPreferences}
                   insertNoteAtFront={insertNoteAtFront}
+                  insertFolderSorted={insertFolderSorted}
                   patchNoteInList={patchNoteInList}
                   patchFolderInList={patchFolderInList}
                   removeNoteFromList={removeNoteFromList}

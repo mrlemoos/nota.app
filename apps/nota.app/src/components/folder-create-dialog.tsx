@@ -12,6 +12,7 @@ type FolderCreateDialogProps = {
   userId: string | undefined;
   insertFolderSorted: (f: Folder) => void;
   refreshNotesList: (options?: { silent?: boolean }) => Promise<void>;
+  onCreated?: (folder: Folder) => void | Promise<void>;
 };
 
 export function FolderCreateDialog({
@@ -20,6 +21,7 @@ export function FolderCreateDialog({
   userId,
   insertFolderSorted,
   refreshNotesList,
+  onCreated,
 }: FolderCreateDialogProps): JSX.Element {
   const titleId = useId();
   const [name, setName] = useState('');
@@ -57,6 +59,7 @@ export function FolderCreateDialog({
       const client = getBrowserClient();
       const row = await createFolder(client, userId, trimmed);
       insertFolderSorted(row);
+      await onCreated?.(row);
       await refreshNotesList({ silent: true });
       reset();
       onOpenChange(false);
@@ -65,7 +68,7 @@ export function FolderCreateDialog({
     } finally {
       setBusy(false);
     }
-  }, [busy, insertFolderSorted, name, onOpenChange, refreshNotesList, reset, userId]);
+  }, [busy, insertFolderSorted, name, onCreated, onOpenChange, refreshNotesList, reset, userId]);
 
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
