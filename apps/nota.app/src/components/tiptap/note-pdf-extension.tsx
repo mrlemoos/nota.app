@@ -58,6 +58,7 @@ export type NotePdfDocContextValue = {
 const NotePdfDocContext = createContext<NotePdfDocContextValue | null>(null);
 
 const MAX_ATTACHMENT_FILENAME_LEN = 200;
+const NOTE_PDF_THUMBNAIL_SCALE = 0.7;
 
 export function useNotePdfDocContext() {
   return useContext(NotePdfDocContext);
@@ -226,7 +227,7 @@ export function NotePdfNodeView(props: NodeViewProps) {
 
         const pdf = await getDocument({ data: buf }).promise;
         const page = await pdf.getPage(1);
-        const viewport = page.getViewport({ scale: 0.34 });
+        const viewport = page.getViewport({ scale: NOTE_PDF_THUMBNAIL_SCALE });
         const ctx = canvas.getContext('2d', { alpha: false });
 
         if (!ctx) {
@@ -434,7 +435,9 @@ export function NotePdfNodeView(props: NodeViewProps) {
     <NodeViewWrapper
       as="div"
       className={cn(
-        'group note-pdf-block my-4 overflow-visible rounded-md border border-border/60 bg-muted/20 p-3',
+        'group note-pdf-block my-4 overflow-visible rounded-md border border-transparent bg-transparent p-3 transition-colors',
+        'hover:border-border/60 hover:bg-muted/20 hover:shadow-sm',
+        'focus-within:border-border/60 focus-within:bg-muted/20 focus-within:shadow-sm',
         props.selected &&
           'ring-2 ring-ring/40 ring-offset-2 ring-offset-background',
       )}
@@ -524,8 +527,10 @@ export function NotePdfNodeView(props: NodeViewProps) {
                     <div
                       aria-hidden
                       className={cn(
-                        'absolute inset-0 rounded-2xl border border-border/60 bg-background shadow-md transition-transform duration-300 ease-out transform-gpu',
+                        'absolute inset-0 rounded-2xl border border-transparent bg-transparent shadow-none transition-[transform,border-color,background-color,box-shadow,opacity] duration-300 ease-out transform-gpu',
                         'translate-x-2 translate-y-2 rotate-[4deg] opacity-30',
+                        'group-hover:border-border/60 group-hover:bg-background group-hover:shadow-md',
+                        'group-focus-within:border-border/60 group-focus-within:bg-background group-focus-within:shadow-md',
                         'group-hover:translate-x-6 group-hover:translate-y-5 group-hover:rotate-[9deg]',
                         'group-focus-within:translate-x-6 group-focus-within:translate-y-5 group-focus-within:rotate-[9deg]',
                       )}
@@ -533,8 +538,10 @@ export function NotePdfNodeView(props: NodeViewProps) {
                     <div
                       aria-hidden
                       className={cn(
-                        'absolute inset-0 rounded-2xl border border-border/60 bg-background shadow-md transition-transform duration-300 ease-out transform-gpu',
+                        'absolute inset-0 rounded-2xl border border-transparent bg-transparent shadow-none transition-[transform,border-color,background-color,box-shadow,opacity] duration-300 ease-out transform-gpu',
                         'translate-x-1 translate-y-1 rotate-[2deg] opacity-45',
+                        'group-hover:border-border/60 group-hover:bg-background group-hover:shadow-md',
+                        'group-focus-within:border-border/60 group-focus-within:bg-background group-focus-within:shadow-md',
                         'group-hover:translate-x-4 group-hover:translate-y-3 group-hover:rotate-[6deg]',
                         'group-focus-within:translate-x-4 group-focus-within:translate-y-3 group-focus-within:rotate-[6deg]',
                       )}
@@ -542,24 +549,18 @@ export function NotePdfNodeView(props: NodeViewProps) {
                     <div
                       aria-hidden
                       className={cn(
-                        'absolute inset-0 rounded-2xl border border-border/70 bg-background shadow-md transition-transform duration-300 ease-out transform-gpu',
+                        'absolute inset-0 rounded-2xl border border-transparent bg-transparent shadow-none transition-[transform,border-color,background-color,box-shadow,opacity] duration-300 ease-out transform-gpu',
                         'translate-x-0 translate-y-0 rotate-0 opacity-70',
+                        'group-hover:border-border/70 group-hover:bg-background group-hover:shadow-md',
+                        'group-focus-within:border-border/70 group-focus-within:bg-background group-focus-within:shadow-md',
                         'group-hover:translate-x-2 group-hover:translate-y-1 group-hover:rotate-[3deg]',
                         'group-focus-within:translate-x-2 group-focus-within:translate-y-1 group-focus-within:rotate-[3deg]',
                       )}
                     />
                   </div>
 
-                  <div className="relative z-10 overflow-hidden rounded-2xl border border-border/80 bg-background shadow-lg">
-                    <div className="flex items-center justify-between border-b border-border/60 bg-muted/30 px-3 py-2">
-                      <span className="truncate text-[0.65rem] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                        PDF
-                      </span>
-                      <span className="text-[0.65rem] text-muted-foreground/80">
-                        Page 1
-                      </span>
-                    </div>
-                    <div className="relative aspect-[8.5/11] bg-background p-2">
+                  <div className="relative z-10 overflow-hidden rounded-2xl border border-transparent bg-transparent shadow-none transition-[border-color,background-color,box-shadow] duration-300 ease-out group-hover:border-border/80 group-hover:bg-background group-hover:shadow-lg group-focus-within:border-border/80 group-focus-within:bg-background group-focus-within:shadow-lg">
+                    <div className="relative aspect-[8.5/11] bg-transparent p-2">
                       <div
                         data-testid="note-pdf-thumbnail"
                         className="absolute inset-0 flex items-stretch justify-stretch p-2"

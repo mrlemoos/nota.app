@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { ReactNodeViewContext, type NodeViewProps } from '@tiptap/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -106,6 +106,8 @@ describe('NotePdfNodeView', () => {
     // Assert
     const stack = screen.getByTestId('note-pdf-stack');
     expect(stack.tagName).toBe('BUTTON');
+    expect(screen.queryByText('PDF')).toBeNull();
+    expect(screen.queryByText('Page 1')).toBeNull();
 
     const sheets = screen.getByTestId('note-pdf-stack-sheets');
     const [backSheet, midSheet, frontSheet] = Array.from(
@@ -116,5 +118,13 @@ describe('NotePdfNodeView', () => {
     expect(backSheet.className).toContain('group-focus-within:rotate-[9deg]');
     expect(midSheet.className).toContain('group-hover:rotate-[6deg]');
     expect(frontSheet.className).toContain('group-hover:rotate-[3deg]');
+
+    await waitFor(() => {
+      const canvas = screen
+        .getByTestId('note-pdf-thumbnail')
+        .querySelector('canvas');
+
+      expect(canvas?.getAttribute('aria-label')).toBe('report.pdf front page');
+    });
   });
 });
