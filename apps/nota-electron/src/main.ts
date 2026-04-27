@@ -16,6 +16,7 @@ import {
   NOTA_CLERK_SSO_CALLBACK_PATH,
   NOTA_CUSTOM_SCHEME_URL_PREFIX,
 } from '@nota.app/clerk-oauth-protocol';
+import { buildNotaAppMenuTemplate } from './native-app-menu.js';
 import {
   DEV_PORT,
   resolveMainWindowLoadUrl,
@@ -258,6 +259,30 @@ function createTray(): void {
   );
 }
 
+function installApplicationMenu(): void {
+  if (!isDarwin) {
+    return;
+  }
+  Menu.setApplicationMenu(
+    Menu.buildFromTemplate(
+      buildNotaAppMenuTemplate({
+        onNewNote: () => {
+          sendMenubarAction({ kind: 'create-note' });
+        },
+        onMoveToFolder: () => {
+          sendMenubarAction({ kind: 'move-note' });
+        },
+        onNewFolder: () => {
+          sendMenubarAction({ kind: 'create-folder' });
+        },
+        onQuit: () => {
+          app.quit();
+        },
+      }),
+    ),
+  );
+}
+
 function queueOrDeliverSsoFromNotaProtocol(protocolUrl: string): void {
   const mapped = notaProtocolOAuthUrlToSsoHttpUrl(protocolUrl);
   if (!mapped) {
@@ -440,6 +465,7 @@ if (!gotTheLock) {
 
       await startServer();
       createWindow();
+      installApplicationMenu();
       createTray();
       await registerAutoUpdater();
     } catch (error) {

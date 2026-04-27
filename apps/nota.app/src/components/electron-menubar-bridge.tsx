@@ -1,20 +1,26 @@
 import { useEffect, useRef } from 'react';
 import { useRootLoaderData } from '../context/session-context';
 import { useNotesData } from '../context/notes-data-context';
+import { clientCreateNote } from '../lib/create-note-client';
 import { startStudyNotesFromRecording } from '../lib/audio-to-note-start';
 import { createNoteFromMenubarClipboard } from '../lib/electron-clipboard-note';
+import {
+  dispatchMenubarMoveNoteRequest,
+  dispatchMenubarNewFolderRequest,
+} from '../lib/electron-menubar-events';
 import {
   isNotaMenubarActionPayload,
   type NotaMenubarActionPayload,
 } from '../lib/electron-menubar-payload';
 
 /**
- * Subscribes to Electron tray IPC and runs the corresponding SPA flows (clipboard note, study recording).
+ * Subscribes to Electron menu IPC and runs the corresponding SPA flows.
  */
 export function ElectronMenubarBridge(): null {
   const { user } = useRootLoaderData();
   const userId = user?.id ?? '';
   const {
+    notes,
     notaProEntitled,
     refreshNotesList,
     insertNoteAtFront,
@@ -27,6 +33,7 @@ export function ElectronMenubarBridge(): null {
     refreshNotesList,
     insertNoteAtFront,
     patchNoteInList,
+    notes,
   });
   stableRef.current = {
     userId,
@@ -34,6 +41,7 @@ export function ElectronMenubarBridge(): null {
     refreshNotesList,
     insertNoteAtFront,
     patchNoteInList,
+    notes,
   };
 
   useEffect(() => {
@@ -48,6 +56,30 @@ export function ElectronMenubarBridge(): null {
       const action: NotaMenubarActionPayload = payload;
       const s = stableRef.current;
       void (async () => {
+        if (action.kind === 'create-note') {
+          await clientCreateNote({
+            userId: s.userId,
+            insertNoteAtFront: s.insertNoteAtFront,
+            refreshNotesList: s.refreshNotesList,
+            notaProEntitled: s.notaProEntitled,
+            notes: s.notes,
+          });
+          return;
+        }
+        if (action.kind === 'create-folder') {
+          if (!s.notaProEntitled) {
+            return;
+          }
+          dispatchMenubarNewFolderRequest();
+          return;
+        }
+        if (action.kind === 'move-note') {
+          if (!s.notaProEntitled) {
+            return;
+          }
+          dispatchMenubarMoveNoteRequest();
+          return;
+        }
         if (action.kind === 'study-recording') {
           await startStudyNotesFromRecording({
             userId: s.userId,

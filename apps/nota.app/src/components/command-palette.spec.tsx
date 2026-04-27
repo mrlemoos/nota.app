@@ -1,8 +1,9 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { CommandPalette } from './command-palette';
 import { ThemeProvider } from './theme-provider';
 import { dispatchRenameFolderRequest } from '../lib/folder-rename-request';
+import { NOTA_MENUBAR_MOVE_NOTE_REQUEST_EVENT } from '../lib/electron-menubar-events';
 
 vi.mock('../lib/folder-rename-request', () => ({
   dispatchRenameFolderRequest: vi.fn(),
@@ -123,5 +124,18 @@ describe('CommandPalette', () => {
 
     // Assert
     expect(dispatchRenameFolderRequest).toHaveBeenCalledWith('folder-1');
+  });
+
+  it('opens the move flow from the menubar request event', async () => {
+    // Arrange
+    renderPalette();
+
+    // Act
+    act(() => {
+      window.dispatchEvent(new Event(NOTA_MENUBAR_MOVE_NOTE_REQUEST_EVENT));
+    });
+
+    // Assert
+    expect(await screen.findByText('Move note — pick note')).toBeTruthy();
   });
 });

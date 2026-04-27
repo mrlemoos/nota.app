@@ -1,6 +1,7 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { NotesShell } from './notes-shell';
+import { NOTA_MENUBAR_NEW_FOLDER_REQUEST_EVENT } from '../lib/electron-menubar-events';
 
 vi.mock('./electron-menubar-bridge', () => ({
   ElectronMenubarBridge: (): null => null,
@@ -140,5 +141,18 @@ describe('NotesShell', () => {
     expect(aside).not.toBeNull();
     expect(aside?.className.includes('max-w-[288px]')).toBe(true);
     expect(screen.getByText(longTitle)).toBeTruthy();
+  });
+
+  it('opens the new folder dialog from the menubar request event', async () => {
+    // Arrange
+    render(<NotesShell />);
+
+    // Act
+    act(() => {
+      window.dispatchEvent(new Event(NOTA_MENUBAR_NEW_FOLDER_REQUEST_EVENT));
+    });
+
+    // Assert
+    expect(await screen.findByText('New folder')).toBeTruthy();
   });
 });

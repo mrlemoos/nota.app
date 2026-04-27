@@ -36,6 +36,9 @@ import { useNotesData } from '../context/notes-data-context';
 import { useAppNavigationScreen } from '../hooks/use-app-navigation-screen';
 import { openTodaysNoteClient } from '../lib/open-todays-note';
 import { navigateFromLegacyPath, setAppHash } from '../lib/app-navigation';
+import {
+  NOTA_MENUBAR_MOVE_NOTE_REQUEST_EVENT,
+} from '../lib/electron-menubar-events';
 import { useClerk } from '@clerk/react';
 import { clientCreateNote } from '../lib/create-note-client';
 import { clientDeleteNoteById } from '../lib/delete-note-client';
@@ -191,6 +194,34 @@ export function CommandPalette(): JSX.Element {
   const [deleteFolderPickerOpen, setDeleteFolderPickerOpen] = useState(false);
   const [renameFolderPickerOpen, setRenameFolderPickerOpen] = useState(false);
   const [releaseNotesOpen, setReleaseNotesOpen] = useState(false);
+
+  useEffect(() => {
+    function onMoveNoteRequest(): void {
+      if (!user?.id || !notaProEntitled) {
+        return;
+      }
+      setOpen(true);
+      setBusyAction(null);
+      setNewNoteFolderPickerOpen(false);
+      setFolderCreateDlgOpen(false);
+      setFolderDeleteTarget(null);
+      setRenameFolderPickerOpen(false);
+      setMoveFlow('pickNote');
+      setMoveTargetNoteIds([]);
+      setMoveMultiSelectActive(false);
+      setMoveSelectedNoteIds(new Set());
+      setPaletteValue('');
+      setPaletteSearch('');
+    }
+
+    window.addEventListener(NOTA_MENUBAR_MOVE_NOTE_REQUEST_EVENT, onMoveNoteRequest);
+    return () => {
+      window.removeEventListener(
+        NOTA_MENUBAR_MOVE_NOTE_REQUEST_EVENT,
+        onMoveNoteRequest,
+      );
+    };
+  }, [notaProEntitled, user?.id]);
 
   const semanticSearchUserPref = useNotaPreferencesStore(
     (s) => s.semanticSearchEnabled,

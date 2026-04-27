@@ -13,6 +13,39 @@ describe('isNotaMenubarActionPayload', () => {
     expect(ok).toBe(true);
   });
 
+  it('accepts create-note', () => {
+    // Arrange
+    const payload = { kind: 'create-note' as const };
+
+    // Act
+    const ok = isNotaMenubarActionPayload(payload);
+
+    // Assert
+    expect(ok).toBe(true);
+  });
+
+  it('accepts create-folder', () => {
+    // Arrange
+    const payload = { kind: 'create-folder' as const };
+
+    // Act
+    const ok = isNotaMenubarActionPayload(payload);
+
+    // Assert
+    expect(ok).toBe(true);
+  });
+
+  it('accepts move-note', () => {
+    // Arrange
+    const payload = { kind: 'move-note' as const };
+
+    // Act
+    const ok = isNotaMenubarActionPayload(payload);
+
+    // Assert
+    expect(ok).toBe(true);
+  });
+
   it('accepts clipboard text', () => {
     // Arrange
     const payload = {
@@ -51,6 +84,7 @@ describe('isNotaMenubarActionPayload', () => {
       null,
       {},
       { kind: 'clipboard-note', clipboard: { kind: 'image' } },
+      { kind: 'move-notee' },
     ];
 
     // Act & Assert

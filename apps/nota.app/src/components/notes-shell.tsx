@@ -44,6 +44,9 @@ import {
   replaceAppHash,
   type NotesShellPanel,
 } from '../lib/app-navigation';
+import {
+  NOTA_MENUBAR_NEW_FOLDER_REQUEST_EVENT,
+} from '../lib/electron-menubar-events';
 import { NoteDetailPanel } from './note-detail-panel';
 import { clientCreateNote } from '../lib/create-note-client';
 import { FolderCreateDialog } from './folder-create-dialog';
@@ -125,6 +128,26 @@ export function NotesShell(): JSX.Element {
       setFolderCreateOpen(true);
     },
   );
+
+  useEffect(() => {
+    function onNewFolderRequest(): void {
+      if (!user?.id || !notaProEntitled || !shellReady) {
+        return;
+      }
+      setFolderCreateOpen(true);
+    }
+
+    window.addEventListener(
+      NOTA_MENUBAR_NEW_FOLDER_REQUEST_EVENT,
+      onNewFolderRequest,
+    );
+    return () => {
+      window.removeEventListener(
+        NOTA_MENUBAR_NEW_FOLDER_REQUEST_EVENT,
+        onNewFolderRequest,
+      );
+    };
+  }, [notaProEntitled, shellReady, user?.id]);
 
   useNotesOfflineSync(user?.id, notaProEntitled && shellReady);
 

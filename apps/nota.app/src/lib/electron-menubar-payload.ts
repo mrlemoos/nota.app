@@ -7,6 +7,9 @@ export type NotaMenubarClipboardPayload =
   | { kind: 'image'; base64: string; mimeType: 'image/png' };
 
 export type NotaMenubarActionPayload =
+  | { kind: 'create-note' }
+  | { kind: 'create-folder' }
+  | { kind: 'move-note' }
   | { kind: 'study-recording' }
   | { kind: 'clipboard-note'; clipboard: NotaMenubarClipboardPayload };
 
@@ -17,6 +20,9 @@ export function isNotaMenubarActionPayload(
     return false;
   }
   const k = (value as { kind?: unknown }).kind;
+  if (k === 'create-note' || k === 'create-folder' || k === 'move-note') {
+    return true;
+  }
   if (k === 'study-recording') {
     return true;
   }
