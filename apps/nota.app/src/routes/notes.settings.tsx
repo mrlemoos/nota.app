@@ -1,6 +1,7 @@
 import { UserButton } from '@clerk/react';
 import { useLayoutEffect, useState, type JSX } from 'react';
 import { cn } from '@/lib/utils';
+import { LOCALE_OPTIONS } from '@nota.app/i18n';
 import { ThemeMenu } from '../components/theme-menu';
 import { useRootLoaderData } from '../context/session-context';
 import {
@@ -43,6 +44,8 @@ export default function NotesSettings(): JSX.Element {
   const setOpenTodaysNoteShortcut = useNotaPreferencesStore(
     (s) => s.setOpenTodaysNoteShortcut,
   );
+  const locale = useNotaPreferencesStore((s) => s.locale);
+  const setLocale = useNotaPreferencesStore((s) => s.setLocale);
   const showNoteBacklinks = useNotaPreferencesStore((s) => s.showNoteBacklinks);
   const setShowNoteBacklinks = useNotaPreferencesStore(
     (s) => s.setShowNoteBacklinks,
@@ -96,6 +99,37 @@ export default function NotesSettings(): JSX.Element {
 
         <section className="space-y-3">
           <h2 className="text-sm font-medium text-foreground">Appearance</h2>
+          <div className="rounded-lg border border-border/60 bg-muted/20 px-4 py-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <label htmlFor="nota-locale" className="text-sm text-muted-foreground">
+                Language
+              </label>
+              <select
+                id="nota-locale"
+                value={locale ?? 'system'}
+                onChange={(event) => {
+                  const next = event.target.value === 'system' ? null : event.target.value;
+                  setLocale(next);
+                  submitUserPreferencesPatch(
+                    { locale: next },
+                    user?.id,
+                    setUserPreferencesInState,
+                    notaProEntitled,
+                  );
+                }}
+                className="min-w-48 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+              >
+                {LOCALE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              If you leave this on system default, Nota follows your device language.
+            </p>
+          </div>
           <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/20 px-4 py-3">
             <span className="text-sm text-muted-foreground">Theme</span>
             <ThemeMenu />

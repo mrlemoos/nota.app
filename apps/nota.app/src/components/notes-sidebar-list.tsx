@@ -19,6 +19,7 @@ import {
   PencilEdit01Icon,
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
+import { createTranslator } from '@nota.app/i18n';
 import { NotaButton } from '@nota.app/web-design/button';
 import {
   NotaContextMenu,
@@ -52,6 +53,7 @@ import {
 } from '../lib/folder-rename-request';
 import { clientRenameFolder } from '../lib/rename-folder-client';
 import { useNotesSidebarStore } from '../stores/notes-sidebar';
+import { useNotaPreferencesStore } from '../stores/nota-preferences';
 import { buildSidebarFolderSections } from '../lib/note-sidebar-groups';
 import { FolderCreateDialog } from './folder-create-dialog';
 import { FolderDeleteDialog } from './folder-delete-dialog';
@@ -95,6 +97,8 @@ function NoteRow(options: {
   ) => Promise<void>;
   onMoveNoteToNewFolder: (note: Note) => void;
 }): JSX.Element {
+  const locale = useNotaPreferencesStore((s) => s.locale);
+  const { t } = createTranslator(locale);
   const {
     note,
     folders,
@@ -230,7 +234,7 @@ function NoteRow(options: {
                           ))}
                           <NotaContextMenuSeparator />
                           <NotaContextMenuItem
-                            label="New folder"
+                            label={t('New folder')}
                             onClick={() => {
                               onMoveNoteToNewFolder(note);
                             }}
@@ -240,7 +244,7 @@ function NoteRow(options: {
                               size={16}
                               className="shrink-0 text-muted-foreground"
                             />
-                            <span>New folder</span>
+                            <span>{t('New folder')}</span>
                           </NotaContextMenuItem>
                         </NotaContextMenuViewport>
                       </NotaContextMenuPopup>

@@ -47,6 +47,9 @@
   ],
   "references": [
     {
+      "path": "../../packages/web-design/tsconfig.lib.json"
+    },
+    {
       "path": "../../packages/validation/tsconfig.lib.json"
     },
     {
@@ -56,6 +59,9 @@
       "path": "../../packages/nota-server-client/tsconfig.lib.json"
     },
     {
+      "path": "../../packages/i18n/tsconfig.lib.json"
+    },
+    {
       "path": "../../packages/helper-hooks/tsconfig.lib.json"
     },
     {
@@ -63,9 +69,6 @@
     },
     {
       "path": "../../packages/clerk-oauth-protocol/tsconfig.lib.json"
-    },
-    {
-      "path": "../../packages/web-design/tsconfig.lib.json"
     }
   ]
 }

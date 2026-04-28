@@ -10,6 +10,7 @@
     "@nota.app/clerk-oauth-protocol": "workspace:*",
     "@nota.app/database-types": "workspace:*",
     "@nota.app/helper-hooks": "workspace:*",
+    "@nota.app/i18n": "workspace:*",
     "@nota.app/nota-server-client": "workspace:*",
     "@nota.app/notes-offline": "workspace:*",
     "@nota.app/validation": "workspace:*",

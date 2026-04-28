@@ -1,10 +1,12 @@
 import { useCallback, useId, useState, type JSX } from 'react';
 import { Dialog } from '@base-ui/react/dialog';
+import { createTranslator } from '@nota.app/i18n';
 import { NotaButton } from '@nota.app/web-design/button';
 import { cn } from '@/lib/utils';
 import type { Folder } from '~/types/database.types';
 import { getBrowserClient } from '../lib/supabase/browser';
 import { createFolder } from '../models/folders';
+import { useNotaPreferencesStore } from '../stores/nota-preferences';
 
 type FolderCreateDialogProps = {
   open: boolean;
@@ -24,6 +26,8 @@ export function FolderCreateDialog({
   onCreated,
 }: FolderCreateDialogProps): JSX.Element {
   const titleId = useId();
+  const locale = useNotaPreferencesStore((s) => s.locale);
+  const { t } = createTranslator(locale);
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +54,7 @@ export function FolderCreateDialog({
     }
     const trimmed = name.trim();
     if (!trimmed) {
-      setError('Enter a folder name.');
+      setError(t('Enter a folder name.'));
       return;
     }
     setBusy(true);
@@ -64,11 +68,21 @@ export function FolderCreateDialog({
       reset();
       onOpenChange(false);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to create folder.');
+      setError(e instanceof Error ? e.message : t('Failed to create folder.'));
     } finally {
       setBusy(false);
     }
-  }, [busy, insertFolderSorted, name, onCreated, onOpenChange, refreshNotesList, reset, userId]);
+  }, [
+    busy,
+    insertFolderSorted,
+    name,
+    onCreated,
+    onOpenChange,
+    refreshNotesList,
+    reset,
+    t,
+    userId,
+  ]);
 
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
@@ -79,12 +93,12 @@ export function FolderCreateDialog({
             'fixed top-[22%] left-1/2 z-[60] w-[min(100vw-2rem,22rem)] -translate-x-1/2 rounded-lg border border-border/60 bg-background p-4 text-foreground shadow-lg outline-none',
           )}
           aria-labelledby={titleId}
-        >
+          >
           <Dialog.Title id={titleId} className="font-medium text-foreground">
-            New folder
+            {t('New folder')}
           </Dialog.Title>
           <label className="mt-3 block text-xs text-muted-foreground" htmlFor="nota-new-folder-name">
-            Name
+            {t('Name')}
           </label>
           <input
             id="nota-new-folder-name"
@@ -116,7 +130,7 @@ export function FolderCreateDialog({
                 handleOpenChange(false);
               }}
             >
-              Cancel
+              {t('Cancel')}
             </NotaButton>
             <NotaButton
               type="button"
@@ -126,7 +140,7 @@ export function FolderCreateDialog({
                 void onSubmit();
               }}
             >
-              {busy ? 'Creating…' : 'Create'}
+              {busy ? t('Creating…') : t('Create')}
             </NotaButton>
           </div>
         </Dialog.Popup>

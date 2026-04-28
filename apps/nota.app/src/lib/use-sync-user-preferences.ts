@@ -32,6 +32,7 @@ export function useSyncUserPreferences(
       hydratedLoaderRef.current &&
       hydratedLoaderRef.current.updated_at ===
         userPreferencesFromServer.updated_at &&
+      hydratedLoaderRef.current.locale === userPreferencesFromServer.locale &&
       hydratedLoaderRef.current.open_todays_note_shortcut ===
         userPreferencesFromServer.open_todays_note_shortcut &&
       hydratedLoaderRef.current.show_note_backlinks ===
@@ -56,6 +57,7 @@ export function useSyncUserPreferences(
       }
       const {
         preferencesPendingSync,
+        locale,
         openTodaysNoteShortcut,
         showNoteBacklinks,
         semanticSearchEnabled,
@@ -68,6 +70,7 @@ export function useSyncUserPreferences(
         try {
           const client = getBrowserClient();
           const row = await upsertUserPreferences(client, userId, {
+            locale,
             open_todays_note_shortcut: openTodaysNoteShortcut,
             show_note_backlinks: showNoteBacklinks,
             semantic_search_enabled: semanticSearchEnabled,
@@ -94,6 +97,7 @@ export function useSyncUserPreferences(
 
 export type UserPreferencesSyncPatch = Pick<
   UserPreferences,
+  | 'locale'
   | 'open_todays_note_shortcut'
   | 'show_note_backlinks'
   | 'semantic_search_enabled'

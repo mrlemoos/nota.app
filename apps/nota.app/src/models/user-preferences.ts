@@ -21,6 +21,7 @@ export async function getUserPreferences(
 
   return {
     user_id: userId,
+    locale: null,
     open_todays_note_shortcut: false,
     show_note_backlinks: true,
     semantic_search_enabled: true,
@@ -35,6 +36,7 @@ export async function upsertUserPreferences(
   client: TypedSupabaseClient,
   userId: string,
   patch: {
+    locale?: string | null;
     open_todays_note_shortcut?: boolean;
     show_note_backlinks?: boolean;
     semantic_search_enabled?: boolean;
@@ -46,6 +48,7 @@ export async function upsertUserPreferences(
   const current = await getUserPreferences(client, userId);
   const row = {
     user_id: userId,
+    locale: patch.locale !== undefined ? patch.locale : current.locale,
     open_todays_note_shortcut:
       patch.open_todays_note_shortcut !== undefined
         ? patch.open_todays_note_shortcut

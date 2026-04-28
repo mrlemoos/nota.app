@@ -176,16 +176,17 @@ export function NotesDataProvider({ children }: { children: ReactNode }) {
         }
         setLoadError(undefined);
 
-    const defaultPrefs = (): UserPreferences => ({
-      user_id: userId,
-      open_todays_note_shortcut: false,
-      show_note_backlinks: true,
-      semantic_search_enabled: true,
-      emoji_replacer_enabled: true,
-      welcome_seeded: false,
-      delete_empty_folders: true,
-      updated_at: new Date(0).toISOString(),
-    });
+        const defaultPrefs = (): UserPreferences => ({
+          user_id: userId,
+          locale: null,
+          open_todays_note_shortcut: false,
+          show_note_backlinks: true,
+          semantic_search_enabled: true,
+          emoji_replacer_enabled: true,
+          welcome_seeded: false,
+          delete_empty_folders: true,
+          updated_at: new Date(0).toISOString(),
+        });
 
     const bootstrapVaultFromIdb = async (): Promise<void> => {
       const stored = await listStoredNotes(userId);

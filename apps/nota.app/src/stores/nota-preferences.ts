@@ -5,6 +5,7 @@ import type { UserPreferences } from '~/types/database.types';
 export type CursorVisualStyle = 'line' | 'block';
 
 interface NotaPreferencesState {
+  locale: string | null;
   openTodaysNoteShortcut: boolean;
   showNoteBacklinks: boolean;
   semanticSearchEnabled: boolean;
@@ -17,6 +18,7 @@ interface NotaPreferencesState {
   dailyNoteIdByLocalDate: Record<string, string>;
 
   setOpenTodaysNoteShortcut: (value: boolean, options?: { pendingSync?: boolean }) => void;
+  setLocale: (value: string | null, options?: { pendingSync?: boolean }) => void;
   setShowNoteBacklinks: (value: boolean, options?: { pendingSync?: boolean }) => void;
   setSemanticSearchEnabled: (value: boolean, options?: { pendingSync?: boolean }) => void;
   setEmojiReplacerEnabled: (value: boolean, options?: { pendingSync?: boolean }) => void;
@@ -30,6 +32,7 @@ interface NotaPreferencesState {
 export const useNotaPreferencesStore = create<NotaPreferencesState>()(
   persist(
     (set, get) => ({
+      locale: null,
       openTodaysNoteShortcut: false,
       showNoteBacklinks: true,
       semanticSearchEnabled: true,
@@ -42,6 +45,13 @@ export const useNotaPreferencesStore = create<NotaPreferencesState>()(
       setOpenTodaysNoteShortcut: (value, options) =>
         set({
           openTodaysNoteShortcut: value,
+          preferencesPendingSync:
+            options?.pendingSync !== undefined ? options.pendingSync : true,
+        }),
+
+      setLocale: (value, options) =>
+        set({
+          locale: value,
           preferencesPendingSync:
             options?.pendingSync !== undefined ? options.pendingSync : true,
         }),
@@ -77,6 +87,7 @@ export const useNotaPreferencesStore = create<NotaPreferencesState>()(
           return;
         }
         set({
+          locale: prefs.locale,
           openTodaysNoteShortcut: prefs.open_todays_note_shortcut,
           showNoteBacklinks: prefs.show_note_backlinks,
           semanticSearchEnabled: prefs.semantic_search_enabled,
@@ -87,6 +98,7 @@ export const useNotaPreferencesStore = create<NotaPreferencesState>()(
 
       markPreferencesSynced: (prefs) =>
         set({
+          locale: prefs.locale,
           openTodaysNoteShortcut: prefs.open_todays_note_shortcut,
           showNoteBacklinks: prefs.show_note_backlinks,
           semanticSearchEnabled: prefs.semantic_search_enabled,
@@ -110,6 +122,7 @@ export const useNotaPreferencesStore = create<NotaPreferencesState>()(
     {
       name: 'nota-preferences',
       partialize: (state) => ({
+        locale: state.locale,
         openTodaysNoteShortcut: state.openTodaysNoteShortcut,
         showNoteBacklinks: state.showNoteBacklinks,
         semanticSearchEnabled: state.semanticSearchEnabled,
