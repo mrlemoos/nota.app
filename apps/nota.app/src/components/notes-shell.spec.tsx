@@ -1,7 +1,30 @@
 import { act, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NotesShell } from './notes-shell';
 import { NOTA_MENUBAR_NEW_FOLDER_REQUEST_EVENT } from '../lib/electron-menubar-events';
+import { useNotesData } from '../context/notes-data-context';
+
+const notesShellTestCtx = vi.hoisted(() => {
+  const longTitle = 'Study note: 15 April 2026 — '.padEnd(120, 'x');
+  const listNote = {
+    id: 'note-1',
+    user_id: 'user-1',
+    title: longTitle,
+    content: {},
+    created_at: '2026-04-15T12:00:00.000Z',
+    updated_at: '2026-04-15T12:00:00.000Z',
+    due_at: null,
+    is_deadline: false,
+    editor_settings: {},
+    banner_attachment_id: null,
+    folder_id: null,
+  };
+  return {
+    longTitle,
+    vaultLoading: false,
+    listNote,
+  };
+});
 
 vi.mock('./electron-menubar-bridge', () => ({
   ElectronMenubarBridge: (): null => null,
@@ -23,39 +46,8 @@ vi.mock('../hooks/use-app-navigation-screen', () => ({
   }),
 }));
 
-const longTitle = 'Study note: 15 April 2026 — '.padEnd(120, 'x');
-
 vi.mock('../context/notes-data-context', () => ({
-  useNotesData: () => ({
-    notes: [
-      {
-        id: 'note-1',
-        user_id: 'user-1',
-        title: longTitle,
-        content: {},
-        created_at: '2026-04-15T12:00:00.000Z',
-        updated_at: '2026-04-15T12:00:00.000Z',
-        due_at: null,
-        is_deadline: false,
-        editor_settings: {},
-        banner_attachment_id: null,
-        folder_id: null,
-      },
-    ],
-    folders: [],
-    loadError: undefined,
-    userPreferences: null,
-    notaProEntitled: true,
-    loading: false,
-    refreshNotesList: vi.fn(),
-    insertNoteAtFront: vi.fn(),
-    insertFolderSorted: vi.fn(),
-    patchNoteInList: vi.fn(),
-    removeNoteFromList: vi.fn(),
-    removeFolderFromList: vi.fn(),
-    setUserPreferencesInState: vi.fn(),
-    patchFolderInList: vi.fn(),
-  }),
+  useNotesData: vi.fn(),
 }));
 
 const mockNotesSidebarState = {
@@ -69,7 +61,9 @@ const mockNotesSidebarState = {
 };
 
 vi.mock('../stores/notes-sidebar', () => ({
-  useNotesSidebarStore: <T,>(selector?: (s: typeof mockNotesSidebarState) => T) =>
+  useNotesSidebarStore: <T,>(
+    selector?: (s: typeof mockNotesSidebarState) => T,
+  ) =>
     selector
       ? selector(mockNotesSidebarState)
       : (mockNotesSidebarState as unknown as T),
@@ -128,6 +122,29 @@ vi.mock('../hooks/use-audio-note-pending-drain', () => ({
 }));
 
 describe('NotesShell', () => {
+  beforeEach(() => {
+    vi.mocked(useNotesData).mockImplementation(() => ({
+      notes: [notesShellTestCtx.listNote],
+      folders: [],
+      loadError: undefined,
+      userPreferences: null,
+      notaProEntitled: true,
+      loading: notesShellTestCtx.vaultLoading,
+      refreshNotesList: vi.fn(),
+      insertNoteAtFront: vi.fn(),
+      insertFolderSorted: vi.fn(),
+      patchNoteInList: vi.fn(),
+      removeNoteFromList: vi.fn(),
+      removeFolderFromList: vi.fn(),
+      setUserPreferencesInState: vi.fn(),
+      patchFolderInList: vi.fn(),
+    }));
+  });
+
+  afterEach(() => {
+    notesShellTestCtx.vaultLoading = false;
+  });
+
   it('caps the notes sidebar width on first paint so long titles do not expand the column', () => {
     // Arrange
     const navigationHash = '#/notes';
@@ -140,7 +157,7 @@ describe('NotesShell', () => {
     const aside = container.querySelector('aside');
     expect(aside).not.toBeNull();
     expect(aside?.className.includes('max-w-[288px]')).toBe(true);
-    expect(screen.getByText(longTitle)).toBeTruthy();
+    expect(screen.getByText(notesShellTestCtx.longTitle)).toBeTruthy();
   });
 
   it('opens the new folder dialog from the menubar request event', async () => {
@@ -154,5 +171,20 @@ describe('NotesShell', () => {
 
     // Assert
     expect(await screen.findByText('New folder')).toBeTruthy();
+  });
+
+  it('shows a loading status and hides vault chrome while the initial vault fetch runs', () => {
+    // Arrange
+    notesShellTestCtx.vaultLoading = true;
+    window.history.replaceState(null, '', '#/notes');
+
+    // Act
+    const { container } = render(<NotesShell />);
+
+    // Assert
+    expect(screen.getByText(/loading notes/i)).toBeTruthy();
+    expect(screen.getByRole('status')).toBeTruthy();
+    expect(screen.queryByText(notesShellTestCtx.longTitle)).toBeNull();
+    expect(container.querySelector('aside')).toBeNull();
   });
 });

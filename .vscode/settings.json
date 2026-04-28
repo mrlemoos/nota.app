@@ -16,6 +16,7 @@
     "mrlemoos",
     "nodenext",
     "nosniff",
+    "nums",
     "partialize",
     "pdfs",
     "Pipeable",
@@ -29,6 +30,7 @@
     "supabase",
     "tsconfigs",
     "unlayered",
+    "winstaller",
     "xyflow"
   ],
   "tailwindcss.configPath": "./apps/nota.app/styles.css"
