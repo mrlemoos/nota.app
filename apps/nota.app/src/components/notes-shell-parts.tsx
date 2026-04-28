@@ -1,6 +1,7 @@
 import { NotaButton } from '@nota.app/web-design/button';
 import { NotaLoadingStatus } from '@nota.app/web-design/spinner';
 import { cn } from '@/lib/utils';
+import { useNotaTranslator } from '@/lib/use-nota-translator';
 import { useNotesSidebarStore } from '../stores/notes-sidebar';
 import type { JSX, ReactNode } from 'react';
 
@@ -20,6 +21,7 @@ export function LazyNotesRouteFallback({ label }: { label: string }): JSX.Elemen
 
 export function SidebarToggle({ className }: { className?: string }): JSX.Element {
   const { open, toggle } = useNotesSidebarStore();
+  const { t } = useNotaTranslator();
 
   return (
     <NotaButton
@@ -28,7 +30,7 @@ export function SidebarToggle({ className }: { className?: string }): JSX.Elemen
       size="icon-lg"
       onClick={toggle}
       className={cn('text-foreground', className)}
-      aria-label={open ? 'Close sidebar' : 'Open sidebar'}
+      aria-label={open ? t('Close sidebar') : t('Open sidebar')}
       aria-expanded={open}
     >
       {open ? (
@@ -88,6 +90,8 @@ export function ShellPanel({
 }
 
 export function NotesIndexPanel({ onCreate }: { onCreate: () => void }): JSX.Element {
+  const { t } = useNotaTranslator();
+
   return (
     <div className="flex h-full flex-col items-center justify-center px-4 py-16">
       <div className="max-w-md text-center">
@@ -109,10 +113,10 @@ export function NotesIndexPanel({ onCreate }: { onCreate: () => void }): JSX.Ele
           </svg>
         </div>
         <h2 className="mb-2 font-serif text-xl font-semibold tracking-normal text-foreground">
-          Select a note
+          {t('Select a note')}
         </h2>
         <p className="mb-6 text-muted-foreground">
-          Choose a note from the sidebar or create a new one.
+          {t('Choose a note from the sidebar or create a new one.')}
         </p>
         <NotaButton
           type="button"
@@ -120,7 +124,7 @@ export function NotesIndexPanel({ onCreate }: { onCreate: () => void }): JSX.Ele
           className="min-h-10 px-6"
           onClick={onCreate}
         >
-          Create New Note
+          {t('Create New Note')}
         </NotaButton>
       </div>
     </div>

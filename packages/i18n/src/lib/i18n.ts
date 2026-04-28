@@ -1,3 +1,10 @@
+import { CHROME_UI_ES, CHROME_UI_FR, CHROME_UI_PT } from './chrome-ui-translations.js';
+import {
+  SHORTCUT_TRANSLATIONS_ES,
+  SHORTCUT_TRANSLATIONS_FR,
+  SHORTCUT_TRANSLATIONS_PT,
+} from './shortcut-catalogue-translations.js';
+
 export const EN_GB = 'en-GB' as const;
 export type SupportedLocale = 'en-GB' | 'en-CA' | 'es-ES' | 'pt-BR' | 'fr-CA';
 
@@ -15,12 +22,6 @@ export const LOCALE_OPTIONS = [
  * Runtime validates and resolves to a SupportedLocale.
  */
 export type LocalePreference = string | null | undefined;
-
-/**
- * Type-safe translation keys extracted from all translation dictionaries.
- * Use this type for autocomplete when calling t().
- */
-export type TranslationKey = keyof typeof TRANSLATIONS['es-ES'];
 
 /** Placeholder values for string interpolation, e.g. {totalCount} -> 3 */
 export type PlaceholderValues = Record<string, string | number | boolean>;
@@ -43,57 +44,82 @@ const LOCALE_LANGUAGE_TO_CODES: Map<string, readonly SupportedLocale[]> =
     ['fr', ['fr-CA']],
   ]);
 
+const FOLDER_CORE_ES: LocaleDictionary = {
+  Folder: 'Carpeta',
+  'Move folder': 'Mover carpeta',
+  'New folder': 'Nueva carpeta',
+  Name: 'Nombre',
+  Cancel: 'Cancelar',
+  Create: 'Crear',
+  'Creating…': 'Creando…',
+  'Enter a folder name.': 'Introduce un nombre de carpeta.',
+  'Failed to create folder.': 'No se pudo crear la carpeta.',
+  'Cancel and delete folder': 'Cancelar y eliminar carpeta',
+  'Delete folder "{folderName}"?': '¿Eliminar carpeta "{folderName}"?',
+  'This value is {totalCount}': 'Este valor es {totalCount}',
+};
+
+const FOLDER_CORE_PT: LocaleDictionary = {
+  Folder: 'Pasta',
+  'Move folder': 'Mover pasta',
+  'New folder': 'Nova pasta',
+  Name: 'Nome',
+  Cancel: 'Cancelar',
+  Create: 'Criar',
+  'Creating…': 'Criando…',
+  'Enter a folder name.': 'Digite um nome para a pasta.',
+  'Failed to create folder.': 'Falha ao criar a pasta.',
+  'Cancel and delete folder': 'Cancelar e excluir pasta',
+  'Delete folder "{folderName}"?': 'Excluir pasta "{folderName}"?',
+  'This value is {totalCount}': 'Este valor é {totalCount}',
+};
+
+const FOLDER_CORE_FR: LocaleDictionary = {
+  Folder: 'Dossier',
+  'Move folder': 'Déplacer le dossier',
+  'New folder': 'Nouveau dossier',
+  Name: 'Nom',
+  Cancel: 'Annuler',
+  Create: 'Créer',
+  'Creating…': 'Création…',
+  'Enter a folder name.': 'Entrez un nom de dossier.',
+  'Failed to create folder.': 'Échec de la création du dossier.',
+  'Cancel and delete folder': 'Annuler et supprimer le dossier',
+  'Delete folder "{folderName}"?': 'Supprimer le dossier "{folderName}"?',
+  'This value is {totalCount}': 'Cette valeur est {totalCount}',
+};
+
 /**
  * Translation dictionary for each supported locale
  * (en-GB and en-CA use the key as-is).
+ * Folder/dialog keys are merged last so they override any accidental key clash.
  */
 const TRANSLATIONS: Record<
   Exclude<SupportedLocale, 'en-GB' | 'en-CA'>,
   LocaleDictionary
 > = {
   'es-ES': {
-    Folder: 'Carpeta',
-    'Move folder': 'Mover carpeta',
-    'New folder': 'Nueva carpeta',
-    Name: 'Nombre',
-    Cancel: 'Cancelar',
-    Create: 'Crear',
-    'Creating…': 'Creando…',
-    'Enter a folder name.': 'Introduce un nombre de carpeta.',
-    'Failed to create folder.': 'No se pudo crear la carpeta.',
-    'Cancel and delete folder': 'Cancelar y eliminar carpeta',
-    'Delete folder "{folderName}"?': '¿Eliminar carpeta "{folderName}"?',
-    'This value is {totalCount}': 'Este valor es {totalCount}',
+    ...SHORTCUT_TRANSLATIONS_ES,
+    ...CHROME_UI_ES,
+    ...FOLDER_CORE_ES,
   },
   'pt-BR': {
-    Folder: 'Pasta',
-    'Move folder': 'Mover pasta',
-    'New folder': 'Nova pasta',
-    Name: 'Nome',
-    Cancel: 'Cancelar',
-    Create: 'Criar',
-    'Creating…': 'Criando…',
-    'Enter a folder name.': 'Digite um nome para a pasta.',
-    'Failed to create folder.': 'Falha ao criar a pasta.',
-    'Cancel and delete folder': 'Cancelar e excluir pasta',
-    'Delete folder "{folderName}"?': 'Excluir pasta "{folderName}"?',
-    'This value is {totalCount}': 'Este valor é {totalCount}',
+    ...SHORTCUT_TRANSLATIONS_PT,
+    ...CHROME_UI_PT,
+    ...FOLDER_CORE_PT,
   },
   'fr-CA': {
-    Folder: 'Dossier',
-    'Move folder': 'Déplacer le dossier',
-    'New folder': 'Nouveau dossier',
-    Name: 'Nom',
-    Cancel: 'Annuler',
-    Create: 'Créer',
-    'Creating…': 'Création…',
-    'Enter a folder name.': 'Entrez un nom de dossier.',
-    'Failed to create folder.': 'Échec de la création du dossier.',
-    'Cancel and delete folder': 'Annuler et supprimer le dossier',
-    'Delete folder "{folderName}"?': 'Supprimer le dossier "{folderName}"?',
-    'This value is {totalCount}': 'Cette valeur est {totalCount}',
+    ...SHORTCUT_TRANSLATIONS_FR,
+    ...CHROME_UI_FR,
+    ...FOLDER_CORE_FR,
   },
 };
+
+/**
+ * Type-safe translation keys extracted from all translation dictionaries.
+ * Use this type for autocomplete when calling t().
+ */
+export type TranslationKey = keyof typeof TRANSLATIONS['es-ES'];
 
 /**
  * Canonicalises a locale string using Intl API.

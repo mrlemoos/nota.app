@@ -1,12 +1,11 @@
 import { useCallback, useId, useState, type JSX } from 'react';
 import { Dialog } from '@base-ui/react/dialog';
-import { createTranslator } from '@nota.app/i18n';
 import { NotaButton } from '@nota.app/web-design/button';
 import { cn } from '@/lib/utils';
 import type { Folder } from '~/types/database.types';
+import { useNotaTranslator } from '@/lib/use-nota-translator';
 import { getBrowserClient } from '../lib/supabase/browser';
 import { createFolder } from '../models/folders';
-import { useNotaPreferencesStore } from '../stores/nota-preferences';
 
 type FolderCreateDialogProps = {
   open: boolean;
@@ -26,8 +25,7 @@ export function FolderCreateDialog({
   onCreated,
 }: FolderCreateDialogProps): JSX.Element {
   const titleId = useId();
-  const locale = useNotaPreferencesStore((s) => s.locale);
-  const { t } = createTranslator(locale);
+  const { t } = useNotaTranslator();
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);

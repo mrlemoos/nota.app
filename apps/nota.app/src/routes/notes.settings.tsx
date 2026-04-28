@@ -1,5 +1,5 @@
 import { UserButton } from '@clerk/react';
-import { useLayoutEffect, useState, type JSX } from 'react';
+import { useLayoutEffect, useMemo, useState, type JSX } from 'react';
 import { cn } from '@/lib/utils';
 import { LOCALE_OPTIONS } from '@nota.app/i18n';
 import { ThemeMenu } from '../components/theme-menu';
@@ -16,23 +16,7 @@ import {
 import { NotaProSettingsSection } from '../components/nota-pro-settings-section';
 import { hashForScreen } from '../lib/app-navigation';
 import { navigatorLooksLikeApplePlatform } from '../lib/navigator-apple-platform';
-
-const CURSOR_STYLE_OPTIONS: ReadonlyArray<{
-  value: CursorVisualStyle;
-  label: string;
-  description: string;
-}> = [
-  {
-    value: 'line',
-    label: 'Line',
-    description: 'Classic text cursor',
-  },
-  {
-    value: 'block',
-    label: 'Block',
-    description: 'Solid cursor block',
-  },
-] as const;
+import { useNotaTranslator } from '../lib/use-nota-translator';
 
 export default function NotesSettings(): JSX.Element {
   const { user } = useRootLoaderData();
@@ -66,6 +50,26 @@ export default function NotesSettings(): JSX.Element {
   const setCursorVisualStyle = useNotaPreferencesStore(
     (s) => s.setCursorVisualStyle,
   );
+  const { t } = useNotaTranslator();
+  const cursorStyleOptions = useMemo(
+    (): ReadonlyArray<{
+      value: CursorVisualStyle;
+      label: string;
+      description: string;
+    }> => [
+      {
+        value: 'line',
+        label: t('Line'),
+        description: t('Classic text cursor'),
+      },
+      {
+        value: 'block',
+        label: t('Block'),
+        description: t('Solid cursor block'),
+      },
+    ],
+    [t],
+  );
   const [modDLabel, setModDLabel] = useState('⌘D');
   const [historyBackLabel, setHistoryBackLabel] = useState('⌘[');
   const [historyForwardLabel, setHistoryForwardLabel] = useState('⌘]');
@@ -90,19 +94,19 @@ export default function NotesSettings(): JSX.Element {
       <div className="mx-auto flex w-full max-w-lg flex-col gap-8">
         <div>
           <h1 className="font-serif text-xl font-semibold tracking-normal text-foreground">
-            Settings
+            {t('Settings')}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Appearance, shortcuts, subscription, and your account.
+            {t('Appearance, shortcuts, subscription, and your account.')}
           </p>
         </div>
 
         <section className="space-y-3">
-          <h2 className="text-sm font-medium text-foreground">Appearance</h2>
+          <h2 className="text-sm font-medium text-foreground">{t('Appearance')}</h2>
           <div className="rounded-lg border border-border/60 bg-muted/20 px-4 py-3">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <label htmlFor="nota-locale" className="text-sm text-muted-foreground">
-                Language
+                {t('Language')}
               </label>
               <select
                 id="nota-locale"
@@ -127,19 +131,19 @@ export default function NotesSettings(): JSX.Element {
               </select>
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
-              If you leave this on system default, Nota follows your device language.
+              {t('If you leave this on system default, Nota follows your device language.')}
             </p>
           </div>
           <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/20 px-4 py-3">
-            <span className="text-sm text-muted-foreground">Theme</span>
+            <span className="text-sm text-muted-foreground">{t('Theme')}</span>
             <ThemeMenu />
           </div>
           <fieldset className="rounded-lg border border-border/60 bg-muted/20 px-4 py-3">
             <legend className="px-1 text-xs font-medium tracking-wide text-foreground/80 uppercase">
-              Editor cursor
+              {t('Editor cursor')}
             </legend>
             <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
-              {CURSOR_STYLE_OPTIONS.map((option) => {
+              {cursorStyleOptions.map((option) => {
                 const checked = cursorVisualStyle === option.value;
                 return (
                   <label
@@ -183,7 +187,7 @@ export default function NotesSettings(): JSX.Element {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-sm font-medium text-foreground">Shortcuts</h2>
+          <h2 className="text-sm font-medium text-foreground">{t('Shortcuts')}</h2>
           <label
             htmlFor="nota-open-todays-note-shortcut"
             className={cn(
@@ -207,32 +211,27 @@ export default function NotesSettings(): JSX.Element {
               className="mt-0.5 size-4 shrink-0 rounded border border-input accent-primary"
             />
             <span className="text-sm leading-snug text-muted-foreground">
-              Open today’s note with {modDLabel}
+              {t('Open today\'s note with {modKey}', { modKey: modDLabel })}
             </span>
           </label>
           <p className="text-sm text-muted-foreground">
-            Go back and forward through recently visited notes with{' '}
-            <span className="tabular-nums text-foreground/80">
-              {historyBackLabel}
-            </span>{' '}
-            and{' '}
-            <span className="tabular-nums text-foreground/80">
-              {historyForwardLabel}
-            </span>
-            .
+            {t('Go back and forward through recently visited notes with {backKey} and {forwardKey}.', {
+              backKey: historyBackLabel,
+              forwardKey: historyForwardLabel,
+            })}
           </p>
           <p className="text-sm text-muted-foreground">
             <a
               href={shortcutsHref}
               className="text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground"
             >
-              View all shortcuts
+              {t('View all shortcuts')}
             </a>
           </p>
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-sm font-medium text-foreground">Notes</h2>
+          <h2 className="text-sm font-medium text-foreground">{t('Notes')}</h2>
           <label
             htmlFor="nota-show-note-backlinks"
             className={cn(
@@ -256,11 +255,11 @@ export default function NotesSettings(): JSX.Element {
               className="mt-0.5 size-4 shrink-0 rounded border border-input accent-primary"
             />
             <span className="text-sm leading-snug text-muted-foreground">
-              Show backlinks on open notes
+              {t('Show backlinks on open notes')}
             </span>
           </label>
           <p className="text-sm text-muted-foreground">
-            Lists other notes that link to the note you have open.
+            {t('Lists other notes that link to the note you have open.')}
           </p>
           <label
             htmlFor="nota-delete-empty-folders"
@@ -284,12 +283,11 @@ export default function NotesSettings(): JSX.Element {
               className="mt-0.5 size-4 shrink-0 rounded border border-input accent-primary"
             />
             <span className="text-sm leading-snug text-muted-foreground">
-              Delete folder when it has no notes
+              {t('Delete folder when it has no notes')}
             </span>
           </label>
           <p className="text-sm text-muted-foreground">
-            After you move or delete the last note in a folder, remove the empty
-            folder automatically.
+            {t('After you move or delete the last note in a folder, remove the empty folder automatically.')}
           </p>
           <label
             htmlFor="nota-emoji-replacer-enabled"
@@ -314,18 +312,17 @@ export default function NotesSettings(): JSX.Element {
               className="mt-0.5 size-4 shrink-0 rounded border border-input accent-primary"
             />
             <span className="text-sm leading-snug text-muted-foreground">
-              Replace typed smileys with emoji
+              {t('Replace typed smileys with emoji')}
             </span>
           </label>
           <p className="text-sm text-muted-foreground">
-            Turn off to keep text like <code className="text-foreground/90">:-)</code> as
-            plain characters.
+            {t('Turn off to keep text like :-) as plain characters.')}
           </p>
         </section>
 
         {notaProEntitled ? (
           <section className="space-y-3">
-            <h2 className="text-sm font-medium text-foreground">Search</h2>
+            <h2 className="text-sm font-medium text-foreground">{t('Search')}</h2>
             <label
               htmlFor="nota-semantic-search-enabled"
               className={cn(
@@ -349,12 +346,11 @@ export default function NotesSettings(): JSX.Element {
                 className="mt-0.5 size-4 shrink-0 rounded border border-input accent-primary"
               />
               <span className="text-sm leading-snug text-muted-foreground">
-                Enable Semantic Search in ⌘K
+                {t('Enable Semantic Search in ⌘K')}
               </span>
             </label>
             <p className="text-sm text-muted-foreground">
-              Reorders notes by meaning as you type. Turn off to use text
-              matching only.
+              {t('Reorders notes by meaning as you type. Turn off to use text matching only.')}
             </p>
           </section>
         ) : null}
@@ -363,10 +359,10 @@ export default function NotesSettings(): JSX.Element {
 
         {user ? (
           <section className="space-y-3">
-            <h2 className="text-sm font-medium text-foreground">Account</h2>
+            <h2 className="text-sm font-medium text-foreground">{t('Account')}</h2>
             <div className="flex flex-col gap-4 rounded-lg border border-border/60 bg-muted/20 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
               <div className="min-w-0 flex-1">
-                <p className="text-xs text-muted-foreground">Signed in as</p>
+                <p className="text-xs text-muted-foreground">{t('Signed in as')}</p>
                 <p
                   className="mt-0.5 truncate text-sm font-medium text-foreground"
                   title={user.email ?? undefined}

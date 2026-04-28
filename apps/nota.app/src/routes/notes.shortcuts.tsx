@@ -6,6 +6,7 @@ import {
   NOTA_SHORTCUT_SECTIONS,
 } from '@/lib/nota-shortcuts-catalogue';
 import { navigatorLooksLikeApplePlatform } from '@/lib/navigator-apple-platform';
+import { useNotaTranslator } from '@/lib/use-nota-translator';
 import { useNotaPreferencesStore } from '@/stores/nota-preferences';
 
 export default function NotesShortcuts(): JSX.Element {
@@ -13,6 +14,7 @@ export default function NotesShortcuts(): JSX.Element {
     (s) => s.openTodaysNoteShortcut,
   );
   const [isApple, setIsApple] = useState(true);
+  const { t } = useNotaTranslator();
 
   useLayoutEffect(() => {
     setIsApple(
@@ -31,18 +33,19 @@ export default function NotesShortcuts(): JSX.Element {
       <div className="mx-auto flex w-full max-w-lg flex-col gap-10">
         <div>
           <h1 className="font-serif text-xl font-semibold tracking-normal text-foreground">
-            Shortcuts
+            {t('Shortcuts')}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Keyboard reference for Nota. Mod means {isApple ? '⌘' : 'Ctrl'} on
-            your device.
+            {t('Keyboard reference for Nota. Mod means {modChar} on your device.', {
+              modChar: isApple ? '⌘' : 'Ctrl',
+            })}
           </p>
         </div>
 
         {sections.map((section) => (
           <section key={section.id} className="space-y-3">
             <h2 className="text-sm font-medium text-foreground">
-              {section.title}
+              {t(section.title)}
             </h2>
             <ul className="divide-y divide-border/60 rounded-lg border border-border/60 bg-muted/20">
               {section.rows.map((row, rowIndex) => {
@@ -54,10 +57,10 @@ export default function NotesShortcuts(): JSX.Element {
                     className="flex flex-col gap-0.5 px-4 py-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm text-foreground">{row.description}</p>
+                      <p className="text-sm text-foreground">{t(row.description)}</p>
                       {row.detail ? (
                         <p className="mt-1 text-muted-foreground text-xs leading-snug">
-                          {row.detail}
+                          {t(row.detail)}
                         </p>
                       ) : null}
                     </div>

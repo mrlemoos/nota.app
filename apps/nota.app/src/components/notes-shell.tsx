@@ -55,6 +55,7 @@ import { AudioToNoteDock } from './audio-to-note-dock';
 import { ElectronMenubarBridge } from './electron-menubar-bridge';
 import { StudyRecordingUploadWarningBanner } from './study-recording-upload-warning-banner';
 import { useAudioNotePendingDrain } from '../hooks/use-audio-note-pending-drain';
+import { useNotaTranslator } from '@/lib/use-nota-translator';
 import {
   LazyNotesRouteFallback,
   NotesIndexPanel,
@@ -104,6 +105,7 @@ export function NotesShell(): JSX.Element {
     (s) => s.openTodaysNoteShortcut,
   );
   const [folderCreateOpen, setFolderCreateOpen] = useState(false);
+  const { t } = useNotaTranslator();
 
   useSyncUserPreferences(
     userPreferences,
@@ -387,7 +389,7 @@ export function NotesShell(): JSX.Element {
                       <span className="inline-flex shrink-0" aria-hidden>
                         <HugeiconsIcon icon={Flowchart01Icon} size={16} />
                       </span>
-                      Note Graph
+                      {t('Note Graph')}
                     </a>
                     <a
                       href={shortcutsHref}
@@ -401,7 +403,7 @@ export function NotesShell(): JSX.Element {
                       <span className="inline-flex shrink-0" aria-hidden>
                         <HugeiconsIcon icon={SparklesIcon} size={16} />
                       </span>
-                      Shortcuts
+                      {t('Shortcuts')}
                     </a>
                     <a
                       href={settingsHref}
@@ -415,7 +417,7 @@ export function NotesShell(): JSX.Element {
                       <span className="inline-flex shrink-0" aria-hidden>
                         <HugeiconsIcon icon={Settings01Icon} size={16} />
                       </span>
-                      Settings
+                      {t('Settings')}
                     </a>
                   </div>
                 </footer>
@@ -445,10 +447,10 @@ export function NotesShell(): JSX.Element {
               role="status"
             >
               <p className="text-sm leading-relaxed text-muted-foreground">
-                An active Nota subscription is required to write and sync notes.
-                Choose a plan in{' '}
-                <span className="font-medium text-foreground">Settings</span>{' '}
-                below.
+                {t('An active Nota subscription is required to write and sync notes.')}{' '}
+                {t('Choose a plan in')}{' '}
+                <span className="font-medium text-foreground">{t('Settings')}</span>{' '}
+                {t('below.')}
               </p>
             </div>
           ) : null}
@@ -460,7 +462,7 @@ export function NotesShell(): JSX.Element {
           </ShellPanel>
           <ShellPanel active={panel === 'graph'} panelId="nota-panel-graph">
             <Suspense
-              fallback={<LazyNotesRouteFallback label="Loading graph…" />}
+              fallback={<LazyNotesRouteFallback label={t('Loading graph…')} />}
             >
               <NotesGraphRoute />
             </Suspense>
@@ -470,7 +472,7 @@ export function NotesShell(): JSX.Element {
             panelId="nota-panel-settings"
           >
             <Suspense
-              fallback={<LazyNotesRouteFallback label="Loading settings…" />}
+              fallback={<LazyNotesRouteFallback label={t('Loading settings…')} />}
             >
               <NotesSettingsRoute />
             </Suspense>
@@ -480,7 +482,7 @@ export function NotesShell(): JSX.Element {
             panelId="nota-panel-shortcuts"
           >
             <Suspense
-              fallback={<LazyNotesRouteFallback label="Loading shortcuts…" />}
+              fallback={<LazyNotesRouteFallback label={t('Loading shortcuts…')} />}
             >
               <NotesShortcutsRoute />
             </Suspense>

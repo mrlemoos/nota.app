@@ -19,7 +19,6 @@ import {
   PencilEdit01Icon,
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { createTranslator } from '@nota.app/i18n';
 import { NotaButton } from '@nota.app/web-design/button';
 import {
   NotaContextMenu,
@@ -41,6 +40,7 @@ import {
   NotaTooltipTrigger,
 } from '@nota.app/web-design/tooltip';
 import { cn } from '@/lib/utils';
+import { useNotaTranslator } from '@/lib/use-nota-translator';
 import type { Folder, Note, UserPreferences } from '~/types/database.types';
 import type { NotesShellPanel } from '../lib/app-navigation';
 import { noteHashHref } from './note-detail-panel';
@@ -53,7 +53,6 @@ import {
 } from '../lib/folder-rename-request';
 import { clientRenameFolder } from '../lib/rename-folder-client';
 import { useNotesSidebarStore } from '../stores/notes-sidebar';
-import { useNotaPreferencesStore } from '../stores/nota-preferences';
 import { buildSidebarFolderSections } from '../lib/note-sidebar-groups';
 import { FolderCreateDialog } from './folder-create-dialog';
 import { FolderDeleteDialog } from './folder-delete-dialog';
@@ -97,8 +96,7 @@ function NoteRow(options: {
   ) => Promise<void>;
   onMoveNoteToNewFolder: (note: Note) => void;
 }): JSX.Element {
-  const locale = useNotaPreferencesStore((s) => s.locale);
-  const { t } = createTranslator(locale);
+  const { t } = useNotaTranslator();
   const {
     note,
     folders,
@@ -182,14 +180,14 @@ function NoteRow(options: {
             <NotaContextMenuPopup>
               <NotaContextMenuViewport>
                 <NotaContextMenuSubmenuRoot>
-                  <NotaContextMenuSubmenuTrigger label="Move to">
+                  <NotaContextMenuSubmenuTrigger label={t('Move to')}>
                     <span className="inline-flex min-w-0 flex-1 items-center gap-2">
                       <HugeiconsIcon
                         icon={Folder01Icon}
                         size={16}
                         className="shrink-0 text-muted-foreground"
                       />
-                      <span className="min-w-0 flex-1">Move to</span>
+                      <span className="min-w-0 flex-1">{t('Move to')}</span>
                     </span>
                     <HugeiconsIcon
                       icon={ArrowRight01Icon}
@@ -202,7 +200,7 @@ function NoteRow(options: {
                       <NotaContextMenuPopup>
                         <NotaContextMenuViewport>
                           <NotaContextMenuItem
-                            label="Root"
+                            label={t('Root')}
                             onClick={() => {
                               void onMoveNoteToFolder(note.id, null);
                             }}
@@ -212,7 +210,7 @@ function NoteRow(options: {
                               size={16}
                               className="shrink-0 text-muted-foreground"
                             />
-                            <span>Root</span>
+                            <span>{t('Root')}</span>
                           </NotaContextMenuItem>
                           {folders.map((folder) => (
                             <NotaContextMenuItem
@@ -253,11 +251,9 @@ function NoteRow(options: {
                 </NotaContextMenuSubmenuRoot>
                 <NotaContextMenuSeparator />
                 <NotaContextMenuItem
-                  label={`Delete note: ${noteLabel}`}
+                  label={t('Delete note: {noteTitle}', { noteTitle: noteLabel })}
                   onClick={() => {
-                    if (
-                      !window.confirm('Are you sure you want to delete this note?')
-                    ) {
+                    if (!window.confirm(t('Are you sure you want to delete this note?'))) {
                       return;
                     }
                     void clientDeleteNoteById(note.id, {
@@ -276,7 +272,7 @@ function NoteRow(options: {
                     size={16}
                     className="shrink-0 text-destructive"
                   />
-                  <span className="text-destructive">Delete note</span>
+                  <span className="text-destructive">{t('Delete note')}</span>
                 </NotaContextMenuItem>
               </NotaContextMenuViewport>
             </NotaContextMenuPopup>
@@ -307,6 +303,7 @@ function FolderRow(options: {
   moveDraggedNoteToFolder: (folderId: string) => Promise<void>;
   children: ReactNode;
 }): JSX.Element {
+  const { t } = useNotaTranslator();
   const {
     folder,
     folderContentId,
@@ -378,8 +375,8 @@ function FolderRow(options: {
                 className="h-7 w-7 shrink-0 bg-transparent text-muted-foreground"
                 aria-label={
                   isCollapsed
-                    ? `Expand folder ${folder.name}`
-                    : `Collapse folder ${folder.name}`
+                    ? t('Expand folder {folderName}', { folderName: folder.name })
+                    : t('Collapse folder {folderName}', { folderName: folder.name })
                 }
                 aria-expanded={!isCollapsed}
                 aria-controls={isCollapsed ? undefined : folderContentId}
@@ -434,7 +431,9 @@ function FolderRow(options: {
                       commitFolderRename(folder);
                     }}
                     className="min-w-0 flex-1 rounded border border-input bg-background px-1 text-xs font-medium text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-                    aria-label={`Rename folder ${folder.name}`}
+                    aria-label={t('Rename folder {folderName}', {
+                      folderName: folder.name,
+                    })}
                   />
                 ) : (
                   <NotaTooltip>
@@ -455,7 +454,7 @@ function FolderRow(options: {
                     <NotaTooltipPortal>
                       <NotaTooltipPositioner side="top" sideOffset={6}>
                         <NotaTooltipPopup>
-                          Double-click to rename
+                          {t('Double-click to rename')}
                         </NotaTooltipPopup>
                       </NotaTooltipPositioner>
                     </NotaTooltipPortal>
@@ -470,7 +469,7 @@ function FolderRow(options: {
             <NotaContextMenuPopup>
               <NotaContextMenuViewport>
                 <NotaContextMenuItem
-                  label={`Rename folder ${folder.name}`}
+                  label={t('Rename folder {folderName}', { folderName: folder.name })}
                   onClick={() => {
                     startRenamingFolder(folder);
                   }}
@@ -480,10 +479,10 @@ function FolderRow(options: {
                     size={16}
                     className="shrink-0 text-muted-foreground"
                   />
-                  <span>Rename</span>
+                  <span>{t('Rename')}</span>
                 </NotaContextMenuItem>
                 <NotaContextMenuItem
-                  label={`Delete folder ${folder.name}`}
+                  label={`${t('Delete folder')} ${folder.name}`}
                   onClick={() => {
                     setFolderDeleteTarget(folder);
                   }}
@@ -493,7 +492,7 @@ function FolderRow(options: {
                     size={16}
                     className="shrink-0 text-destructive"
                   />
-                  <span className="text-destructive">Delete folder</span>
+                  <span className="text-destructive">{t('Delete folder')}</span>
                 </NotaContextMenuItem>
               </NotaContextMenuViewport>
             </NotaContextMenuPopup>

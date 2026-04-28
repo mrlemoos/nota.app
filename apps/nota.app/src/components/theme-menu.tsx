@@ -1,4 +1,4 @@
-import type { JSX } from 'react';
+import { useMemo, type JSX } from 'react';
 import { Menu } from '@base-ui/react/menu';
 import {
   ArrowDown01Icon,
@@ -10,13 +10,8 @@ import {
 import { HugeiconsIcon } from '@hugeicons/react';
 import { notaButtonVariants } from '@nota.app/web-design/button';
 import { cn } from '@/lib/utils';
+import { useNotaTranslator } from '@/lib/use-nota-translator';
 import { type Theme, useTheme } from './theme-provider';
-
-const THEME_LABEL: Record<Theme, string> = {
-  light: 'Light',
-  dark: 'Dark',
-  system: 'System',
-};
 
 const itemClass = cn(
   'flex cursor-default items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground outline-none',
@@ -25,18 +20,27 @@ const itemClass = cn(
 
 export function ThemeMenu(): JSX.Element {
   const { theme, setTheme } = useTheme();
+  const { t } = useNotaTranslator();
+  const themeLabel = useMemo(
+    (): Record<Theme, string> => ({
+      light: t('Light'),
+      dark: t('Dark'),
+      system: t('System'),
+    }),
+    [t],
+  );
 
   return (
     <Menu.Root modal={false}>
       <Menu.Trigger
         type="button"
-        aria-label="Theme"
+        aria-label={t('Theme')}
         className={cn(
           notaButtonVariants({ variant: 'outline', size: 'default' }),
           'min-w-[7.5rem] justify-between gap-2 px-2.5 font-normal',
         )}
       >
-        <span className="truncate">{THEME_LABEL[theme]}</span>
+        <span className="truncate">{themeLabel[theme]}</span>
         <HugeiconsIcon
           icon={ArrowDown01Icon}
           size={14}
@@ -76,7 +80,7 @@ export function ThemeMenu(): JSX.Element {
                     size={16}
                     className="shrink-0 text-muted-foreground"
                   />
-                  <span className="min-w-0 flex-1">Light</span>
+                  <span className="min-w-0 flex-1">{t('Light')}</span>
                   <Menu.RadioItemIndicator className="flex size-4 shrink-0 items-center justify-center">
                     <HugeiconsIcon icon={Tick01Icon} size={14} />
                   </Menu.RadioItemIndicator>
@@ -87,7 +91,7 @@ export function ThemeMenu(): JSX.Element {
                     size={16}
                     className="shrink-0 text-muted-foreground"
                   />
-                  <span className="min-w-0 flex-1">Dark</span>
+                  <span className="min-w-0 flex-1">{t('Dark')}</span>
                   <Menu.RadioItemIndicator className="flex size-4 shrink-0 items-center justify-center">
                     <HugeiconsIcon icon={Tick01Icon} size={14} />
                   </Menu.RadioItemIndicator>
@@ -102,7 +106,7 @@ export function ThemeMenu(): JSX.Element {
                     size={16}
                     className="shrink-0 text-muted-foreground"
                   />
-                  <span className="min-w-0 flex-1">System</span>
+                  <span className="min-w-0 flex-1">{t('System')}</span>
                   <Menu.RadioItemIndicator className="flex size-4 shrink-0 items-center justify-center">
                     <HugeiconsIcon icon={Tick01Icon} size={14} />
                   </Menu.RadioItemIndicator>

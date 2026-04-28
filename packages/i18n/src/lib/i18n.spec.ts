@@ -92,6 +92,23 @@ describe('i18n', () => {
     expect(newFolder).toBe('New folder');
   });
 
+  it('translates settings and shell chrome for Spanish', () => {
+    // Arrange
+    const translator = createTranslator('es-ES');
+
+    // Act
+    const settings = translator.t('Settings');
+    const appearance = translator.t('Appearance');
+    const shortcuts = translator.t('Shortcuts');
+    const noteGraph = translator.t('Note Graph');
+
+    // Assert
+    expect(settings).toBe('Ajustes');
+    expect(appearance).toBe('Apariencia');
+    expect(shortcuts).toBe('Atajos');
+    expect(noteGraph).toBe('Grafo de notas');
+  });
+
   it('translates Canadian French correctly', () => {
     // Arrange
     const translator = createTranslator('fr-CA');

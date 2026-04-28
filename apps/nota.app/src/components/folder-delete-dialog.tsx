@@ -7,6 +7,7 @@ import {
   clientDeleteAllNotesInFolderThenDeleteFolder,
   clientMoveAllNotesThenDeleteFolder,
 } from '../lib/delete-folder-client';
+import { useNotaTranslator } from '@/lib/use-nota-translator';
 
 type FolderDeleteDialogProps = {
   folder: Folder | null;
@@ -30,6 +31,7 @@ export function FolderDeleteDialog({
 }: FolderDeleteDialogProps): JSX.Element {
   const titleId = useId();
   const descId = useId();
+  const { t } = useNotaTranslator();
   const [targetId, setTargetId] = useState<string>('');
   const [busy, setBusy] = useState<'move' | 'delete' | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -59,7 +61,7 @@ export function FolderDeleteDialog({
       });
       resetAndClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Something went wrong.');
+      setError(e instanceof Error ? e.message : t('Something went wrong.'));
     } finally {
       setBusy(null);
     }
@@ -70,17 +72,14 @@ export function FolderDeleteDialog({
     removeFolderFromList,
     resetAndClose,
     targetId,
+    t,
   ]);
 
   const onDeleteAllThenDelete = useCallback(async (): Promise<void> => {
     if (!folder || busy) {
       return;
     }
-    if (
-      !window.confirm(
-        'Delete every note in this folder? This cannot be undone.',
-      )
-    ) {
+    if (!window.confirm(t('Delete every note in this folder? This cannot be undone.'))) {
       return;
     }
     setBusy('delete');
@@ -94,11 +93,11 @@ export function FolderDeleteDialog({
       });
       resetAndClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Something went wrong.');
+      setError(e instanceof Error ? e.message : t('Something went wrong.'));
     } finally {
       setBusy(null);
     }
-  }, [busy, folder, refreshNotesList, removeFolderFromList, removeNoteFromList, resetAndClose]);
+  }, [busy, folder, refreshNotesList, removeFolderFromList, removeNoteFromList, resetAndClose, t]);
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -112,16 +111,17 @@ export function FolderDeleteDialog({
           aria-describedby={descId}
         >
           <Dialog.Title id={titleId} className="font-medium text-foreground">
-            Delete folder{folder ? ` “${folder.name}”` : ''}?
+            {folder?.name
+              ? t('Delete folder "{folderName}"?', { folderName: folder.name })
+              : t('Delete folder?')}
           </Dialog.Title>
           <p id={descId} className="mt-2 text-sm text-muted-foreground">
-            Move all notes elsewhere and remove the folder, or delete every note in
-            the folder first.
+            {t('Move all notes elsewhere and remove the folder, or delete every note in the folder first.')}
           </p>
 
           <div className="mt-4 space-y-2">
             <label className="block text-xs font-medium text-muted-foreground">
-              Move all notes to
+              {t('Move all notes to')}
             </label>
             <select
               className="w-full rounded-md border border-input bg-background px-2 py-2 text-sm"
@@ -157,7 +157,7 @@ export function FolderDeleteDialog({
               }}
               disabled={Boolean(busy)}
             >
-              Cancel
+              {t('Cancel')}
             </NotaButton>
             <NotaButton
               type="button"
@@ -167,7 +167,7 @@ export function FolderDeleteDialog({
                 void onMoveThenDelete();
               }}
             >
-              {busy === 'move' ? 'Working…' : 'Move notes and delete folder'}
+              {busy === 'move' ? t('Working…') : t('Move notes and delete folder')}
             </NotaButton>
             <NotaButton
               type="button"
@@ -177,7 +177,7 @@ export function FolderDeleteDialog({
                 void onDeleteAllThenDelete();
               }}
             >
-              {busy === 'delete' ? 'Working…' : 'Delete all notes in folder'}
+              {busy === 'delete' ? t('Working…') : t('Delete all notes in folder')}
             </NotaButton>
           </div>
         </Dialog.Popup>
