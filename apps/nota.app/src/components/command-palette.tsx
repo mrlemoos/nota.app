@@ -30,7 +30,7 @@ import {
 import { HugeiconsIcon } from '@hugeicons/react';
 import { cn } from '@/lib/utils';
 import { notaKbdFooterClass, notaKbdHintClass } from '@/lib/nota-kbd-styles';
-import { useNoteEditorCommands } from '../context/note-editor-commands';
+import { useNoteEditorCommands } from '@nota.app/editor';
 import { useRootLoaderData } from '../context/session-context';
 import { useNotesData } from '../context/notes-data-context';
 import { useAppNavigationScreen } from '../hooks/use-app-navigation-screen';

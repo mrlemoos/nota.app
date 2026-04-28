@@ -1,4 +1,4 @@
-import type { Editor , JSONContent } from '@tiptap/core';
+import type { Editor, JSONContent } from '@tiptap/core';
 import {
   createContext,
   useCallback,
@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { MERMAID_CODE_BLOCK_INSERT } from '@/lib/tiptap-mermaid-insert';
+import { MERMAID_CODE_BLOCK_INSERT } from '../lib/tiptap-mermaid-insert';
 
 type NoteEditorCommandsContextValue = {
   registerMermaidInserter: (fn: (() => void) | null) => void;
@@ -27,7 +27,6 @@ const NoteEditorCommandsContext =
   createContext<NoteEditorCommandsContextValue | null>(null);
 
 function noopRegister(_fn: (() => void) | null) {}
-
 function noopInsert() {}
 
 const fallbackValue: NoteEditorCommandsContextValue = {
@@ -119,7 +118,6 @@ export function useNoteEditorCommands(): NoteEditorCommandsContextValue {
   return ctx ?? fallbackValue;
 }
 
-/** Registers TipTap `insertContent` for Mermaid; clears on unmount or when `editor` is null. */
 export function useRegisterNoteEditorMermaidInserter(
   editor: Editor | null,
 ): void {
@@ -147,7 +145,6 @@ export function useRegisterNoteEditorMermaidInserter(
   }, [editor, ctx]);
 }
 
-/** Registers TipTap `insertTable`; clears on unmount or when `editor` is null. */
 export function useRegisterNoteEditorTableInserter(editor: Editor | null): void {
   const ctx = useContext(NoteEditorCommandsContext);
 
@@ -171,7 +168,6 @@ export function useRegisterNoteEditorTableInserter(editor: Editor | null): void 
   }, [editor, ctx]);
 }
 
-/** Registers TipTap `toggleTaskList`; clears on unmount or when `editor` is null. */
 export function useRegisterNoteEditorTaskListInserter(
   editor: Editor | null,
 ): void {

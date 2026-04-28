@@ -9,7 +9,7 @@ import {
   noteEditorFontFromThemeSelectValue,
   noteThemeSelectValue,
   type NoteEditorSettings,
-} from '../lib/note-editor-settings';
+} from '@nota.app/editor';
 
 type NoteLayoutMenuProps = {
   settings: NoteEditorSettings;

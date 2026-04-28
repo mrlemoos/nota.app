@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { NotaLoadingStatus } from '@nota.app/web-design/spinner';
-import { cn } from '@/lib/utils';
+import { cn } from '@nota.app/web-design/utils';
 import pdfjsWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
 type PdfJsModalPreviewProps = {
@@ -10,10 +10,6 @@ type PdfJsModalPreviewProps = {
   onRenderFailed: () => void;
 };
 
-/**
- * Renders PDF pages to canvases (no Chromium PDF extension toolbar).
- * Fails into iframe fallback via onRenderFailed (CORS, corrupt PDF, etc.).
- */
 export function PdfJsModalPreview({
   url,
   documentTitle,
@@ -38,9 +34,7 @@ export function PdfJsModalPreview({
         GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
 
         const res = await fetch(url);
-        if (!res.ok) {
-          throw new Error('fetch failed');
-        }
+        if (!res.ok) throw new Error('fetch failed');
         const buf = await res.arrayBuffer();
         if (cancelled) return;
 
@@ -53,9 +47,7 @@ export function PdfJsModalPreview({
           const viewport = page.getViewport({ scale: 1.25 });
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d', { alpha: false });
-          if (!ctx) {
-            throw new Error('no canvas context');
-          }
+          if (!ctx) throw new Error('no canvas context');
           canvas.height = viewport.height;
           canvas.width = viewport.width;
           canvas.style.maxWidth = '100%';

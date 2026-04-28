@@ -1,6 +1,6 @@
 import { textblockTypeInputRule } from '@tiptap/core';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
-import { notaLowlight } from '@/lib/nota-lowlight';
+import { notaLowlight } from '../../lib/nota-lowlight';
 import {
   NodeViewContent,
   NodeViewWrapper,
@@ -14,7 +14,7 @@ import {
   useState,
   type JSX,
 } from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '@nota.app/web-design/utils';
 
 /** Wider than TipTap default `[a-z]+` so fences like ```c++``` / ```f#``` work when typed. */
 const backtickFenceRegex = /^```([\w+#.-]+)?[\s\n]$/;

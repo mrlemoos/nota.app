@@ -24,28 +24,41 @@ import {
   NotaTooltipProvider,
   NotaTooltipTrigger,
 } from '@nota.app/web-design/tooltip';
+import { cn } from '@nota.app/web-design/utils';
 import { pdfPreviewSrc } from '../../lib/pdf-preview-url';
-import { cn } from '../../lib/utils';
-import pdfjsWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
-import { getBrowserClient } from '../../lib/supabase/browser';
-import { getValidNoteAttachmentSignedUrlCacheEntry } from '../../lib/note-attachment-signed-url-cache';
-import {
-  downloadBlobFromSignedUrl,
-  getOrFetchNoteAttachmentSignedUrl,
-} from '../../lib/pdf-attachment-client';
-import {
-  NOTE_PDFS_BUCKET,
-  deleteNoteAttachment,
-  updateNoteAttachmentFilename,
-} from '../../models/note-attachments';
-import type { NoteAttachment } from '~/types/database.types';
 import { PdfJsModalPreview } from '../pdf-js-modal-preview';
+import type { NoteAttachment } from '@nota.app/database-types';
+import pdfjsWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+
+export type CachedSignedUrlEntry = {
+  signedUrl: string;
+  expiresAtMs: number;
+};
+
+export type SignedUrlResult =
+  | { ok: true; signedUrl: string }
+  | { ok: false; error?: string };
+
+export type OgPreviewData = {
+  title?: string | null;
+  description?: string | null;
+  image?: string | null;
+};
 
 export type NotePdfDocContextValue = {
   noteId: string;
   userId: string;
   attachmentsById: Map<string, NoteAttachment>;
   revalidate: () => void;
+  getOrFetchSignedUrl: (attachmentId: string, storagePath: string) => Promise<SignedUrlResult>;
+  getValidCachedSignedUrl: (attachmentId: string, storagePath: string) => CachedSignedUrlEntry | null;
+  createRawSignedUrl: (storagePath: string, ttlSec: number) => Promise<{ ok: true; signedUrl: string } | { ok: false; error?: string }>;
+  downloadAttachment: (url: string, filename: string) => Promise<void>;
+  removeStorageFile: (storagePath: string) => Promise<void>;
+  deleteAttachmentRecord: (attachmentId: string) => Promise<void>;
+  renameAttachmentRecord: (attachmentId: string, newFilename: string) => Promise<void>;
+  signedUrlTtlSec: number;
+  fetchOgPreview?: (href: string) => Promise<OgPreviewData>;
 };
 
 const NotePdfDocContext = createContext<NotePdfDocContextValue | null>(null);
@@ -123,7 +136,7 @@ export function NotePdfNodeView(props: NodeViewProps) {
     setThumbnailPhase('loading');
 
     const attachmentStoragePath = attachment?.storage_path;
-    if (!attachmentId || !attachmentStoragePath) {
+    if (!attachmentId || !attachmentStoragePath || !ctx) {
       setSignedUrl(null);
       return () => {
         clearThumbnailRefreshTimer();
@@ -131,29 +144,20 @@ export function NotePdfNodeView(props: NodeViewProps) {
     }
 
     let cancelled = false;
-    const entry = getValidNoteAttachmentSignedUrlCacheEntry(
-      attachmentId,
-      attachmentStoragePath,
-    );
+    const entry = ctx.getValidCachedSignedUrl(attachmentId, attachmentStoragePath);
 
     if (entry) {
       setSignedUrl(entry.signedUrl);
     } else {
       setSignedUrl(null);
       void (async () => {
-        const result = await getOrFetchNoteAttachmentSignedUrl(
-          attachmentId,
-          attachmentStoragePath,
-        );
-
+        const result = await ctx.getOrFetchSignedUrl(attachmentId, attachmentStoragePath);
         if (cancelled) return;
-
         if (!result.ok) {
           setSignedUrl(null);
           setThumbnailPhase('error');
           return;
         }
-
         setSignedUrl(result.signedUrl);
       })();
     }
@@ -165,18 +169,13 @@ export function NotePdfNodeView(props: NodeViewProps) {
       );
       thumbnailRefreshTimerRef.current = setTimeout(() => {
         void (async () => {
-          const result = await getOrFetchNoteAttachmentSignedUrl(
-            attachmentId,
-            attachmentStoragePath,
-          );
-
+          if (!ctx) return;
+          const result = await ctx.getOrFetchSignedUrl(attachmentId, attachmentStoragePath);
           if (cancelled) return;
-
           if (!result.ok) {
             setThumbnailPhase('error');
             return;
           }
-
           setSignedUrl(result.signedUrl);
         })();
       }, ms);
@@ -186,7 +185,7 @@ export function NotePdfNodeView(props: NodeViewProps) {
       cancelled = true;
       clearThumbnailRefreshTimer();
     };
-  }, [attachment?.storage_path, attachmentId, clearThumbnailRefreshTimer]);
+  }, [attachment?.storage_path, attachmentId, clearThumbnailRefreshTimer, ctx]);
 
   useEffect(() => {
     const canvas = thumbnailCanvasRef.current;
@@ -195,9 +194,9 @@ export function NotePdfNodeView(props: NodeViewProps) {
     let cancelled = false;
 
     if (!signedUrl) {
-      const ctx = canvas.getContext('2d', { alpha: false });
-      if (ctx) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const canvasCtx = canvas.getContext('2d', { alpha: false });
+      if (canvasCtx) {
+        canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
       }
       setThumbnailPhase('loading');
       return;
@@ -221,9 +220,9 @@ export function NotePdfNodeView(props: NodeViewProps) {
         const pdf = await getDocument({ data: buf }).promise;
         const page = await pdf.getPage(1);
         const viewport = page.getViewport({ scale: NOTE_PDF_THUMBNAIL_SCALE });
-        const ctx = canvas.getContext('2d', { alpha: false });
+        const canvasCtx = canvas.getContext('2d', { alpha: false });
 
-        if (!ctx) {
+        if (!canvasCtx) {
           throw new Error('no canvas context');
         }
 
@@ -232,7 +231,7 @@ export function NotePdfNodeView(props: NodeViewProps) {
         canvas.className = 'block h-full w-full';
         canvas.setAttribute('aria-label', `${displayName} front page`);
 
-        await page.render({ canvasContext: ctx, canvas, viewport }).promise;
+        await page.render({ canvasContext: canvasCtx, canvas, viewport }).promise;
 
         if (cancelled) return;
         setThumbnailPhase('ready');
@@ -307,8 +306,7 @@ export function NotePdfNodeView(props: NodeViewProps) {
     renameMutexRef.current = true;
     setActionError(null);
     try {
-      const client = getBrowserClient();
-      await updateNoteAttachmentFilename(client, attachment.id, next);
+      await ctx.renameAttachmentRecord(attachment.id, next);
       updateAttributesRef.current({ filename: next });
       ctx.revalidate();
       skipRenameBlurRef.current = true;
@@ -329,7 +327,7 @@ export function NotePdfNodeView(props: NodeViewProps) {
   ]);
 
   const openPreview = useCallback(async () => {
-    if (!attachment) return;
+    if (!attachment || !ctx) return;
     setActionError(null);
     setPreviewLoading(true);
     setPreview(null);
@@ -342,10 +340,7 @@ export function NotePdfNodeView(props: NodeViewProps) {
         return;
       }
 
-      const result = await getOrFetchNoteAttachmentSignedUrl(
-        attachment.id,
-        attachment.storage_path,
-      );
+      const result = await ctx.getOrFetchSignedUrl(attachment.id, attachment.storage_path);
 
       if (!result.ok) {
         throw new Error(result.error);
@@ -360,7 +355,7 @@ export function NotePdfNodeView(props: NodeViewProps) {
     } finally {
       setPreviewLoading(false);
     }
-  }, [attachment, signedUrl]);
+  }, [attachment, ctx, signedUrl]);
 
   const closePreview = useCallback(() => {
     previewDialogRef.current?.close();
@@ -376,43 +371,30 @@ export function NotePdfNodeView(props: NodeViewProps) {
   }, []);
 
   const handleDownload = useCallback(async () => {
-    if (!attachment) return;
+    if (!attachment || !ctx) return;
     setActionError(null);
     try {
-      const result = await getOrFetchNoteAttachmentSignedUrl(
-        attachment.id,
-        attachment.storage_path,
-      );
-
+      const result = await ctx.getOrFetchSignedUrl(attachment.id, attachment.storage_path);
       if (!result.ok) {
         throw new Error(result.error);
       }
-
-      await downloadBlobFromSignedUrl(result.signedUrl, attachment.filename);
+      await ctx.downloadAttachment(result.signedUrl, attachment.filename);
     } catch (e) {
       setActionError(e instanceof Error ? e.message : 'Download failed');
     }
-  }, [attachment]);
+  }, [attachment, ctx]);
 
   const handleRemove = useCallback(async () => {
     if (!attachment || !ctx) return;
-    if (!window.confirm(`Remove “${attachment.filename}” from this note?`)) {
+    if (!window.confirm(`Remove "${attachment.filename}" from this note?`)) {
       return;
     }
 
     setActionError(null);
-    const client = getBrowserClient();
 
     try {
-      const { error: rmErr } = await client.storage
-        .from(NOTE_PDFS_BUCKET)
-        .remove([attachment.storage_path]);
-
-      if (rmErr) {
-        throw new Error(rmErr.message);
-      }
-
-      await deleteNoteAttachment(client, attachment.id);
+      await ctx.removeStorageFile(attachment.storage_path);
+      await ctx.deleteAttachmentRecord(attachment.id);
       props.deleteNode();
       ctx.revalidate();
     } catch (e) {
@@ -789,20 +771,13 @@ export const NotePdf = Node.create({
   },
 
   parseHTML() {
-    return [
-      {
-        tag: 'div[data-note-pdf]',
-      },
-    ];
+    return [{ tag: 'div[data-note-pdf]' }];
   },
 
   renderHTML({ HTMLAttributes }) {
     return [
       'div',
-      mergeAttributes(
-        { 'data-note-pdf': '' },
-        HTMLAttributes,
-      ),
+      mergeAttributes({ 'data-note-pdf': '' }, HTMLAttributes),
     ];
   },
 

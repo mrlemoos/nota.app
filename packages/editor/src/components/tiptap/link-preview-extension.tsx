@@ -7,21 +7,15 @@ import {
 import { useEffect, useRef, useState, type JSX } from 'react';
 import { NotaButton } from '@nota.app/web-design/button';
 import { NotaSpinner } from '@nota.app/web-design/spinner';
-import { cn } from '@/lib/utils';
-import { fetchOgPreviewForEditor } from '@/lib/og-preview-client';
-import { safeOgImageSrcForPreview } from '@/lib/og-image-url';
+import { cn } from '@nota.app/web-design/utils';
+import { safeOgImageSrcForPreview } from '../../lib/og-image-url';
 import { revertLinkPreviewToParagraph } from './link-preview-scan';
+import { useNotePdfDocContext } from './note-pdf-extension';
 
 function stringifyPreviewAttr(value: unknown): string {
-  if (value == null) {
-    return '';
-  }
-  if (typeof value === 'string') {
-    return value;
-  }
-  if (typeof value === 'number' || typeof value === 'boolean') {
-    return String(value);
-  }
+  if (value == null) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
   return '';
 }
 
@@ -36,6 +30,7 @@ function linkPreviewHasPersistedMeta(node: {
 }
 
 function LinkPreviewNodeView(props: NodeViewProps): JSX.Element {
+  const ctx = useNotePdfDocContext();
   const href = (props.node.attrs['href'] as string) || '';
   const linkTextAttr = (props.node.attrs['linkText'] as string) || '';
   const titleAttr = (props.node.attrs['title'] as string) || '';
@@ -55,13 +50,14 @@ function LinkPreviewNodeView(props: NodeViewProps): JSX.Element {
   getPosRef.current = props.getPos;
 
   useEffect(() => {
-    if (!href) return;
+    if (!href || !ctx?.fetchOgPreview) return;
+    const fetchOgPreview = ctx.fetchOgPreview;
     let cancelled = false;
     setError(null);
     setLoading(true);
     void (async () => {
       try {
-        const data = await fetchOgPreviewForEditor(href);
+        const data = await fetchOgPreview(href);
         if (cancelled) return;
         const title = (data.title ?? '').trim();
         const desc = (data.description ?? '').trim();
@@ -100,7 +96,7 @@ function LinkPreviewNodeView(props: NodeViewProps): JSX.Element {
     return () => {
       cancelled = true;
     };
-  }, [href, refreshNonce]);
+  }, [href, refreshNonce, ctx]);
 
   const displayTitle = titleAttr || href;
   const displayLinkLabel = linkTextAttr.trim() || href;

@@ -9,8 +9,8 @@ import {
 } from 'react';
 import { DayPicker } from 'react-day-picker';
 import { NotaButton } from '@nota.app/web-design/button';
-import { cn } from '@/lib/utils';
-import { firstDateFromText } from '@/lib/parse-natural-due-date';
+import { cn } from '@nota.app/web-design/utils';
+import { firstDateFromText } from '../lib/parse-natural-due-date';
 
 function toTimeInputValue(d: Date): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
@@ -36,7 +36,6 @@ function startOfLocalDay(d: Date): Date {
   return next;
 }
 
-/** True when the instant is exactly local midnight (saved date-only due_at round-trips as this). */
 export function dueInstantIsLocalStartOfDay(d: Date): boolean {
   return (
     d.getHours() === 0 &&
@@ -46,35 +45,19 @@ export function dueInstantIsLocalStartOfDay(d: Date): boolean {
   );
 }
 
-/**
- * Whether the time row should start checked: default true for NL-only workflow;
- * false when persisted due is local midnight (date-only); true when any non-zero local time.
- */
 export function initialIncludeTimeFromPersisted(persistedDueAt: string | null): boolean {
-  if (!persistedDueAt) {
-    return true;
-  }
+  if (!persistedDueAt) return true;
   const d = new Date(persistedDueAt);
-  if (Number.isNaN(d.getTime())) {
-    return true;
-  }
+  if (Number.isNaN(d.getTime())) return true;
   return !dueInstantIsLocalStartOfDay(d);
 }
 
-/** DayPicker days/nav, shadcn buttons, checkbox rows (label+span), links, etc. */
 export function isInteractiveBubbleTarget(el: Element): boolean {
   if (el instanceof HTMLElement) {
-    if (el.tagName === 'TEXTAREA' || el.isContentEditable) {
-      return true;
-    }
+    if (el.tagName === 'TEXTAREA' || el.isContentEditable) return true;
     if (el.tagName === 'INPUT') {
       const type = (el as HTMLInputElement).type;
-      if (
-        type === 'text' ||
-        type === 'search' ||
-        type === 'time' ||
-        type === 'checkbox'
-      ) {
+      if (type === 'text' || type === 'search' || type === 'time' || type === 'checkbox') {
         return true;
       }
     }
@@ -89,27 +72,20 @@ export function isInteractiveBubbleTarget(el: Element): boolean {
   );
 }
 
-/** Keeps the ProseMirror selection when clicking bubble chrome (not interactive controls). */
 export function keepBubbleSelectionUnlessTextField(e: ReactMouseEvent) {
   const t = e.target;
-  if (!(t instanceof Element)) {
-    return;
-  }
-  if (isInteractiveBubbleTarget(t)) {
-    return;
-  }
+  if (!(t instanceof Element)) return;
+  if (isInteractiveBubbleTarget(t)) return;
   e.preventDefault();
   e.stopPropagation();
 }
 
-/** For explicit button actions inside the bubble. */
 export function keepEditorTextSelection(e: ReactMouseEvent) {
   e.preventDefault();
   e.stopPropagation();
 }
 
 export interface NoteDueDatePickerPanelProps {
-  /** Resets draft state when the user selects different text (e.g. `${from}-${to}`). */
   draftKey: string;
   initialNaturalLanguageText: string;
   persistedDueAt: string | null;
@@ -137,8 +113,9 @@ export function NoteDueDatePickerPanel({
 
   useEffect(() => {
     const ref = new Date();
+    void ref;
     const trimmed = initialNaturalLanguageText.trim();
-    const parsedNl = firstDateFromText(initialNaturalLanguageText, ref);
+    const parsedNl = firstDateFromText(initialNaturalLanguageText, new Date());
     setNlInput(initialNaturalLanguageText);
 
     let nextSelected: Date | null = null;
@@ -217,9 +194,7 @@ export function NoteDueDatePickerPanel({
   };
 
   const onNlInputKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
-    if (e.key !== 'Enter') {
-      return;
-    }
+    if (e.key !== 'Enter') return;
     e.preventDefault();
     applyNaturalLanguage();
   };
@@ -259,9 +234,7 @@ export function NoteDueDatePickerPanel({
           mode="single"
           selected={selectedDate ?? undefined}
           onSelect={(day) => {
-            if (!day) {
-              return;
-            }
+            if (!day) return;
             setSelectedDate((prev) => {
               const merged = mergeCalendarDay(prev, day);
               return includeTime ? merged : startOfLocalDay(merged);
@@ -303,9 +276,7 @@ export function NoteDueDatePickerPanel({
               type="time"
               value={selectedDate ? toTimeInputValue(selectedDate) : ''}
               onChange={(e) => {
-                if (!selectedDate) {
-                  return;
-                }
+                if (!selectedDate) return;
                 setSelectedDate(applyTimeToDate(selectedDate, e.target.value));
               }}
               disabled={!selectedDate || saving || disabled}
@@ -343,9 +314,7 @@ export function NoteDueDatePickerPanel({
           type="button"
           variant="ghost"
           size="sm"
-          disabled={
-            saving || disabled || (!persistedDueAt && !selectedDate)
-          }
+          disabled={saving || disabled || (!persistedDueAt && !selectedDate)}
           onMouseDown={keepEditorTextSelection}
           onClick={() => { void handleClear(); }}
         >

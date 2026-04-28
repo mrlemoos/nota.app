@@ -6,7 +6,7 @@ import {
   allDateSpansInText,
   dateSpanContainingOffset,
   firstDateFromText,
-} from '@/lib/parse-natural-due-date';
+} from '../../lib/parse-natural-due-date';
 
 const key = new PluginKey('notaDueDateInteraction');
 

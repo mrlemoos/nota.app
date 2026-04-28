@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import {
   noteSurfaceClassNames,
   parseNoteEditorSettings,
-} from '@/lib/note-editor-settings';
+} from '@nota.app/editor';
 import { getBrowserClient } from '../lib/supabase/browser';
 import {
   getStoredNote,

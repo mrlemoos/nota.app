@@ -3,16 +3,11 @@ import type { Editor } from '@tiptap/core';
 import { TextSelection } from '@tiptap/pm/state';
 import type { EditorView } from '@tiptap/pm/view';
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
-import type { Note } from '~/types/database.types';
-import { hrefForNote } from '../lib/internal-note-link';
-import { persistedDisplayTitle } from '../lib/note-title';
-import { findNoteMentionTrigger } from '../lib/tiptap-note-mention';
+import type { Note } from '@nota.app/database-types';
+import { hrefForNote } from './lib/internal-note-link';
+import { persistedDisplayTitle } from './lib/note-title';
+import { findNoteMentionTrigger } from './lib/tiptap-note-mention';
 
-/**
- * Inserts the internal note link using the same `EditorView` that receives
- * `handleKeyDown`, so Enter confirmation does not depend on TipTap `Editor`
- * refs or `dom.editor` (which can disagree with the active view).
- */
 export function insertNoteLinkAtMentionRangeView(
   view: EditorView,
   from: number,
@@ -76,11 +71,6 @@ export type NoteMentionConfirmRefs = {
   mentionSelectedIndexRef: MutableRefObject<number>;
 };
 
-/**
- * Inserts the note link for the active `@` mention if the trigger and a
- * non-empty candidate list are present. Shared by `handleKeyDown` (desktop
- * Enter/Tab) and `beforeinput` (mobile Return where keydown is unreliable).
- */
 export function tryConfirmNoteMention(
   view: EditorView,
   setMention: Dispatch<
@@ -90,17 +80,11 @@ export function tryConfirmNoteMention(
 ): boolean {
   const state = view.state;
 
-  if (!refs.canInsertAttachmentsRef.current) {
-    return false;
-  }
+  if (!refs.canInsertAttachmentsRef.current) return false;
   const trigger = findNoteMentionTrigger(state);
-  if (!trigger) {
-    return false;
-  }
+  if (!trigger) return false;
   const filtered = refs.filterNoteCandidatesRef.current(trigger.query);
-  if (filtered.length === 0) {
-    return false;
-  }
+  if (filtered.length === 0) return false;
 
   const triggerKey = `${trigger.from}:${trigger.query}`;
   if (refs.mentionTriggerKeyRef.current !== triggerKey) {
@@ -120,9 +104,7 @@ export function tryConfirmNoteMention(
     to,
     target,
   );
-  if (!inserted) {
-    return false;
-  }
+  if (!inserted) return false;
   setMention(null);
   return true;
 }

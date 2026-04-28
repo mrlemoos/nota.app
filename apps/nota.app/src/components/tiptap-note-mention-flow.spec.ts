@@ -3,18 +3,19 @@ import StarterKit from '@tiptap/starter-kit';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { EditorView } from '@tiptap/pm/view';
 import type { Note } from '~/types/database.types';
-import { findNoteMentionTrigger } from '../lib/tiptap-note-mention';
-import { NotaLink } from './tiptap/nota-link';
 import {
+  findNoteMentionTrigger,
+  NotaLink,
   insertNoteLinkAtMentionRange,
   insertNoteLinkAtMentionRangeView,
   tryConfirmNoteMention,
   type NoteMentionConfirmRefs,
-} from './tiptap-note-mention-flow';
+} from '@nota.app/editor';
 
-vi.mock('../lib/tiptap-note-mention', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../lib/tiptap-note-mention')>();
+vi.mock('@nota.app/editor', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@nota.app/editor')>();
   return {
+    ...actual,
     findNoteMentionTrigger: vi.fn((...args: Parameters<typeof actual.findNoteMentionTrigger>) =>
       actual.findNoteMentionTrigger(...args),
     ),

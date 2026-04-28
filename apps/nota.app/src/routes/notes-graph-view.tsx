@@ -25,7 +25,7 @@ import '@xyflow/react/dist/style.css';
 import type { Note } from '~/types/database.types';
 import { useNotesDataVault } from '../context/notes-data-context';
 import { navigateFromLegacyPath } from '../lib/app-navigation';
-import { filterNotesForNoteGraph } from '../lib/note-editor-settings';
+import { filterNotesForNoteGraph } from '@nota.app/editor';
 import { applyNoteGraphHoverToEdges } from '../lib/note-graph-hover-edges';
 import { buildNoteLinkGraph } from '../lib/note-link-graph';
 import { notesToIdMap } from '../lib/notes-id-map';

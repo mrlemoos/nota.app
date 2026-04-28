@@ -1,9 +1,9 @@
 import { useEffect, useRef, type JSX } from 'react';
 import { createPortal } from 'react-dom';
 import { NotaButton } from '@nota.app/web-design/button';
-import { cn } from '@/lib/utils';
+import { cn } from '@nota.app/web-design/utils';
 import { persistedDisplayTitle } from '../../lib/note-title';
-import type { Note } from '~/types/database.types';
+import type { Note } from '@nota.app/database-types';
 
 export interface NoteLinkMentionMenuProps {
   open: boolean;

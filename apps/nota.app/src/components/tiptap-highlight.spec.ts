@@ -2,7 +2,7 @@ import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Highlight from '@tiptap/extension-highlight';
 import { describe, expect, it } from 'vitest';
-import { NotaCodeBlock } from './tiptap/nota-code-block';
+import { NotaCodeBlock } from '@nota.app/editor';
 
 function createEditorWithHighlight() {
   return new Editor({

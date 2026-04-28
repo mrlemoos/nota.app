@@ -7,7 +7,7 @@ import {
   isInteractiveBubbleTarget,
   keepBubbleSelectionUnlessTextField,
   NoteDueDatePickerPanel,
-} from './note-due-date-picker-panel';
+} from '@nota.app/editor';
 
 describe('keepBubbleSelectionUnlessTextField', () => {
   it('does not prevent default when mousedown target is a button', () => {

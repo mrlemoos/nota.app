@@ -15,7 +15,7 @@ import { DeferredPostHogRoot } from './components/deferred-posthog-root';
 import { AppErrorBoundary } from './components/app-error-boundary';
 import { ThemeProvider } from './components/theme-provider';
 import { ClerkSupabaseBridge } from './context/clerk-supabase-bridge';
-import { NoteEditorCommandsProvider } from './context/note-editor-commands';
+import { NoteEditorCommandsProvider } from '@nota.app/editor';
 import { StickyDocTitleProvider } from './context/sticky-doc-title';
 import { AppSessionProvider } from './context/session-context';
 import {

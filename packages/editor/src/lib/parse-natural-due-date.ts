@@ -54,10 +54,6 @@ export function allDateSpansInText(text: string, ref: Date): Array<{ start: numb
 
 /**
  * Span of the date phrase under `offset` (0-based index into `text`, inclusive of gap after last char).
- * Uses {@link en.GB.parse} spans only when they exist so a sentence like "My birthday is 20 May 2003"
- * resolves to the date phrase, not the whole line ({@link en.GB.parseDate} can match the full string).
- * Prefers the narrowest span when several overlap. If {@link en.GB.parse} is empty but {@link en.GB.parseDate}
- * succeeds, the full trimmed slice is the span (rare).
  */
 export function dateSpanContainingOffset(
   text: string,

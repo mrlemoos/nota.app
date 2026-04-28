@@ -15,16 +15,7 @@ import {
   NotaTooltipProvider,
   NotaTooltipTrigger,
 } from '@nota.app/web-design/tooltip';
-import { cn } from '@/lib/utils';
-import { getBrowserClient } from '../../lib/supabase/browser';
-import {
-  ATTACHMENT_SIGNED_URL_TTL_SEC,
-  downloadBlobFromSignedUrl,
-} from '../../lib/pdf-attachment-client';
-import {
-  NOTE_PDFS_BUCKET,
-  deleteNoteAttachment,
-} from '../../models/note-attachments';
+import { cn } from '@nota.app/web-design/utils';
 import { useNotePdfDocContext } from './note-pdf-extension';
 
 function NoteAudioNodeView(props: NodeViewProps) {
@@ -56,7 +47,7 @@ function NoteAudioNodeView(props: NodeViewProps) {
     setSignedUrl(null);
     setLoadError(null);
 
-    if (!storagePath) {
+    if (!storagePath || !ctx) {
       return;
     }
 
@@ -67,7 +58,7 @@ function NoteAudioNodeView(props: NodeViewProps) {
       clearRefreshTimer();
       const ms = Math.max(
         5_000,
-        Math.floor(ATTACHMENT_SIGNED_URL_TTL_SEC * 0.85 * 1000),
+        Math.floor(ctx.signedUrlTtlSec * 0.85 * 1000),
       );
       refreshTimerRef.current = setTimeout(() => {
         void fetchUrl();
@@ -75,24 +66,22 @@ function NoteAudioNodeView(props: NodeViewProps) {
     };
 
     async function fetchUrl() {
-      const client = getBrowserClient();
-      const { data, error } = await client.storage
-        .from(NOTE_PDFS_BUCKET)
-        .createSignedUrl(
-          signedStoragePath,
-          ATTACHMENT_SIGNED_URL_TTL_SEC,
-        );
+      if (!ctx) return;
+      const result = await ctx.createRawSignedUrl(
+        signedStoragePath,
+        ctx.signedUrlTtlSec,
+      );
 
       if (cancelled) return;
 
-      if (error || !data?.signedUrl) {
-        setLoadError(error?.message ?? 'Could not load recording');
+      if (!result.ok) {
+        setLoadError(result.error ?? 'Could not load recording');
         setSignedUrl(null);
         return;
       }
 
       setLoadError(null);
-      setSignedUrl(data.signedUrl);
+      setSignedUrl(result.signedUrl);
       scheduleNextRefresh();
     }
 
@@ -102,37 +91,29 @@ function NoteAudioNodeView(props: NodeViewProps) {
       cancelled = true;
       clearRefreshTimer();
     };
-  }, [storagePath, clearRefreshTimer]);
+  }, [storagePath, ctx, clearRefreshTimer]);
 
   const handleDownload = useCallback(async () => {
-    if (!attachment || !signedUrl) return;
+    if (!attachment || !signedUrl || !ctx) return;
     setActionError(null);
     try {
-      await downloadBlobFromSignedUrl(signedUrl, attachment.filename);
+      await ctx.downloadAttachment(signedUrl, attachment.filename);
     } catch (e) {
       setActionError(e instanceof Error ? e.message : 'Download failed');
     }
-  }, [attachment, signedUrl]);
+  }, [attachment, signedUrl, ctx]);
 
   const handleRemove = useCallback(async () => {
     if (!attachment || !ctx) return;
-    if (!window.confirm(`Remove “${attachment.filename}” from this note?`)) {
+    if (!window.confirm(`Remove "${attachment.filename}" from this note?`)) {
       return;
     }
 
     setActionError(null);
-    const client = getBrowserClient();
 
     try {
-      const { error: rmErr } = await client.storage
-        .from(NOTE_PDFS_BUCKET)
-        .remove([attachment.storage_path]);
-
-      if (rmErr) {
-        throw new Error(rmErr.message);
-      }
-
-      await deleteNoteAttachment(client, attachment.id);
+      await ctx.removeStorageFile(attachment.storage_path);
+      await ctx.deleteAttachmentRecord(attachment.id);
       props.deleteNode();
       ctx.revalidate();
     } catch (e) {
@@ -271,9 +252,7 @@ export const NoteAudio = Node.create({
         default: null,
         parseHTML: (el) => el.getAttribute('data-attachment-id'),
         renderHTML: (attrs) => {
-          if (!attrs.attachmentId) {
-            return {};
-          }
+          if (!attrs.attachmentId) return {};
           return { 'data-attachment-id': attrs.attachmentId };
         },
       },
@@ -281,9 +260,7 @@ export const NoteAudio = Node.create({
         default: '',
         parseHTML: (el) => el.getAttribute('data-filename') ?? '',
         renderHTML: (attrs) => {
-          if (!attrs.filename) {
-            return {};
-          }
+          if (!attrs.filename) return {};
           return { 'data-filename': attrs.filename };
         },
       },
@@ -295,10 +272,7 @@ export const NoteAudio = Node.create({
   },
 
   renderHTML({ HTMLAttributes }) {
-    return [
-      'div',
-      mergeAttributes({ 'data-note-audio': '' }, HTMLAttributes),
-    ];
+    return ['div', mergeAttributes({ 'data-note-audio': '' }, HTMLAttributes)];
   },
 
   addNodeView() {

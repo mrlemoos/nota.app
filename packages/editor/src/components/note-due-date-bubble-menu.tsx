@@ -2,7 +2,7 @@ import { BubbleMenu, useEditorState } from '@tiptap/react';
 import type { Editor } from '@tiptap/core';
 import type { JSX } from 'react';
 import { NoteDueDatePickerPanel } from './note-due-date-picker-panel';
-import { firstDateFromText } from '@/lib/parse-natural-due-date';
+import { firstDateFromText } from '../lib/parse-natural-due-date';
 
 export interface NoteDueDateBubbleMenuProps {
   editor: Editor | null;
@@ -56,9 +56,7 @@ export function NoteDueDateBubbleMenu({
   disabled,
   onSaveDueDate,
 }: NoteDueDateBubbleMenuProps): JSX.Element | null {
-  if (!editor) {
-    return null;
-  }
+  if (!editor) return null;
 
   return (
     <BubbleMenu
@@ -66,13 +64,9 @@ export function NoteDueDateBubbleMenu({
       pluginKey="notaDueDateBubble"
       updateDelay={0}
       shouldShow={({ editor: ed }) => {
-        if (ed.isActive('table')) {
-          return false;
-        }
+        if (ed.isActive('table')) return false;
         const { from, to } = ed.state.selection;
-        if (from === to) {
-          return false;
-        }
+        if (from === to) return false;
         const text = ed.state.doc.textBetween(from, to, ' ');
         return firstDateFromText(text, new Date()) !== null;
       }}

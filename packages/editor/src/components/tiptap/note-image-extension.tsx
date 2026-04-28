@@ -26,28 +26,13 @@ import {
   NotaTooltipProvider,
   NotaTooltipTrigger,
 } from '@nota.app/web-design/tooltip';
-import { cn } from '@/lib/utils';
-import { getBrowserClient } from '../../lib/supabase/browser';
-import { getValidNoteAttachmentSignedUrlCacheEntry } from '../../lib/note-attachment-signed-url-cache';
-import {
-  ATTACHMENT_SIGNED_URL_TTL_SEC,
-  downloadBlobFromSignedUrl,
-  getOrFetchNoteAttachmentSignedUrl,
-} from '../../lib/pdf-attachment-client';
-import {
-  NOTE_PDFS_BUCKET,
-  deleteNoteAttachment,
-} from '../../models/note-attachments';
+import { cn } from '@nota.app/web-design/utils';
 import { useNotePdfDocContext } from './note-pdf-extension';
 
 export type NoteImageAlign = 'left' | 'center' | 'right';
 
 function isNoteImageAlign(v: unknown): v is NoteImageAlign {
-  return (
-    v === 'left' ||
-    v === 'center' ||
-    v === 'right'
-  );
+  return v === 'left' || v === 'center' || v === 'right';
 }
 
 function noteImageAlignFromAttrs(raw: unknown): NoteImageAlign {
@@ -101,9 +86,7 @@ export function NoteImageNodeView(props: NodeViewProps) {
     ? ctx?.attachmentsById.get(attachmentId)
     : undefined;
 
-  /** Stable for effect deps: loader revalidation replaces row objects with the same path. */
   const storagePath = attachment?.storage_path ?? null;
-
   const displayName = attachment?.filename ?? filenameAttr;
 
   const clearRefreshTimer = useCallback(() => {
@@ -119,7 +102,7 @@ export function NoteImageNodeView(props: NodeViewProps) {
 
     let cancelled = false;
 
-    if (!attachmentId || !storagePath) {
+    if (!attachmentId || !storagePath || !ctx) {
       setSignedUrl(null);
       return () => {
         cancelled = true;
@@ -130,10 +113,7 @@ export function NoteImageNodeView(props: NodeViewProps) {
     const imageAttachmentId = attachmentId;
     const imageStoragePath = storagePath;
 
-    const entry = getValidNoteAttachmentSignedUrlCacheEntry(
-      imageAttachmentId,
-      imageStoragePath,
-    );
+    const entry = ctx.getValidCachedSignedUrl(imageAttachmentId, imageStoragePath);
 
     if (entry) {
       setSignedUrl(entry.signedUrl);
@@ -146,7 +126,7 @@ export function NoteImageNodeView(props: NodeViewProps) {
       clearRefreshTimer();
       const ms = Math.max(
         5_000,
-        Math.floor(ATTACHMENT_SIGNED_URL_TTL_SEC * 0.85 * 1000),
+        Math.floor(ctx.signedUrlTtlSec * 0.85 * 1000),
       );
       refreshTimerRef.current = setTimeout(() => {
         void fetchUrl();
@@ -154,10 +134,8 @@ export function NoteImageNodeView(props: NodeViewProps) {
     };
 
     async function fetchUrl() {
-      const result = await getOrFetchNoteAttachmentSignedUrl(
-        imageAttachmentId,
-        imageStoragePath,
-      );
+      if (!ctx) return;
+      const result = await ctx.getOrFetchSignedUrl(imageAttachmentId, imageStoragePath);
 
       if (cancelled) return;
 
@@ -182,7 +160,7 @@ export function NoteImageNodeView(props: NodeViewProps) {
       cancelled = true;
       clearRefreshTimer();
     };
-  }, [attachmentId, storagePath, clearRefreshTimer]);
+  }, [attachmentId, storagePath, ctx, clearRefreshTimer]);
 
   const handleOpenTab = useCallback(() => {
     if (!signedUrl) return;
@@ -190,34 +168,26 @@ export function NoteImageNodeView(props: NodeViewProps) {
   }, [signedUrl]);
 
   const handleDownload = useCallback(async () => {
-    if (!attachment || !signedUrl) return;
+    if (!attachment || !signedUrl || !ctx) return;
     setActionError(null);
     try {
-      await downloadBlobFromSignedUrl(signedUrl, attachment.filename);
+      await ctx.downloadAttachment(signedUrl, attachment.filename);
     } catch (e) {
       setActionError(e instanceof Error ? e.message : 'Download failed');
     }
-  }, [attachment, signedUrl]);
+  }, [attachment, signedUrl, ctx]);
 
   const handleRemove = useCallback(async () => {
     if (!attachment || !ctx) return;
-    if (!window.confirm(`Remove “${attachment.filename}” from this note?`)) {
+    if (!window.confirm(`Remove "${attachment.filename}" from this note?`)) {
       return;
     }
 
     setActionError(null);
-    const client = getBrowserClient();
 
     try {
-      const { error: rmErr } = await client.storage
-        .from(NOTE_PDFS_BUCKET)
-        .remove([attachment.storage_path]);
-
-      if (rmErr) {
-        throw new Error(rmErr.message);
-      }
-
-      await deleteNoteAttachment(client, attachment.id);
+      await ctx.removeStorageFile(attachment.storage_path);
+      await ctx.deleteAttachmentRecord(attachment.id);
       props.deleteNode();
       ctx.revalidate();
     } catch (e) {
@@ -481,9 +451,7 @@ export const NoteImage = Node.create({
         default: null,
         parseHTML: (el) => el.getAttribute('data-attachment-id'),
         renderHTML: (attrs) => {
-          if (!attrs.attachmentId) {
-            return {};
-          }
+          if (!attrs.attachmentId) return {};
           return { 'data-attachment-id': attrs.attachmentId };
         },
       },
@@ -491,9 +459,7 @@ export const NoteImage = Node.create({
         default: '',
         parseHTML: (el) => el.getAttribute('data-filename') ?? '',
         renderHTML: (attrs) => {
-          if (!attrs.filename) {
-            return {};
-          }
+          if (!attrs.filename) return {};
           return { 'data-filename': attrs.filename };
         },
       },
@@ -516,10 +482,7 @@ export const NoteImage = Node.create({
   },
 
   renderHTML({ HTMLAttributes }) {
-    return [
-      'div',
-      mergeAttributes({ 'data-note-image': '' }, HTMLAttributes),
-    ];
+    return ['div', mergeAttributes({ 'data-note-image': '' }, HTMLAttributes)];
   },
 
   addNodeView() {

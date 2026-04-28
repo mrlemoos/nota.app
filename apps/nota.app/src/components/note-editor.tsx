@@ -1,5 +1,6 @@
 import {
   useCallback,
+  useMemo,
   useState,
   useRef,
   useEffect,
@@ -8,12 +9,13 @@ import {
   type ChangeEvent,
   type KeyboardEvent,
 } from 'react';
-import { TipTapEditor } from './tiptap-editor';
+import { TipTapEditor } from '@nota.app/editor';
+import type { AttachmentStorageOps } from '@nota.app/editor';
 import { useStickyDocTitle } from '../context/sticky-doc-title';
 import { persistedDisplayTitle } from '../lib/note-title';
 import { getBrowserClient } from '../lib/supabase/browser';
 import { useRootLoaderData } from '../context/session-context';
-import { useNotesDataMeta } from '../context/notes-data-context';
+import { useNotesDataMeta, useNotesDataActions } from '../context/notes-data-context';
 import { mergeUpdatedNoteLocalContent } from '../lib/note-updated-content-merge';
 import {
   drainNotesOutbox,
@@ -27,12 +29,64 @@ import {
   noteEditorSettingsToJson,
   parseNoteEditorSettings,
   type NoteEditorSettings,
-} from '../lib/note-editor-settings';
+} from '@nota.app/editor';
 import { NoteLayoutMenu } from './note-layout-menu';
 import { cn } from '@/lib/utils';
 import type { Editor } from '@tiptap/core';
-import { isImageFile, uploadNoteAttachmentFile } from '../lib/pdf-attachment-client';
+import {
+  classifyNoteAttachmentFile,
+  isImageFile,
+  uploadNoteAttachmentFile,
+  getOrFetchNoteAttachmentSignedUrl,
+  downloadBlobFromSignedUrl,
+  ATTACHMENT_SIGNED_URL_TTL_SEC,
+} from '../lib/pdf-attachment-client';
+import {
+  getValidNoteAttachmentSignedUrlCacheEntry,
+} from '../lib/note-attachment-signed-url-cache';
+import {
+  NOTE_PDFS_BUCKET,
+  deleteNoteAttachment,
+  updateNoteAttachmentFilename,
+} from '../models/note-attachments';
+import { fetchOgPreviewForEditor } from '../lib/og-preview-client';
+import { parseNoteLinkPath, hrefForNote } from '../lib/internal-note-link';
+import { absoluteUrlForNote, navigateFromLegacyPath } from '../lib/app-navigation';
 import { useNotaPreferencesStore } from '../stores/nota-preferences';
+
+function buildStorageOps(noteId: string, userId: string): AttachmentStorageOps {
+  const client = getBrowserClient();
+  return {
+    signedUrlTtlSec: ATTACHMENT_SIGNED_URL_TTL_SEC,
+    getOrFetchSignedUrl: (attachmentId, storagePath) =>
+      getOrFetchNoteAttachmentSignedUrl(attachmentId, storagePath),
+    getValidCachedSignedUrl: (attachmentId, storagePath) =>
+      getValidNoteAttachmentSignedUrlCacheEntry(attachmentId, storagePath),
+    createRawSignedUrl: async (storagePath, ttlSec) => {
+      const { data, error } = await client.storage
+        .from(NOTE_PDFS_BUCKET)
+        .createSignedUrl(storagePath, ttlSec);
+      if (error || !data?.signedUrl) {
+        return { ok: false, error: error?.message ?? 'Could not create signed URL' };
+      }
+      return { ok: true, signedUrl: data.signedUrl };
+    },
+    downloadAttachment: (url, filename) => downloadBlobFromSignedUrl(url, filename),
+    removeStorageFile: async (storagePath) => {
+      const { error } = await client.storage
+        .from(NOTE_PDFS_BUCKET)
+        .remove([storagePath]);
+      if (error) throw new Error(error.message);
+    },
+    deleteAttachmentRecord: async (attachmentId) => {
+      await deleteNoteAttachment(client, attachmentId);
+    },
+    renameAttachmentRecord: async (attachmentId, newFilename) => {
+      await updateNoteAttachmentFilename(client, attachmentId, newFilename);
+    },
+    fetchOgPreview: fetchOgPreviewForEditor,
+  };
+}
 
 interface NoteEditorProps {
   note: Note;
@@ -58,6 +112,8 @@ function NoteEditorImpl({
 }: NoteEditorProps) {
   const { user } = useRootLoaderData() ?? { user: null };
   const { notaProEntitled } = useNotesDataMeta();
+  const { refreshNotesList } = useNotesDataActions();
+  const emojiReplacerEnabled = useNotaPreferencesStore((s) => s.emojiReplacerEnabled);
   const cursorVisualStyle = useNotaPreferencesStore((s) => s.cursorVisualStyle);
   const { scrollRootRef, scrollRootEpoch, setSticky, resetSticky } =
     useStickyDocTitle();
@@ -65,6 +121,12 @@ function NoteEditorImpl({
     'saved',
   );
   const [title, setTitle] = useState(() => note.title || '');
+
+  const storageOps = useMemo(
+    () => buildStorageOps(note.id, user?.id ?? ''),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [note.id, user?.id],
+  );
 
   const titleRowRef = useRef<HTMLDivElement>(null);
   const titleTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -656,6 +718,17 @@ function NoteEditorImpl({
           isDeadline={note.is_deadline}
           onSaveDueDate={persistDueDate}
           bodyEditorRef={bodyEditorRef}
+          proEntitled={notaProEntitled}
+          emojiReplacerEnabled={emojiReplacerEnabled}
+          onRefreshNotesList={() => { void refreshNotesList({ silent: true }); }}
+          onUploadFile={(file) =>
+            uploadNoteAttachmentFile(note.id, user?.id ?? '', file)
+          }
+          acceptsFile={(file) => classifyNoteAttachmentFile(file) !== null}
+          resolveNoteIdFromPath={parseNoteLinkPath}
+          onNavigateToNote={(id) => navigateFromLegacyPath(hrefForNote(id))}
+          getAbsoluteNoteUrl={absoluteUrlForNote}
+          storageOps={storageOps}
         />
       </div>
     </div>
