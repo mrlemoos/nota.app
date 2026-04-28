@@ -22,7 +22,7 @@
   "dependencies": {
     "@nota.app/database-types": "workspace:*",
     "@nota.app/web-design": "workspace:*",
-    "@tiptap/extension-code-block": "^2.11.5",
+    "@tiptap/extension-code-block": "^3.22.4",
     "@tiptap/extension-code-block-lowlight": "2.11.5",
     "@tiptap/extension-emoji": "^2.27.2",
     "@tiptap/extension-highlight": "2.27.2",
